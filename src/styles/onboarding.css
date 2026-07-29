@@ -1,0 +1,25 @@
+.onboarding { min-height: 100vh; display: grid; grid-template-columns: .9fr 1.1fr; background: #fff; }
+.onboarding__visual { position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 42px 9%; color: #fff; background: radial-gradient(circle at 70% 38%, #8876ed, transparent 27%), linear-gradient(145deg, #384cc9, #654ad3); }
+.onboarding__visual::before, .onboarding__visual::after { content: ""; position: absolute; border: 1px solid #ffffff18; border-radius: 50%; }
+.onboarding__visual::before { width: 380px; height: 380px; left: -220px; top: 23%; }.onboarding__visual::after { width: 470px; height: 470px; right: -330px; bottom: -170px; }
+.brand--light { color: #fff; padding: 0; z-index: 1; }.brand--light .brand__mark { background: #ffffff20; box-shadow: none; }
+.onboarding__visual h1 { position: relative; z-index: 1; margin: 8px 0 20px; font-size: clamp(33px, 4vw, 54px); line-height: 1.13; letter-spacing: -.055em; }
+.onboarding__visual h1 em { color: #c7c0ff; font-style: normal; }.onboarding__visual .eyebrow { color: #cbcfff; }
+.onboarding-orbit { position: absolute; top: 34%; right: 15%; width: 150px; height: 150px; border: 1px solid #ffffff28; border-radius: 50%; }
+.onboarding-orbit::before { content: ""; position: absolute; inset: -24px; border: 1px solid #ffffff16; border-radius: 50%; }
+.onboarding-orbit span { display: grid; place-items: center; width: 84px; height: 84px; margin: 33px; border-radius: 27px; color: #fff; background: #ffffff22; box-shadow: 0 18px 40px #18207c44; }
+.onboarding__form { width: min(490px, 80%); align-self: center; justify-self: center; padding: 45px 0; }
+.onboarding-progress { display: flex; gap: 8px; margin-bottom: 13px; }.onboarding-progress i { width: 42px; height: 4px; border-radius: 8px; background: #e8e9f0; }.onboarding-progress i.active { background: var(--blue); }
+.step-count { color: var(--blue); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+.onboarding__form h2 { margin: 13px 0 7px; font-size: 29px; letter-spacing: -.04em; }.onboarding__form > p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.interview-fields { display: grid; gap: 18px; margin: 28px 0; }.interview-fields label { display: grid; gap: 8px; font-size: 10px; font-weight: 800; }
+.interview-fields input { width: 100%; padding: 14px 15px; border: 1px solid var(--line); border-radius: 11px; outline: none; color: var(--ink); font-size: 11px; background: #fbfcfe; }.interview-fields input:focus { border-color: #9fa9eb; box-shadow: 0 0 0 3px #5369eb12; }
+.onboarding-actions { display: flex; gap: 9px; justify-content: flex-end; }.continue-button, .back-button { border: 0; border-radius: 11px; padding: 13px 18px; font-size: 10px; font-weight: 800; }
+.continue-button { display: flex; align-items: center; gap: 8px; color: #fff; background: var(--blue); box-shadow: 0 8px 20px #465ddd33; }.back-button { color: var(--muted); background: #f2f3f7; }
+.privacy-note { display: block; margin-top: 25px; color: #a2a6b4; font-size: 8px; text-align: center; }
+
+@media (max-width: 720px) {
+  .onboarding { display: block; background: linear-gradient(#4356cd 0 220px, #fff 220px); }
+  .onboarding__visual { min-height: 220px; padding: 24px; background: transparent; }.onboarding__visual h1 { font-size: 29px; }.onboarding__visual h1 br:nth-child(2), .onboarding-orbit { display: none; }
+  .onboarding__form { width: auto; margin: -12px 15px 0; padding: 25px 20px; border-radius: 20px 20px 0 0; background: #fff; }
+}

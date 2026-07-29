@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --blue: #3978f6;
+  --blue-dark: #2457d6;
+  --purple: #8f55ee;
+  --pink: #ee69bb;
+  --mint: #19c99a;
+  --yellow: #ffcc53;
+  --ink: #20284a;
+  --muted: #77809b;
+  --line: #e8eaf5;
+  --soft-bg: #f8f8ff;
+  font-family: 'Manrope', system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--soft-bg);
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; }
+
+.app-shell { min-height: 100vh; padding-left: 240px; }
+.sidebar {
+  position: fixed; inset: 0 auto 0 0; width: 240px;
+  background: linear-gradient(180deg, #fff 55%, #f6f3ff);
+  border-right: 1px solid var(--line); padding: 28px 18px 22px;
+  display: flex; flex-direction: column; z-index: 10;
+}
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 10px; font-size: 20px; font-weight: 800; }
+.brand__mark {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px;
+  color: #fff; background: linear-gradient(145deg, #26baf1, var(--purple));
+  box-shadow: 0 7px 17px #6d68e650;
+}
+.nav-list { display: grid; gap: 7px; margin-top: 46px; }
+.nav-item {
+  display: flex; gap: 13px; align-items: center; min-height: 47px; padding: 0 14px;
+  border-radius: 12px; color: #747b91; font-size: 14px; font-weight: 600;
+}
+.nav-item.is-active { color: #734ae4; background: #f0ebff; font-weight: 800; }
+.momentum-card { margin-top: auto; padding: 14px; border: 1px solid #e5e6f1; border-radius: 14px; background: #fafaff; }
+.momentum-card__top { display: flex; align-items: center; justify-content: space-between; font-size: 11px; }
+.momentum-card__top span { display: flex; align-items: center; gap: 5px; color: var(--purple); font-weight: 800; }
+.meter { height: 6px; margin: 10px 0 8px; overflow: hidden; border-radius: 8px; background: #e9e8f4; }
+.meter span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--purple), var(--blue)); }
+.momentum-card small { color: #969bad; font-size: 9px; }
+.sidebar-user { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 14px 5px 0; border-top: 1px solid var(--line); }
+.sidebar-user { border-radius: 12px; transition: color .2s, background .2s, transform .2s; }
+.sidebar-user:hover, .sidebar-user.is-active { color: #734ae4; background: #f0ebff; transform: translateY(-1px); }
+.sidebar-user div:nth-child(2) { flex: 1; display: grid; }
+.sidebar-user b { font-size: 12px; }.sidebar-user small { color: var(--muted); font-size: 9px; margin-top: 2px; }
+.avatar { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%; background: #ece8ff; color: #7455ce; font-weight: 800; }
+.main-content { max-width: 1260px; margin: auto; padding: 34px 44px 60px; }
+.bottom-nav { display: none; }
+.eyebrow { color: #8d94aa; font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+.primary-button, .dark-button, .secondary-button, .complete-button {
+  border: 0; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800;
+}
+.primary-button { padding: 13px 18px; color: #fff; background: var(--blue); box-shadow: 0 7px 20px #283faa35; font-size: 12px; }
+.dark-button { padding: 12px; color: #fff; background: #202943; font-size: 11px; }
+.secondary-button { padding: 11px 14px; color: var(--blue); background: #eef1ff; font-size: 11px; }
+.icon-button { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 10px; color: var(--blue); }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin: 7px 0 28px; }
+.page-header h1 { margin: 6px 0; font-size: clamp(24px, 3vw, 34px); letter-spacing: -.04em; }
+.page-header p { margin: 0; color: var(--muted); font-size: 13px; }

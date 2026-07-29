@@ -1,0 +1,32 @@
+@media (max-width: 920px) {
+  .app-shell { padding-left: 0; padding-bottom: 68px; }
+  .sidebar { display: none; }
+  .bottom-nav {
+    position: fixed; inset: auto 0 0; z-index: 20; display: flex; justify-content: space-around;
+    padding: 8px 10px max(8px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #ffffffef; backdrop-filter: blur(14px);
+  }
+  .bottom-nav a { display: grid; justify-items: center; gap: 3px; min-width: 75px; color: #9297a8; font-size: 8px; font-weight: 700; }
+  .bottom-nav a.is-active { color: var(--blue); }
+  .main-content { padding: 25px 22px 45px; }
+  .dashboard-grid, .quest-page-grid { grid-template-columns: 1fr; }
+  .dashboard-side { grid-template-columns: 1fr 1fr; }
+  .mentor-mini { grid-column: 1 / -1; }
+  .task-layout { grid-template-columns: minmax(400px, 1.3fr) minmax(270px, .7fr); }
+}
+
+@media (max-width: 680px) {
+  .main-content { padding: 19px 15px 35px; }
+  .topbar { margin-bottom: 18px; }.topbar p { display: none; }.topbar h1 { font-size: 20px; }
+  .top-stats .stat-chip--xp { display: none; }.top-stats .avatar { display: none; }
+  .hero-card { align-items: flex-start; min-height: 232px; padding: 18px; }.hero-card__mascot { width: 76px; height: 76px; border-radius: 22px; border-width: 3px; }
+  .hero-card h2 { font-size: 17px; }.hero-card p { font-size: 9px; line-height: 1.5; }.hero-card .primary-button { position: absolute; right: 18px; bottom: 18px; padding: 10px 12px; }
+  .hero-progress { width: calc(100% - 95px); }.hero-card__copy { min-width: 0; }
+  .dashboard-side, .profile-grid { grid-template-columns: 1fr; }.mentor-mini { grid-column: auto; }
+  .quest-card { padding: 19px 14px; }.quest-map { min-height: 440px; padding-inline: 0; }.level { width: 86%; gap: 8px; }.level--0, .level--2, .level--4 { margin-left: 0; }.level--1, .level--3 { margin-left: 14%; }.level-node { width: 52px; height: 52px; border-radius: 19px; }.level-row b { font-size: 9px; }.level-copy { padding: 9px; }
+  .profile-hero { align-items: flex-start; flex-wrap: wrap; }.profile-copy { min-width: 180px; }.profile-hero button { width: 100%; }
+  .page-header { align-items: flex-start; }.page-header h1 { font-size: 24px; }
+  .task-topbar { grid-template-columns: 1fr 1.3fr; padding: 0 17px; }.task-topbar .stat-chip { display: none; }.task-topbar__progress { justify-items: end; }.task-topbar__progress div { width: 120px; }
+  .task-layout { display: flex; flex-direction: column; padding: 25px 15px 50px; }.task-main h1 { font-size: 26px; }
+  .ai-panel { position: static; order: -1; }.ai-chat { min-height: 150px; }.task-info { gap: 10px; flex-wrap: wrap; }
+  .achievement-list { grid-template-columns: repeat(3, 1fr); }
+}
