@@ -1,5 +1,6 @@
 import { Link } from 'wouter';
 import { Icon } from './Icon';
+import { NewNoteButton } from './NewNoteButton';
 
 export function TodayTasks() {
   const tasks = [
@@ -50,7 +51,7 @@ export function QuickActions() {
       <span className="eyebrow">БЫСТРЫЕ ДЕЙСТВИЯ</span>
       <div>
         <Link href="/quest"><span><Icon name="map" /></span><b>Открыть карту</b></Link>
-        <Link href="/task"><span><Icon name="book" /></span><b>Добавить заметку</b></Link>
+        <NewNoteButton />
         <Link href="/profile"><span><Icon name="trophy" /></span><b>Мои награды</b></Link>
       </div>
     </section>

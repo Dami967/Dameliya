@@ -7,6 +7,7 @@ type AppShellProps = { children: React.ReactNode };
 const navigation = [
   { href: '/home', icon: 'home', label: 'Главная' },
   { href: '/quest', icon: 'map', label: 'Мой квест' },
+  { href: '/notes', icon: 'book', label: 'Заметки' },
   { href: '/rewards', icon: 'trophy', label: 'Награды' },
   { href: '/friends', icon: 'users', label: 'Друзья' },
   { href: '/settings', icon: 'settings', label: 'Настройки' },
@@ -24,7 +25,7 @@ export function AppShell({ children }: AppShellProps) {
         <nav className="nav-list">
           {navigation.map((item) => (
             <Link key={item.href} href={item.href}
-              className={`nav-item ${location === item.href ? 'is-active' : ''}`}>
+              className={`nav-item ${location === item.href || location.startsWith(`${item.href}/`) ? 'is-active' : ''}`}>
               <Icon name={item.icon} size={21} /><span>{item.label}</span>
             </Link>
           ))}
@@ -43,7 +44,7 @@ export function AppShell({ children }: AppShellProps) {
       <main className="main-content">{children}</main>
       <nav className="bottom-nav">
         {navigation.map((item) => (
-          <Link key={item.href} href={item.href} className={location === item.href ? 'is-active' : ''}>
+          <Link key={item.href} href={item.href} className={location === item.href || location.startsWith(`${item.href}/`) ? 'is-active' : ''}>
             <Icon name={item.icon} size={21} /><span>{item.label}</span>
           </Link>
         ))}
