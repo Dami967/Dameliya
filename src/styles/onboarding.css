@@ -18,6 +18,10 @@
 .onboarding-actions { display: flex; gap: 9px; justify-content: flex-end; }.continue-button, .back-button { border: 0; border-radius: 11px; padding: 13px 18px; font-size: 10px; font-weight: 800; }
 .continue-button { display: flex; align-items: center; gap: 8px; color: #fff; background: var(--blue); box-shadow: 0 8px 20px #465ddd33; }.back-button { color: var(--muted); background: #f2f3f7; }
 .privacy-note { display: block; margin-top: 25px; color: #a2a6b4; font-size: 8px; text-align: center; }
+.profile-setup-avatar { display: grid; justify-items: center; gap: 9px; margin: 24px 0 8px; }
+.profile-setup-avatar > div { width: 92px; height: 92px; overflow: hidden; display: grid; place-items: center; border: 4px solid #fff; border-radius: 50%; color: #7054df; background: #ece8ff; box-shadow: 0 10px 30px #5543bd26; font-size: 30px; font-weight: 800; }
+.profile-setup-avatar img { width: 100%; height: 100%; object-fit: cover; }.profile-setup-avatar small { color: var(--muted); font-size: 8px; }
+.profile-setup-fields { margin-top: 18px; }
 
 @media (max-width: 720px) {
   .onboarding { display: block; background: linear-gradient(#4356cd 0 220px, #fff 220px); }

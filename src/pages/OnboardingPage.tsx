@@ -5,15 +5,15 @@ import { useSession } from '../lib/useSession';
 import { loadProfile, loadSettings, saveProfile, saveSettings } from '../lib/userProfile';
 import { appLanguages, detectLanguage, rememberLanguage } from '../lib/languages';
 import { interviewCopy } from '../lib/onboardingLocale';
+import { ProfileSetupStep } from '../components/ProfileSetupStep';
 
 type Answers = Record<string, string>;
 const steps = [
-  ['display_name', 'username'],
   ['age', 'country', 'occupation'],
   ['interests', 'strengths', 'challenges'],
   ['goal', 'why', 'daily_minutes'],
 ] as const;
-const fieldOffsets = [0, 2, 5, 8];
+const fieldOffsets = [2, 5, 8];
 
 export function OnboardingPage() {
   const [step, setStep] = useState(0);
@@ -21,6 +21,9 @@ export function OnboardingPage() {
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [language, setLanguage] = useState(detectLanguage);
+  const [profileCreated, setProfileCreated] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const { session, loading } = useSession();
   const [, navigate] = useLocation();
   const copy = interviewCopy(language);
@@ -37,9 +40,10 @@ export function OnboardingPage() {
         display_name: data.display_name, username: data.username ?? '', age: data.age?.toString() ?? '',
         country: data.country, occupation: data.occupation, interests: data.interests.join(', '),
         strengths: data.strengths, challenges: data.challenges, goal: data.main_goals[0] ?? '',
-        daily_minutes: data.daily_minutes.toString(),
+        why: data.daily_goal, daily_minutes: data.daily_minutes.toString(),
       });
-    });
+      setAvatarUrl(data.avatar_url);
+    }).finally(() => setProfileLoading(false));
   }, [session]);
 
   async function finish() {
@@ -65,7 +69,7 @@ export function OnboardingPage() {
     navigate('/home');
   }
 
-  if (loading) return <main className="center-loader">Создаём твой путь…</main>;
+  if (loading || profileLoading) return <main className="center-loader">Создаём твой путь…</main>;
 
   return (
     <main className="onboarding">
@@ -75,12 +79,22 @@ export function OnboardingPage() {
         <div><span className="eyebrow">AI-ПРОФИЛЬ</span><h1>Большая цель.<br />Маленькие шаги.<br /><em>Твой личный путь.</em></h1></div>
       </div>
       <div className="onboarding__form">
-        <div className="onboarding-progress">{steps.map((_, index) => <i key={index} className={index <= step ? 'active' : ''} />)}</div>
+        {!profileCreated && session
+          ? <ProfileSetupStep userId={session.user.id} displayName={answers.display_name ?? ''} username={answers.username ?? ''}
+              avatarUrl={avatarUrl} onChange={(changes) => {
+                if (changes.avatarUrl) setAvatarUrl(changes.avatarUrl);
+                setAnswers((current) => ({ ...current,
+                  ...(changes.displayName !== undefined ? { display_name: changes.displayName } : {}),
+                  ...(changes.username !== undefined ? { username: changes.username } : {}),
+                }));
+              }} onContinue={() => setProfileCreated(true)} />
+          : <>
+        <div className="onboarding-progress">{[0, 1, 2, 3].map((item) => <i key={item} className={item <= step + 1 ? 'active' : ''} />)}</div>
         <select className="interview-language" value={language} onChange={(event) => {
           setLanguage(event.target.value); rememberLanguage(event.target.value);
         }}>{appLanguages.map((item) => <option value={item.code} key={item.code}>{item.nativeName}</option>)}</select>
         <span className="step-count">{copy.step} {step + 1} / {steps.length}</span>
-        <h2>{copy.titles[step]}</h2><p>{copy.texts[step]}</p>
+        <h2>{copy.titles[step + 1]}</h2><p>{copy.texts[step + 1]}</p>
         <div className="interview-fields">
           {steps[step].map((key, index) => (
             <label key={key}>{copy.labels[fieldOffsets[step] + index]}<input name={key}
@@ -97,6 +111,7 @@ export function OnboardingPage() {
           </button>
         </div>
         <small className="privacy-note">{copy.privacy}</small>
+        </>}
       </div>
     </main>
   );
