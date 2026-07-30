@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
-import { loadProfile } from '../lib/userProfile';
+import { getAuthDestination } from '../lib/authDestination';
 
 export function AuthCallbackPage() {
   const [, navigate] = useLocation();
@@ -20,9 +20,9 @@ export function AuthCallbackPage() {
         return;
       }
 
-      const { data: profile } = await loadProfile(data.session.user.id);
+      const destination = await getAuthDestination(data.session.user.id);
       if (!isActive) return;
-      navigate(profile ? '/home' : '/onboarding');
+      navigate(destination);
     }
 
     void finishGoogleSignIn();

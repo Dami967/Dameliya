@@ -1,11 +1,19 @@
 import { Link, useLocation } from 'wouter';
 import { Auth } from '../components/Auth';
 import { Icon } from '../components/Icon';
+import { supabase } from '../lib/supabase';
+import { getAuthDestination } from '../lib/authDestination';
 
 export function AuthPage() {
   const params = new URLSearchParams(window.location.search);
   const initialMode = params.get('mode') === 'signup' ? 'signup' : 'signin';
   const [, navigate] = useLocation();
+
+  async function finishAuthentication() {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) return navigate('/auth');
+    navigate(await getAuthDestination(data.user.id));
+  }
 
   return (
     <main className="auth-page">
@@ -22,7 +30,7 @@ export function AuthPage() {
         <img src="/goalquest-eagle-quest.png" alt="" className="auth-eagle" />
       </section>
       <section className="auth-panel">
-        <Auth initialMode={initialMode} onSuccess={(isNew) => navigate(isNew ? '/onboarding' : '/home')} />
+        <Auth initialMode={initialMode} onSuccess={finishAuthentication} />
       </section>
     </main>
   );
