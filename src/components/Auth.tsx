@@ -27,15 +27,20 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    if (!isValidEmail(cleanEmail)) {
+      setMessage('Проверь email: перед @ не должно быть точки, пробела или другого лишнего символа.');
+      return;
+    }
     setBusy(true);
     setMessage('');
     const result = mode === 'signup'
       ? await supabase.auth.signUp({
-          email,
+          email: cleanEmail,
           password,
           options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { language } },
         })
-      : await supabase.auth.signInWithPassword({ email, password });
+      : await supabase.auth.signInWithPassword({ email: cleanEmail, password });
     setBusy(false);
     if (result.error) return setMessage(translateError(result.error.message));
     rememberLanguage(language);
@@ -116,5 +121,13 @@ function translateError(message: string) {
   if (message.includes('Invalid login')) return 'Неверный email или пароль.';
   if (message.includes('already registered')) return 'Аккаунт с таким email уже существует.';
   if (message.includes('Anonymous sign-ins')) return 'Гостевой вход нужно включить в настройках Supabase Auth.';
+  if (message === '{}' || message.toLowerCase().includes('email address') || message.toLowerCase().includes('email format')) {
+    return 'Не удалось использовать этот email. Проверь адрес и убери лишнюю точку перед @.';
+  }
   return message;
+}
+
+function isValidEmail(email: string) {
+  const [local, domain, extra] = email.split('@');
+  return !extra && Boolean(local && domain?.includes('.')) && !local.endsWith('.') && !local.includes('..') && !email.includes(' ');
 }
