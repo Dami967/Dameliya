@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'wouter';
 
 const slides = [
   { icon: '✨', eyebrow: 'УМНЫЙ СТАРТ', title: 'Расскажи Кью о своей мечте', text: 'AI-наставник поймёт твою цель, сроки и интересы — и соберёт персональное приключение.' },
@@ -42,7 +41,7 @@ export function GoalQuestIntro({ onClose }: GoalQuestIntroProps) {
             {activeSlide > 0 && <button type="button" className="intro-back" onClick={() => setActiveSlide((value) => value - 1)}>Назад</button>}
             {activeSlide < slides.length - 1
               ? <button type="button" className="welcome-button welcome-button--primary" onClick={() => setActiveSlide((value) => value + 1)}>Дальше →</button>
-              : <Link href="/auth?mode=signup" className="welcome-button welcome-button--primary">Начать квест →</Link>}
+              : <button type="button" className="welcome-button welcome-button--primary" onClick={onClose}>Готово ✓</button>}
           </div>
         </div>
       </section>
