@@ -1,0 +1,43 @@
+.shared-quest { margin-bottom: 14px; padding: 19px; border: 1px solid #dfe4ef; border-radius: 19px; background: #f9faff; }
+.shared-quest-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.shared-quest-head span, .team-quest-side header span { color: #6879df; font-size: 9px; font-weight: 800; letter-spacing: 1px; }
+.shared-quest-head h2 { margin: 5px 0; font-size: 22px; }.shared-quest-head p { margin: 0; color: #7e889a; font-size: 11px; }
+.shared-quest-head strong { color: #5368d9; font-size: 24px; text-align: right; }.shared-quest-head strong small { display: block; color: #939cad; font-size: 8px; }
+.shared-quest > .team-progress { margin: 14px 0 17px; }.shared-quest-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(230px, .65fr); gap: 12px; }
+.shared-stage { overflow: hidden; border: 1px solid #e1e6ef; border-radius: 17px; background: #fff; animation: panel-in .25s ease; }
+.stage-navigation { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 10px 13px; border-bottom: 1px solid #edf0f5; background: #f6f7fb; }
+.stage-navigation span { color: #778297; font-size: 9px; font-weight: 800; }.stage-navigation button { border: 0; color: #5f71db; background: transparent; font-size: 10px; font-weight: 800; }
+.stage-navigation button:last-child { justify-self: end; }.stage-navigation button:disabled { color: #b8bdc9; cursor: default; }
+.shared-stage-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 17px 17px 0; }
+.shared-stage-title label { display: flex; gap: 10px; align-items: flex-start; }.shared-stage-title input { width: 19px; height: 19px; accent-color: #6277df; }
+.shared-stage-title small { color: #7687df; font-size: 8px; letter-spacing: .7px; }.shared-stage-title h3 { margin: 3px 0; font-size: 17px; }
+.shared-stage-title label.is-done h3 { color: #788395; text-decoration: line-through; }.shared-stage-title > div { display: flex; gap: 4px; }
+.shared-stage-title > div button { border: 0; color: #6879df; background: transparent; font-size: 8px; font-weight: 800; }
+.shared-stage-title > div button:last-child { color: #a36c78; }.shared-stage > p { margin: 8px 17px 15px; color: #7d8798; font-size: 11px; line-height: 1.5; }
+.stage-notes { display: flex; align-items: flex-end; gap: 8px; margin: 0 17px 13px; }.stage-notes label { flex: 1; color: #4d596d; font-size: 9px; font-weight: 800; }
+.stage-notes textarea { width: 100%; min-height: 80px; margin-top: 6px; padding: 10px; resize: vertical; border: 1px solid #e1e5ed; border-radius: 11px; outline: none; background: #f9fafc; font: inherit; font-size: 10px; }
+.stage-notes textarea:focus { border-color: #8796e8; }.stage-notes button, .add-stage-button, .proposal-button { border: 0; border-radius: 10px; padding: 10px; color: #fff; background: #687ae1; font-size: 9px; font-weight: 800; }
+.stage-materials { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 12px 17px; border-top: 1px solid #eff1f5; font-size: 9px; }
+.stage-materials span { color: #9aa2b0; }.stage-materials a { padding: 5px 7px; border-radius: 7px; color: #5d70d9; background: #eff2ff; }
+.stage-material { display: inline-flex; align-items: center; border-radius: 7px; background: #eff2ff; }.stage-material a { background: transparent; }
+.stage-material button, .add-material { border: 0; color: #6879d9; background: transparent; font-size: 10px; font-weight: 800; }.add-material { padding: 5px; }
+.proposal-button { margin: 0 17px 15px; color: #596bd1; background: #eff1ff; }.add-stage-button { width: 100%; margin-top: 9px; color: #6072d9; background: #eef1ff; }
+.team-quest-side { display: grid; align-content: start; gap: 10px; }.team-quest-side > section { padding: 12px; border: 1px solid #e3e7ee; border-radius: 14px; background: #fff; }
+.team-quest-side header { display: flex; justify-content: space-between; gap: 7px; }.team-quest-side h4 { margin: 3px 0 8px; font-size: 12px; }
+.team-quest-side header button { align-self: flex-start; border: 0; border-radius: 8px; padding: 6px; color: #6476db; background: #eef1ff; font-size: 8px; font-weight: 800; }
+.team-quest-side header button:disabled { opacity: .45; }.team-history-list, .team-proposal-list { display: grid; gap: 7px; max-height: 250px; overflow: auto; }
+.team-history-list > p, .team-proposal-list > p { color: #99a1af; font-size: 9px; }.team-history-list article { display: flex; gap: 7px; padding-top: 7px; border-top: 1px solid #f0f2f5; }
+.team-history-list i { color: #6e7fe0; font-style: normal; }.team-history-list div { display: flex; flex-direction: column; }.team-history-list b { font-size: 9px; }.team-history-list span { margin-top: 2px; color: #939cab; font-size: 7px; }
+.team-history-list article.is-undone { opacity: .45; text-decoration: line-through; }.team-proposal-list article { padding: 9px; border-radius: 10px; background: #f7f8fb; }
+.team-proposal-list b, .team-proposal-list small { display: block; font-size: 9px; }.team-proposal-list small { margin-top: 3px; color: #8c96a6; }
+.team-proposal-list article div { display: flex; gap: 5px; margin-top: 7px; }.team-proposal-list button { border: 0; border-radius: 7px; padding: 5px; color: #fff; background: #6c7de1; font-size: 7px; }
+.team-proposal-list button:last-child { color: #8c6670; background: #f3e9ec; }.shared-quest-empty { text-align: center; }.shared-quest-empty > span { font-size: 35px; }
+.shared-quest-empty p, .shared-quest-empty small { color: #8b95a5; }.shared-quest-empty form { display: grid; gap: 8px; margin-top: 14px; }
+.shared-quest-empty input, .shared-quest-empty textarea { padding: 11px; border: 1px solid #dfe4ed; border-radius: 10px; font: inherit; }.shared-quest-empty textarea { min-height: 70px; resize: vertical; }
+.team-roles header { display: flex; justify-content: space-between; align-items: flex-start; }.team-roles header span { color: #6879df; font-size: 8px; font-weight: 800; letter-spacing: .8px; }
+.team-roles header h3 { margin: 3px 0 10px; }.team-roles header button { border: 0; color: #6274db; background: transparent; font-size: 9px; font-weight: 800; }
+.team-roles article { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid #eef1f5; }.team-roles article > i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; color: #6576d9; background: #edf0ff; font-style: normal; font-weight: 800; }
+.team-roles article > div { display: flex; flex: 1; flex-direction: column; }.team-roles article b { font-size: 10px; }.team-roles article small { margin-top: 2px; color: #929baa; font-size: 8px; }
+.team-roles select { padding: 6px; border: 1px solid #e0e5ed; border-radius: 8px; color: #5e6fce; background: #fff; font-size: 8px; font-weight: 700; }
+@media (max-width: 900px) { .shared-quest-layout { grid-template-columns: 1fr; }.team-quest-side { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .shared-quest { padding: 12px; }.shared-quest-head strong { font-size: 19px; }.team-quest-side { grid-template-columns: 1fr; }.shared-stage-title { flex-direction: column; }.stage-notes { align-items: stretch; flex-direction: column; }.stage-navigation button { font-size: 8px; } }

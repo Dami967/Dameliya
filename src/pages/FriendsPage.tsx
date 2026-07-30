@@ -13,6 +13,7 @@ import { socialUsers, type SocialUser } from '../lib/socialData';
 import type { ChallengeDraft, CreatedChallenge, CreatedTeam, TeamDraft } from '../lib/collaborationData';
 import { loadMutualFriends, subscribeToFriendships } from '../lib/friends';
 import { useSession } from '../lib/useSession';
+import { createStoredTeam, deleteStoredTeam, loadStoredTeams } from '../lib/teamRepository';
 
 type Tab = 'friends' | 'activity' | 'teams' | 'search';
 const tabs: { id: Tab; label: string; icon: string }[] = [
@@ -43,10 +44,18 @@ export function FriendsPage() {
     const channel = subscribeToFriendships(session.user.id, () => void refreshFriends());
     return () => { void channel.unsubscribe(); };
   }, [session, refreshFriends]);
+  useEffect(() => {
+    if (!session) return;
+    void loadStoredTeams(session.user.id).then(({ data }) => {
+      if (data[0]) setCreatedTeam(data[0]);
+    });
+  }, [session]);
   const openChat = (user: SocialUser) => { setProfile(null); setChat(user); };
-  const currentUser: SocialUser = { id: 'me', name: 'Дамелия', username: 'dameliya', avatar: 'Д', level: 6, xp: 1420, streak: 8, online: true, interests: [], goal: 'Достичь своей цели' };
-  const createTeam = (draft: TeamDraft) => {
-    setCreatedTeam({ ...draft, id: crypto.randomUUID(), progress: 67, members: [currentUser] });
+  const currentUser: SocialUser = { id: session?.user.id ?? 'me', name: 'Дамелия', username: 'dameliya', avatar: 'Д', level: 6, xp: 1420, streak: 8, online: true, interests: [], goal: 'Достичь своей цели' };
+  const createTeam = async (draft: TeamDraft) => {
+    if (!session) return;
+    const { data } = await createStoredTeam(session.user.id, draft);
+    if (data) setCreatedTeam(data);
     setTeamModal(false);
     setTab('teams');
   };
@@ -65,7 +74,11 @@ export function FriendsPage() {
       <div className="friends-panel" key={tab}>
         {tab === 'friends' && <><FriendsList friends={friends} onOpen={setProfile} onChat={openChat} onChallenge={() => setChallengeModal(true)} onPin={(id) => setFriends((old) => old.map((friend) => ({ ...friend, pinned: friend.id === id ? !friend.pinned : false })))} />{challenge && <ChallengeDashboard challenge={challenge} />}</>}
         {tab === 'activity' && <ActivityFeed />}
-        {tab === 'teams' && <TeamsPanel key={createdTeam?.id ?? 'teams'} createdTeam={createdTeam} onCreate={() => setTeamModal(true)} onDelete={() => setCreatedTeam(null)} />}
+        {tab === 'teams' && <TeamsPanel key={createdTeam?.id ?? 'teams'} createdTeam={createdTeam}
+          userId={session?.user.id ?? ''} onCreate={() => setTeamModal(true)} onDelete={() => {
+            if (createdTeam) void deleteStoredTeam(createdTeam.id);
+            setCreatedTeam(null);
+          }} />}
         {tab === 'search' && <PeopleSearch onOpen={setProfile} />}
       </div>
     </div>

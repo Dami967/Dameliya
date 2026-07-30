@@ -3,10 +3,10 @@ import { teams } from '../lib/socialData';
 import type { CreatedTeam } from '../lib/collaborationData';
 import { TeamDetail } from './TeamDetail';
 
-export function TeamsPanel({ createdTeam, onCreate, onDelete }: { createdTeam: CreatedTeam | null; onCreate: () => void; onDelete: () => void }) {
+export function TeamsPanel({ createdTeam, userId, onCreate, onDelete }: { createdTeam: CreatedTeam | null; userId: string; onCreate: () => void; onDelete: () => void }) {
   const [joined, setJoined] = useState<string[]>(teams.filter((team) => team.joined).map((team) => team.name));
   const [opened, setOpened] = useState(Boolean(createdTeam));
-  if (createdTeam && opened) return <TeamDetail team={createdTeam} onBack={() => setOpened(false)} onDelete={onDelete} />;
+  if (createdTeam && opened) return <TeamDetail team={createdTeam} userId={userId} onBack={() => setOpened(false)} onDelete={onDelete} />;
   return (
     <section>
       <div className="teams-hero"><div><span>СИЛЬНЕЕ ВМЕСТЕ</span><h2>Команды GoalQuest</h2><p>Общие задания, чат и награды за командные победы.</p></div><button className="social-primary" onClick={onCreate}>+ Создать команду</button></div>

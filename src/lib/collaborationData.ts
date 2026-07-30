@@ -12,6 +12,7 @@ export type CreatedTeam = TeamDraft & {
   id: string;
   progress: number;
   members: SocialUser[];
+  role: 'creator' | 'admin' | 'member';
 };
 
 export type ChallengeDraft = {
