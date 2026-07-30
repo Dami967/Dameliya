@@ -22,7 +22,7 @@ export function AuthPage() {
         <img src="/goalquest-eagle-quest.png" alt="" className="auth-eagle" />
       </section>
       <section className="auth-panel">
-        <Auth initialMode={initialMode} onSuccess={(isNew) => navigate(isNew ? '/onboarding' : '/')} />
+        <Auth initialMode={initialMode} onSuccess={(isNew) => navigate(isNew ? '/onboarding' : '/home')} />
       </section>
     </main>
   );

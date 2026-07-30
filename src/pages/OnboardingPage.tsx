@@ -2,33 +2,37 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Icon } from '../components/Icon';
 import { useSession } from '../lib/useSession';
-import { loadProfile, saveProfile } from '../lib/userProfile';
+import { loadProfile, loadSettings, saveProfile, saveSettings } from '../lib/userProfile';
+import { appLanguages, detectLanguage, rememberLanguage } from '../lib/languages';
+import { interviewCopy } from '../lib/onboardingLocale';
 
 type Answers = Record<string, string>;
 const steps = [
-  { title: 'Давай познакомимся', text: 'Это поможет создать твой личный AI-профиль.',
-    fields: [['display_name', 'Как тебя зовут?', 'Дамелия'], ['username', 'Придумай username', 'dameliya']] },
-  { title: 'Расскажи о себе', text: 'Мы подберём задания, которые подходят именно тебе.',
-    fields: [['age', 'Сколько тебе лет?', '15'], ['country', 'В какой стране ты живёшь?', 'Казахстан'], ['occupation', 'Где учишься или работаешь?', '9 класс']] },
-  { title: 'В чём твоя суперсила?', text: 'Здесь нет правильных ответов — пиши как чувствуешь.',
-    fields: [['interests', 'Твои интересы', 'Дизайн, технологии, музыка'], ['strengths', 'Сильные стороны', 'Креативность, любознательность'], ['challenges', 'Что пока даётся сложно?', 'Планирование']] },
-  { title: 'Выбери главную цель', text: 'Она станет твоим первым персональным квестом.',
-    fields: [['goal', 'Чего хочешь достичь?', 'Запустить первый стартап'], ['why', 'Почему это важно?', 'Хочу создать полезный продукт'], ['daily_minutes', 'Минут в день', '30']] },
+  ['display_name', 'username'],
+  ['age', 'country', 'occupation'],
+  ['interests', 'strengths', 'challenges'],
+  ['goal', 'why', 'daily_minutes'],
 ] as const;
+const fieldOffsets = [0, 2, 5, 8];
 
 export function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [language, setLanguage] = useState(detectLanguage);
   const { session, loading } = useSession();
   const [, navigate] = useLocation();
-  const current = steps[step];
+  const copy = interviewCopy(language);
 
   useEffect(() => {
     if (!session) return;
-    void loadProfile(session.user.id).then(({ data }) => {
+    void Promise.all([loadProfile(session.user.id), loadSettings(session.user.id)]).then(([{ data }, { data: settings }]) => {
       if (!data) return;
+      const preferredLanguage = session.user.user_metadata.language as string | undefined;
+      const nextLanguage = preferredLanguage || settings?.language || language;
+      setLanguage(nextLanguage);
+      rememberLanguage(nextLanguage);
       setAnswers({
         display_name: data.display_name, username: data.username ?? '', age: data.age?.toString() ?? '',
         country: data.country, occupation: data.occupation, interests: data.interests.join(', '),
@@ -41,6 +45,7 @@ export function OnboardingPage() {
   async function finish() {
     if (!session) return navigate('/auth?mode=signup');
     setSaving(true);
+    await saveSettings(session.user.id, { language });
     const { error } = await saveProfile(session.user.id, {
       display_name: answers.display_name?.trim() || 'Искатель целей',
       username: answers.username?.trim().replace(/^@/, '') || null,
@@ -57,7 +62,7 @@ export function OnboardingPage() {
     });
     setSaving(false);
     if (error) return setMessage(error.message.includes('unique') ? 'Этот username уже занят.' : error.message);
-    navigate('/');
+    navigate('/home');
   }
 
   if (loading) return <main className="center-loader">Создаём твой путь…</main>;
@@ -71,23 +76,27 @@ export function OnboardingPage() {
       </div>
       <div className="onboarding__form">
         <div className="onboarding-progress">{steps.map((_, index) => <i key={index} className={index <= step ? 'active' : ''} />)}</div>
-        <span className="step-count">Шаг {step + 1} из {steps.length}</span>
-        <h2>{current.title}</h2><p>{current.text}</p>
+        <select className="interview-language" value={language} onChange={(event) => {
+          setLanguage(event.target.value); rememberLanguage(event.target.value);
+        }}>{appLanguages.map((item) => <option value={item.code} key={item.code}>{item.nativeName}</option>)}</select>
+        <span className="step-count">{copy.step} {step + 1} / {steps.length}</span>
+        <h2>{copy.titles[step]}</h2><p>{copy.texts[step]}</p>
         <div className="interview-fields">
-          {current.fields.map(([key, label, placeholder]) => (
-            <label key={key}>{label}<input name={key} placeholder={placeholder} value={answers[key] ?? ''}
+          {steps[step].map((key, index) => (
+            <label key={key}>{copy.labels[fieldOffsets[step] + index]}<input name={key}
+              placeholder={copy.placeholders[fieldOffsets[step] + index]} value={answers[key] ?? ''}
               type={key === 'age' || key === 'daily_minutes' ? 'number' : 'text'}
               onChange={(event) => setAnswers({ ...answers, [key]: event.target.value })} /></label>
           ))}
         </div>
         {message && <p className="form-error">{message}</p>}
         <div className="onboarding-actions">
-          {step > 0 && <button className="back-button" onClick={() => setStep(step - 1)}>Назад</button>}
+          {step > 0 && <button className="back-button" onClick={() => setStep(step - 1)}>{copy.back}</button>}
           <button className="continue-button" disabled={saving} onClick={() => step === steps.length - 1 ? finish() : setStep(step + 1)}>
-            {saving ? 'Сохраняем…' : step === steps.length - 1 ? 'Создать мой квест' : 'Продолжить'} <Icon name="arrow" size={18} />
+            {saving ? copy.saving : step === steps.length - 1 ? copy.finish : copy.next} <Icon name="arrow" size={18} />
           </button>
         </div>
-        <small className="privacy-note">🔒 Ответы видны только тебе и твоему AI-наставнику</small>
+        <small className="privacy-note">{copy.privacy}</small>
       </div>
     </main>
   );

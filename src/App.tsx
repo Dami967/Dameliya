@@ -10,6 +10,16 @@ import { ProfileEditPage } from './pages/ProfileEditPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { RewardsPage } from './pages/RewardsPage';
 import { RequireAuth } from './components/RequireAuth';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
+import { SupportPage } from './pages/SupportPage';
+import { BugReportPage } from './pages/BugReportPage';
+import { RatePage } from './pages/RatePage';
+import { FriendsPage } from './pages/FriendsPage';
+import { MentorPage } from './pages/MentorPage';
+import { WelcomePage } from './pages/WelcomePage';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 const protectedPage = (Page: React.ComponentType) => () => <RequireAuth><Page /></RequireAuth>;
 
@@ -17,8 +27,11 @@ const protectedPage = (Page: React.ComponentType) => () => <RequireAuth><Page />
 export default function App() {
   return (
     <Switch>
-      <Route path="/" component={protectedPage(HomePage)} />
+      <Route path="/" component={WelcomePage} />
+      <Route path="/home" component={protectedPage(HomePage)} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/auth/callback" component={AuthCallbackPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/quest" component={protectedPage(QuestPage)} />
       <Route path="/task" component={protectedPage(TaskPage)} />
       <Route path="/rewards" component={protectedPage(RewardsPage)} />
@@ -26,6 +39,13 @@ export default function App() {
       <Route path="/profile/edit" component={protectedPage(ProfileEditPage)} />
       <Route path="/settings" component={protectedPage(SettingsPage)} />
       <Route path="/onboarding" component={protectedPage(OnboardingPage)} />
+      <Route path="/privacy" component={protectedPage(PrivacyPage)} />
+      <Route path="/terms" component={protectedPage(TermsPage)} />
+      <Route path="/support" component={protectedPage(SupportPage)} />
+      <Route path="/report-bug" component={protectedPage(BugReportPage)} />
+      <Route path="/rate" component={protectedPage(RatePage)} />
+      <Route path="/friends" component={protectedPage(FriendsPage)} />
+      <Route path="/mentor" component={protectedPage(MentorPage)} />
       <Route component={NotFoundPage} />
     </Switch>
   );

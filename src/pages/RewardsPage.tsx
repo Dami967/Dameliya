@@ -8,6 +8,7 @@ import { RewardsHero } from '../components/RewardsHero';
 import { rewardCategories, rewards, type Reward, type RewardCategory } from '../lib/rewardsData';
 import { loadUserRewards, toggleEquipped } from '../lib/userRewards';
 import { useSession } from '../lib/useSession';
+import { NewRewardToast } from '../components/NewRewardToast';
 
 type Section = 'collection' | 'expeditions' | 'competitions';
 
@@ -18,6 +19,7 @@ export function RewardsPage() {
   const [selected, setSelected] = useState<Reward | null>(null);
   const [equipped, setEquipped] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showNewReward, setShowNewReward] = useState(true);
 
   useEffect(() => {
     if (!session) return;
@@ -31,6 +33,7 @@ export function RewardsPage() {
     [category],
   );
   const collected = rewards.filter((reward) => reward.unlocked).length;
+  const preview = rewards.find((reward) => equipped.includes(reward.id));
 
   async function equipReward() {
     if (!selected) return;
@@ -58,7 +61,7 @@ export function RewardsPage() {
       </nav>
 
       {section === 'collection' && <>
-        <RewardsHero collected={collected} total={rewards.length} />
+        <RewardsHero collected={collected} total={rewards.length} preview={preview} />
         <div className="collection-heading"><div><h2>Коллекция наград</h2><p>Нажми на предмет, чтобы узнать условие или примерить его.</p></div>
           <span>{collected}/{rewards.length} открыто</span></div>
         <nav className="category-filter">
@@ -74,6 +77,8 @@ export function RewardsPage() {
       {section === 'competitions' && <CompetitionsPanel />}
       {selected && <RewardDetails reward={selected} equipped={equipped.includes(selected.id)}
         saving={saving} onEquip={equipReward} onClose={() => setSelected(null)} />}
+      {showNewReward && rewards.find((reward) => reward.isNew) && <NewRewardToast
+        reward={rewards.find((reward) => reward.isNew)!} onClose={() => setShowNewReward(false)} />}
     </AppShell>
   );
 }

@@ -1,3 +1,4 @@
+import { Link } from 'wouter';
 import { Icon } from './Icon';
 
 export function SettingsSection({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {
@@ -19,7 +20,7 @@ type RowProps = {
 export function SettingsRow({ title, detail, danger, onClick, href, trailing }: RowProps) {
   const content = <><span><b>{title}</b>{detail && <small>{detail}</small>}</span>{trailing ?? <i>›</i>}</>;
   const className = `settings-row ${danger ? 'settings-row--danger' : ''}`;
-  if (href) return <a className={className} href={href}>{content}</a>;
+  if (href) return <Link className={className} href={href}>{content}</Link>;
   return <button type="button" className={className} onClick={onClick}>{content}</button>;
 }
 

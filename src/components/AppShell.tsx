@@ -5,9 +5,10 @@ import { FloatingMentor } from './FloatingMentor';
 type AppShellProps = { children: React.ReactNode };
 
 const navigation = [
-  { href: '/', icon: 'home', label: 'Главная' },
+  { href: '/home', icon: 'home', label: 'Главная' },
   { href: '/quest', icon: 'map', label: 'Мой квест' },
   { href: '/rewards', icon: 'trophy', label: 'Награды' },
+  { href: '/friends', icon: 'users', label: 'Друзья' },
   { href: '/settings', icon: 'settings', label: 'Настройки' },
 ];
 
@@ -16,7 +17,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link href="/" className="brand">
+        <Link href="/home" className="brand">
           <span className="brand__mark"><Icon name="star" size={20} /></span>
           <span>GoalQuest</span>
         </Link>

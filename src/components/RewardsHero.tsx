@@ -1,6 +1,7 @@
 import { Icon } from './Icon';
+import type { Reward } from '../lib/rewardsData';
 
-export function RewardsHero({ collected, total }: { collected: number; total: number }) {
+export function RewardsHero({ collected, total, preview }: { collected: number; total: number; preview?: Reward }) {
   const percent = Math.round((collected / total) * 100);
   return (
     <section className="rewards-hero">
@@ -13,7 +14,9 @@ export function RewardsHero({ collected, total }: { collected: number; total: nu
       </div>
       <div className="hero-character">
         <span className="hero-character__spark">✦</span>
-        <div className="hero-character__avatar">🧑‍🚀</div>
+        <div className={`hero-character__avatar preview--${preview?.rarity ?? 'common'}`}>🧑‍🚀
+          {preview && <span className="equipped-preview">{preview.icon}</span>}
+        </div>
         <div className="hero-character__eagle"><img src="/goalquest-eagle.png" alt="Орлёнок Кью" /></div>
       </div>
       <div className="next-reward"><span>СЛЕДУЮЩАЯ НАГРАДА</span><b>Компас цели</b><small>Ещё 5 заданий</small>

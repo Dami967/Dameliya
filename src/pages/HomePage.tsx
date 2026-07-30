@@ -1,7 +1,6 @@
 import { Link } from 'wouter';
 import { AppShell } from '../components/AppShell';
 import { Icon } from '../components/Icon';
-import { QuestMap } from '../components/QuestMap';
 import { AiTip, QuickActions, TodayTasks, WeekProgress } from '../components/HomeWidgets';
 
 export function HomePage() {
@@ -36,9 +35,7 @@ export function HomePage() {
         <div className="home-overview__side"><AiTip /><WeekProgress /></div>
       </div>
 
-      <div className="dashboard-grid">
-        <QuestMap />
-        <aside className="dashboard-side">
+      <aside className="dashboard-side dashboard-side--home">
           <section className="daily-card">
             <div className="daily-card__icon"><Icon name="sparkles" size={25} /></div>
             <div><span className="eyebrow">ЗАДАНИЕ ДНЯ</span><h3>Изучи своих конкурентов</h3>
@@ -58,10 +55,9 @@ export function HomePage() {
           <section className="mentor-mini">
             <span className="mentor-avatar">AI</span>
             <div><b>Нужна помощь?</b><p>Твой AI-наставник всегда рядом</p></div>
-            <Link href="/task"><Icon name="message" size={21} /></Link>
+            <Link href="/mentor" aria-label="Открыть чат с AI"><Icon name="message" size={21} /></Link>
           </section>
-        </aside>
-      </div>
+      </aside>
     </AppShell>
   );
 }

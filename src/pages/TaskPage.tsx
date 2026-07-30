@@ -10,7 +10,7 @@ export function TaskPage() {
   return (
     <div className="task-page">
       <header className="task-topbar">
-        <Link href="/" className="back-link">← <span>К карте</span></Link>
+        <Link href="/quest" className="back-link">← <span>К карте</span></Link>
         <div className="task-topbar__progress"><span>Этап 2 из 10</span><div><i /></div></div>
         <span className="stat-chip stat-chip--xp"><Icon name="zap" size={18} />1 240 XP</span>
       </header>

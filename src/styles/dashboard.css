@@ -25,22 +25,34 @@
 .quest-card, .daily-card, .streak-card, .mentor-mini, .goal-summary, .profile-hero, .profile-section {
   border: 1px solid var(--line); border-radius: 17px; background: #fff; box-shadow: 0 8px 24px #1f25440a;
 }
-.quest-card { overflow: hidden; padding: 23px 26px; background: linear-gradient(180deg, #fff, #fbfaff); }.section-heading { display: flex; align-items: center; justify-content: space-between; }
+.quest-card { overflow: hidden; padding: 26px 28px; background: radial-gradient(circle at 92% 4%, #f5eaff, transparent 18%), linear-gradient(180deg, #fffefe, #fbf9ff); }.section-heading { display: flex; align-items: center; justify-content: space-between; }
 .section-heading h2 { margin: 5px 0 0; font-size: 15px; }.progress-pill { padding: 6px 9px; border-radius: 9px; color: var(--blue); background: #edf0ff; font-size: 9px; font-weight: 800; }
 .progress-pill { display: inline-flex; align-items: center; gap: 4px; color: #9a4dcc; background: #f6eaff; }
-.quest-map { position: relative; max-width: 530px; min-height: 430px; margin: 8px auto 0; padding: 20px 8px 45px; }
+.quest-map { position: relative; max-width: 610px; min-height: 430px; margin: 8px auto 0; padding: 20px 0 25px; }
 .quest-line { position: absolute; inset: 35px auto 55px 50%; width: 105px; border-left: 8px dotted #e5dcf7; border-radius: 50%; transform: translateX(-50%) rotate(-3deg); }
 .quest-scenery { position: absolute; color: #d9c9fb; font-size: 30px; }.quest-scenery--one { top: 95px; left: 8%; }.quest-scenery--two { right: 7%; bottom: 90px; color: #d8effd; font-size: 44px; }
-.level { position: relative; display: flex; align-items: center; gap: 14px; width: 72%; min-height: 74px; z-index: 1; }
+.level { position: relative; display: flex; align-items: center; gap: 14px; width: 76%; min-height: 82px; z-index: 3; }
 .level--0, .level--2, .level--4 { margin-left: 3%; }.level--1, .level--3 { margin-left: 28%; }
-.level-node { display: grid; place-items: center; width: 58px; height: 58px; flex: 0 0 auto; border: 5px solid #fff; border-radius: 22px; transform: rotate(-5deg); box-shadow: 0 7px 0 #ded9ec, 0 10px 20px #5a4f8220; }
+.level-node { display: grid; place-items: center; width: 58px; height: 58px; flex: 0 0 auto; border: 5px solid #fff; border-radius: 20px; transform: rotate(-3deg); box-shadow: 0 8px 0 #d8d3e8, 0 14px 24px #5a4f8230; }
 .level-node svg { transform: rotate(5deg); }
 .level-node--done { color: #fff; background: linear-gradient(145deg, #19d0a0, #12b985); box-shadow: 0 7px 0 #099f74, 0 12px 24px #19c99a35; }.level-node--active { color: #fff; background: linear-gradient(145deg, #ff85ce, #df55b3); box-shadow: 0 7px 0 #bd3c91, 0 12px 24px #df55b344; animation: quest-pulse 2.4s ease-in-out infinite; }
-.level-node--locked { color: #a8adbc; background: #f0eff5; }.level-copy { flex: 1; padding: 10px 12px; border-radius: 14px; background: #fff; box-shadow: 0 5px 18px #36305f0c; }.level-row { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+.level-node--locked { color: #9ba0b0; background: linear-gradient(145deg, #f4f3f8, #e7e5ee); }.level-copy { flex: 1; min-height: 64px; display: grid; align-content: center; padding: 12px 16px; border: 1px solid #f2eff5; border-radius: 15px; background: #ffffffed; box-shadow: 0 9px 25px #39305f12; backdrop-filter: blur(8px); }.level-row { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
 .level-copy b { font-size: 11px; }.level-copy small { color: #9da2b3; font-size: 8px; }.level-copy em { color: #9a89e5; font-size: 8px; font-style: normal; font-weight: 800; }
-.level--active .level-copy { border: 2px solid #f3b9de; background: #fff7fc; }
+.level--active .level-copy { border: 2px solid #eb83d4; background: #fff9fd; box-shadow: 0 10px 28px #e95fc73b, inset 0 0 28px #fff; }
 .level--locked { opacity: .72; }.dashboard-side { display: grid; align-content: start; gap: 14px; }
-.quest-treasure { position: absolute; left: 44%; bottom: 0; display: grid; place-items: center; width: 60px; height: 52px; border-radius: 18px; background: #fff4cb; box-shadow: 0 6px 0 #e4b73e; font-size: 30px; transform: rotate(4deg); }
+.dashboard-side--home { grid-template-columns: 1.25fr 1fr 1fr; align-items: stretch; margin-top: 20px; }
+.dashboard-side--home > section { height: 100%; }.dashboard-side--home .mentor-mini { align-self: stretch; }
+.quest-chapter { position: relative; overflow: hidden; padding: 20px 18px 12px; border: 1px solid #e9e3f5; border-radius: 26px; background: radial-gradient(circle at 95% 20%, #fff3fa, transparent 31%), #fffdfdce; box-shadow: inset 0 0 35px #aa80e708; }
+.quest-chapter + .quest-chapter { margin-top: 11px; }.quest-chapter > header { position: relative; z-index: 4; display: flex; align-items: center; gap: 10px; margin: 0 4px 10px; }
+.quest-chapter > header > span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: #fff; background: linear-gradient(145deg, #3e48ed, #7538dd); box-shadow: 0 6px 14px #543bd334; font-size: 10px; font-weight: 800; }
+.quest-chapter > header div { display: grid; gap: 1px; }.quest-chapter > header b { font-size: 11px; }.quest-chapter > header small { color: var(--muted); font-size: 7px; }
+.quest-chapter__path { position: relative; display: grid; gap: 5px; min-height: 280px; padding: 0 0 4px; }.chapter-route { position: absolute; inset: -3px 0 0; z-index: 0; width: 100%; height: 275px; overflow: visible; }.chapter-route path { fill: none; stroke-linecap: round; }.chapter-route__glow { stroke: #b689e733; stroke-width: 56; filter: blur(9px); }.chapter-route__road { stroke-width: 45; }.chapter-route__steps { stroke: #ffffffa0; stroke-width: 2; stroke-dasharray: 3 10; }
+.chapter-scenery { position: absolute; z-index: 1; font-size: 27px; filter: drop-shadow(0 7px 6px #635b7c22); }.chapter-scenery--one { left: 2px; top: 88px; }.chapter-scenery--two { right: 2px; bottom: 20px; }.quest-chapter--2 .chapter-scenery--two { right: auto; left: 3px; }
+.quest-chapter__path .level { width: 82%; margin-left: 3%; }.quest-chapter__path .level--1, .quest-chapter__path .level--4, .quest-chapter__path .level--7 { margin-left: 18%; }.quest-chapter__path .level--2, .quest-chapter__path .level--5, .quest-chapter__path .level--8 { margin-left: 7%; }
+.reward-stop { position: relative; z-index: 4; display: flex; align-items: center; width: 100%; gap: 12px; margin: 8px 0 0; padding: 13px 16px; border: 1px dashed #d5cfe1; border-radius: 15px; color: #979baa; background: #faf8fbeb; box-shadow: 0 7px 18px #4d3f6a0a; text-align: left; }
+.reward-stop > span { display: grid; place-items: center; width: 48px; height: 43px; flex: 0 0 auto; border-radius: 13px; color: #9a9dac; background: #e8e8ed; font-size: 28px; }.reward-stop > div { display: grid; flex: 1; gap: 3px; }.reward-stop small { font-size: 6px; font-weight: 800; letter-spacing: .1em; }.reward-stop b { color: #73788c; font-size: 10px; }.reward-stop em { font-size: 7px; font-style: normal; font-weight: 800; }
+.reward-stop.is-locked { cursor: not-allowed; }.reward-stop.is-locked > span { filter: grayscale(1); opacity: .48; }
+.reward-stop.is-ready { color: #a16f06; border-color: #e9c75f; background: #fff9df; box-shadow: 0 7px 17px #d7a82d1b; transition: transform .2s, box-shadow .2s; }.reward-stop.is-ready:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 10px 22px #d7a82d2b; }.reward-stop.is-ready > span { background: #ffedac; }.reward-stop.is-ready b { color: #8a6315; }.reward-stop.is-opened { color: #168665; border-style: solid; border-color: #87d9be; background: #edfff8; }.reward-stop.is-opened > span { background: #caffed; }.reward-stop.is-opened b { color: #168665; }
 @keyframes quest-pulse { 50% { transform: rotate(-5deg) translateY(-4px); box-shadow: 0 9px 0 #bd3c91, 0 16px 30px #df55b355; } }
 .daily-card { padding: 20px; }.daily-card__icon { display: grid; place-items: center; width: 45px; height: 45px; margin-bottom: 13px; border-radius: 13px; color: #6c57dc; background: #eeeaff; }
 .daily-card h3 { margin: 5px 0 7px; font-size: 14px; }.daily-card p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.6; }

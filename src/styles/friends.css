@@ -1,0 +1,24 @@
+.friends-page{max-width:1180px;margin:0 auto;padding:42px 44px 80px;color:#172235}
+.friends-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px}
+.friends-header h1{font-size:38px;line-height:1;margin:8px 0 10px;letter-spacing:-1.4px}
+.friends-header p,.panel-title p{margin:0;color:#718096}
+.friends-summary{display:flex;gap:10px}.friends-summary span{background:#fff;border:1px solid #e9edf3;border-radius:14px;padding:11px 14px;box-shadow:0 4px 18px #1d2a4410;font-size:13px}
+.friends-tabs{display:flex;gap:5px;background:#edf1f6;padding:5px;border-radius:16px;margin-bottom:28px;max-width:580px}
+.friends-tabs button{flex:1;border:0;background:transparent;padding:11px 16px;border-radius:12px;font:600 14px inherit;color:#778397;cursor:pointer;transition:.2s ease;white-space:nowrap}
+.friends-tabs button span{margin-right:7px}.friends-tabs button.is-active{background:#fff;color:#5268dd;box-shadow:0 3px 10px #26345314;transform:translateY(-1px)}
+.friends-panel{animation:panel-in .28s ease both}@keyframes panel-in{from{opacity:0;transform:translateY(8px)}}
+.panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.panel-title h2{font-size:22px;margin:0 0 5px}
+.friend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.friend-card{position:relative;background:#fff;border:1px solid #e8ecf2;border-radius:20px;padding:19px;transition:.2s ease;box-shadow:0 5px 24px #27364e0a}
+.friend-card:hover{transform:translateY(-3px);box-shadow:0 12px 30px #27364e12}.friend-card.is-pinned{border-color:#d9c9ff;background:linear-gradient(145deg,#fff 60%,#f4efff)}
+.pin-label{position:absolute;right:16px;top:14px;display:flex;gap:4px;align-items:center;color:#7652c8;font-size:11px;font-weight:700}
+.friend-person{display:flex;align-items:center;gap:12px;text-align:left;border:0;background:transparent;padding:0;cursor:pointer;color:inherit}.friend-person span{display:flex;flex-direction:column}.friend-person b{font-size:16px}.friend-person small{color:#8a94a6;margin-top:3px}
+.social-avatar{position:relative;display:inline-grid;place-items:center;flex:0 0 auto;width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#7d8ff3,#9f77e8);color:white;font-weight:800}
+.social-avatar--small{width:38px;height:38px;border-radius:12px;font-size:12px}.social-avatar--large{width:78px;height:78px;border-radius:24px;font-size:22px}
+.social-avatar i{position:absolute;right:-2px;bottom:-2px;width:12px;height:12px;border:3px solid white;border-radius:50%;background:#b5bdc9}.social-avatar i.is-online{background:#4ad39b}
+.friend-stats{display:flex;gap:12px;margin:17px 0;padding:13px 0;border-block:1px solid #eef1f5}.friend-stats span{display:flex;flex-direction:column;color:#8a94a6;font-size:10px}.friend-stats b{color:#344054;font-size:13px;margin-bottom:2px}
+.friend-actions{display:flex;gap:8px}.social-primary,.social-outline,.social-icon-button{border:0;border-radius:11px;padding:10px 15px;font:700 13px inherit;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.social-primary{background:#6577e8;color:#fff}.social-primary:hover{background:#5365d7;transform:translateY(-1px)}.social-outline{background:#fff;color:#5f6f84;border:1px solid #dfe4ec}.social-icon-button{background:#f2f4f8;color:#718096;padding:10px}.friend-actions .social-primary{flex:1}
+.modal-backdrop{position:fixed;z-index:50;inset:0;background:#14203780;backdrop-filter:blur(5px);display:grid;place-items:center;padding:20px;animation:fade-in .2s ease}@keyframes fade-in{from{opacity:0}}
+.social-modal{position:relative;background:#fff;border-radius:24px;width:min(520px,100%);max-height:90vh;overflow:auto;box-shadow:0 30px 80px #0f172a50;animation:modal-in .25s ease}@keyframes modal-in{from{transform:translateY(16px) scale(.98);opacity:0}}
+.modal-close{position:absolute;right:16px;top:13px;border:0;background:#ffffffcc;border-radius:50%;width:34px;height:34px;font-size:24px;color:#697386;cursor:pointer;z-index:2}

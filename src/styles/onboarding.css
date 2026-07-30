@@ -11,6 +11,7 @@
 .onboarding__form { width: min(490px, 80%); align-self: center; justify-self: center; padding: 45px 0; }
 .onboarding-progress { display: flex; gap: 8px; margin-bottom: 13px; }.onboarding-progress i { width: 42px; height: 4px; border-radius: 8px; background: #e8e9f0; }.onboarding-progress i.active { background: var(--blue); }
 .step-count { color: var(--blue); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+.interview-language { float: right; max-width: 155px; margin-top: -7px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 9px; color: var(--purple); background: #fff; font-size: 8px; font-weight: 800; }
 .onboarding__form h2 { margin: 13px 0 7px; font-size: 29px; letter-spacing: -.04em; }.onboarding__form > p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
 .interview-fields { display: grid; gap: 18px; margin: 28px 0; }.interview-fields label { display: grid; gap: 8px; font-size: 10px; font-weight: 800; }
 .interview-fields input { width: 100%; padding: 14px 15px; border: 1px solid var(--line); border-radius: 11px; outline: none; color: var(--ink); font-size: 11px; background: #fbfcfe; }.interview-fields input:focus { border-color: #9fa9eb; box-shadow: 0 0 0 3px #5369eb12; }

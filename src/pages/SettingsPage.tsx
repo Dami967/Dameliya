@@ -5,6 +5,7 @@ import { SettingsRow, SettingsSection, Toggle } from '../components/SettingsUi';
 import { supabase } from '../lib/supabase';
 import { useSession } from '../lib/useSession';
 import { loadSettings, saveProfile, saveSettings, type UserSettings } from '../lib/userProfile';
+import { appLanguages, rememberLanguage } from '../lib/languages';
 
 export function SettingsPage() {
   const { session } = useSession();
@@ -15,7 +16,10 @@ export function SettingsPage() {
   useEffect(() => {
     if (session) void loadSettings(session.user.id).then(({ data }) => {
       setSettings(data);
-      if (data) applyTheme(data.theme);
+      if (data) {
+        applyTheme(data.theme);
+        rememberLanguage(data.language);
+      }
     });
   }, [session]);
 
@@ -24,6 +28,7 @@ export function SettingsPage() {
     const next = { ...settings, ...changes };
     setSettings(next);
     if (changes.theme) applyTheme(changes.theme);
+    if (changes.language) rememberLanguage(changes.language);
     const { error } = await saveSettings(session.user.id, changes);
     setMessage(error ? error.message : 'Сохранено ✓');
   }
@@ -69,8 +74,12 @@ export function SettingsPage() {
             <button className={settings.theme === theme ? 'active' : ''} key={theme} onClick={() => update({ theme })}>
               {theme === 'light' ? '☀ Светлая' : theme === 'dark' ? '☾ Тёмная' : '◐ Системная'}
             </button>)}</div>
-          <SettingsRow title="Язык приложения" trailing={<select value={settings.language} onChange={(e) => update({ language: e.target.value })}>
-            <option value="ru">Русский</option><option value="kk">Қазақша</option><option value="en">English</option></select>} />
+          <SettingsRow title="Язык приложения" detail="Интерфейс и ответы AI" trailing={
+            <select value={settings.language} onChange={(e) => update({ language: e.target.value })}>
+              {appLanguages.map((language) => <option value={language.code} key={language.code}>
+                {language.nativeName} · {language.name}
+              </option>)}
+            </select>} />
         </SettingsSection>
         <SettingsSection icon="bell" title="Уведомления">
           <SettingsRow title="Напоминания" trailing={<Toggle checked={settings.reminders} onChange={(reminders) => update({ reminders })} />} />
@@ -89,9 +98,9 @@ export function SettingsPage() {
         <SettingsSection icon="shield" title="Privacy & Support">
           <SettingsRow title="Политика конфиденциальности" href="/privacy" />
           <SettingsRow title="Условия использования" href="/terms" />
-          <SettingsRow title="Связаться с поддержкой" href="mailto:support@goalquest.app" />
-          <SettingsRow title="Сообщить об ошибке" href="mailto:support@goalquest.app?subject=Ошибка GoalQuest" />
-          <SettingsRow title="Оценить приложение" onClick={() => setMessage('Спасибо! Это очень помогает 💜')} />
+          <SettingsRow title="Связаться с поддержкой" href="/support" />
+          <SettingsRow title="Сообщить об ошибке" href="/report-bug" />
+          <SettingsRow title="Оценить приложение" href="/rate" />
         </SettingsSection>
       </div>
     </AppShell>

@@ -22,7 +22,8 @@
   .hero-card h2 { font-size: 17px; }.hero-card p { font-size: 9px; line-height: 1.5; }.hero-card .primary-button { position: absolute; right: 18px; bottom: 18px; padding: 10px 12px; }
   .hero-progress { width: calc(100% - 95px); }.hero-card__copy { min-width: 0; }
   .dashboard-side, .profile-grid { grid-template-columns: 1fr; }.mentor-mini { grid-column: auto; }
-  .quest-card { padding: 19px 14px; }.quest-map { min-height: 440px; padding-inline: 0; }.level { width: 86%; gap: 8px; }.level--0, .level--2, .level--4 { margin-left: 0; }.level--1, .level--3 { margin-left: 14%; }.level-node { width: 52px; height: 52px; border-radius: 19px; }.level-row b { font-size: 9px; }.level-copy { padding: 9px; }
+  .quest-card { padding: 19px 14px; }.quest-map { min-height: 440px; padding-inline: 0; }.level { width: 86%; gap: 8px; }.level-node { width: 52px; height: 52px; border-radius: 19px; }.level-row b { font-size: 9px; }.level-copy { padding: 9px; }
+  .quest-chapter { padding: 16px 8px 10px; border-radius: 21px; }.quest-chapter__path .level { width: 94%; margin-left: 0; }.quest-chapter__path .level--1, .quest-chapter__path .level--4, .quest-chapter__path .level--7 { margin-left: 6%; }.quest-chapter__path .level--2, .quest-chapter__path .level--5, .quest-chapter__path .level--8 { margin-left: 0; }.chapter-route { opacity: .8; }.reward-stop { margin-inline: 0; }
   .profile-hero { align-items: flex-start; flex-wrap: wrap; }.profile-copy { min-width: 180px; }.profile-hero button { width: 100%; }
   .page-header { align-items: flex-start; }.page-header h1 { font-size: 24px; }
   .task-topbar { grid-template-columns: 1fr 1.3fr; padding: 0 17px; }.task-topbar .stat-chip { display: none; }.task-topbar__progress { justify-items: end; }.task-topbar__progress div { width: 120px; }

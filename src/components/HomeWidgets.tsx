@@ -26,7 +26,7 @@ export function TodayTasks() {
 export function AiTip() {
   return (
     <section className="home-panel ai-tip">
-      <img src="/goalquest-eagle-quest.png" alt="Орлёнок Кью" />
+      <img src="/goalquest-q-tip-star.png" alt="Фиолетовая звезда GoalQuest" />
       <div><span className="eyebrow">СОВЕТ ОТ КЬЮ</span><p>Не пытайся изучить весь рынок сразу. Начни с трёх проектов и ищи не недостатки, а возможности.</p></div>
     </section>
   );
