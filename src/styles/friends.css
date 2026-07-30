@@ -2,6 +2,7 @@
 .friends-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px}
 .friends-header h1{font-size:38px;line-height:1;margin:8px 0 10px;letter-spacing:-1.4px}
 .friends-header p,.panel-title p{margin:0;color:#718096}
+.friends-header-actions{display:flex;align-items:center;gap:10px}.friends-header-actions>.social-primary{white-space:nowrap}
 .friends-summary{display:flex;gap:10px}.friends-summary span{background:#fff;border:1px solid #e9edf3;border-radius:14px;padding:11px 14px;box-shadow:0 4px 18px #1d2a4410;font-size:13px}
 .friends-tabs{display:flex;gap:5px;background:#edf1f6;padding:5px;border-radius:16px;margin-bottom:28px;max-width:580px}
 .friends-tabs button{flex:1;border:0;background:transparent;padding:11px 16px;border-radius:12px;font:600 14px inherit;color:#778397;cursor:pointer;transition:.2s ease;white-space:nowrap}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
 import { AppShell } from '../components/AppShell';
 import { ActivityFeed } from '../components/ActivityFeed';
 import { FriendsList } from '../components/FriendsList';
@@ -14,6 +15,7 @@ import type { ChallengeDraft, CreatedChallenge, CreatedTeam, TeamDraft } from '.
 import { loadMutualFriends, subscribeToFriendships } from '../lib/friends';
 import { useSession } from '../lib/useSession';
 import { createStoredTeam, deleteStoredTeam, loadStoredTeams } from '../lib/teamRepository';
+import { FriendInviteModal } from '../components/FriendInviteModal';
 
 type Tab = 'friends' | 'activity' | 'teams' | 'search';
 const tabs: { id: Tab; label: string; icon: string }[] = [
@@ -33,6 +35,8 @@ export function FriendsPage() {
   const [challengeModal, setChallengeModal] = useState(false);
   const [createdTeam, setCreatedTeam] = useState<CreatedTeam | null>(null);
   const [challenge, setChallenge] = useState<CreatedChallenge | null>(null);
+  const [inviteModal, setInviteModal] = useState(false);
+  const [, navigate] = useLocation();
   const refreshFriends = useCallback(async () => {
     if (!session) return;
     const mutual = await loadMutualFriends(session.user.id);
@@ -66,7 +70,8 @@ export function FriendsPage() {
   return <AppShell>
     <div className="friends-page">
       <header className="friends-header"><div><span className="eyebrow">ВМЕСТЕ ЛЕГЧЕ</span><h1>Друзья</h1><p>Поддерживайте друг друга и достигайте большего вместе.</p></div>
-        <div className="friends-summary"><span>👥 <b>{friends.length}</b> друзей</span><span>🔥 <b>6</b> активны сегодня</span></div>
+        <div className="friends-header-actions"><div className="friends-summary"><span>👥 <b>{friends.length}</b> друзей</span><span>🔥 <b>6</b> активны сегодня</span></div>
+          <button className="social-primary" onClick={() => setInviteModal(true)}>▦ Добавить друга</button></div>
       </header>
       <nav className="friends-tabs" aria-label="Разделы страницы">
         {tabs.map((item) => <button key={item.id} className={tab === item.id ? 'is-active' : ''} onClick={() => setTab(item.id)}><span>{item.icon}</span>{item.label}</button>)}
@@ -86,5 +91,7 @@ export function FriendsPage() {
     {chat && <ChatModal user={chat} onClose={() => setChat(null)} />}
     {teamModal && <CreateTeamModal onClose={() => setTeamModal(false)} onCreate={createTeam} />}
     {challengeModal && <ChallengeModal friends={friends} onClose={() => setChallengeModal(false)} onCreate={createChallenge} />}
+    {inviteModal && session && <FriendInviteModal userId={session.user.id} onClose={() => setInviteModal(false)}
+      onScanned={(token) => { setInviteModal(false); navigate(`/friends/invite/${token}`); }} />}
   </AppShell>;
 }

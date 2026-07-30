@@ -91,10 +91,6 @@ export function SettingsPage() {
           <SettingsRow title="Очистить историю" onClick={clearChats} />
           <SettingsRow title="Перезапустить AI-профиль" onClick={restartAi} />
         </SettingsSection>
-        <SettingsSection icon="crown" title="Premium">
-          <div className="premium-banner"><b>GoalQuest Premium</b><p>Больше Momentum и расширенные AI-возможности.</p><button onClick={() => setMessage('Premium скоро появится ✨')}>Купить Premium</button></div>
-          <SettingsRow title="Управление подпиской" onClick={() => setMessage('У тебя пока нет активной подписки.')} />
-        </SettingsSection>
         <SettingsSection icon="shield" title="Privacy & Support">
           <SettingsRow title="Политика конфиденциальности" href="/privacy" />
           <SettingsRow title="Условия использования" href="/terms" />
