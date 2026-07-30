@@ -32,14 +32,14 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
       ? await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/onboarding`, data: { language } },
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { language } },
         })
       : await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (result.error) return setMessage(translateError(result.error.message));
     rememberLanguage(language);
     if (mode === 'signup' && !result.data.session) {
-      setMessage('Проверь почту и подтверди регистрацию ✨');
+      setMessage('Письмо отправлено. Нажми «Подтвердить email», а затем вернись в GoalQuest ✨');
       return;
     }
     onSuccess(mode === 'signup');
