@@ -63,6 +63,9 @@ Deno.serve(async (req) => {
     const data = (await response.json()) as GeminiResponse;
     if (!response.ok) {
       console.error('Gemini request failed', response.status, data);
+      if (response.status === 429) {
+        return json({ error: 'Лимит AI закончился. Попроси владельца GoalQuest пополнить баланс Gemini.' }, 429);
+      }
       return json({ error: 'AI сейчас не ответил. Попробуй ещё раз чуть позже.' }, 502);
     }
 

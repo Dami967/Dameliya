@@ -6,6 +6,7 @@ import { loadProfile, loadSettings, saveProfile, saveSettings } from '../lib/use
 import { appLanguages, detectLanguage, rememberLanguage } from '../lib/languages';
 import { interviewCopy } from '../lib/onboardingLocale';
 import { ProfileSetupStep } from '../components/ProfileSetupStep';
+import { createAiQuest } from '../lib/aiQuest';
 
 type Answers = Record<string, string>;
 const steps = [
@@ -66,6 +67,12 @@ export function OnboardingPage() {
     });
     setSaving(false);
     if (error) return setMessage(error.message.includes('unique') ? 'Этот username уже занят.' : error.message);
+    if (answers.goal?.trim()) {
+      setSaving(true);
+      setMessage('Кью создаёт первую персональную карту…');
+      await createAiQuest(session.user.id, answers.goal.trim(), buildAiPreferences(answers));
+      setSaving(false);
+    }
     navigate('/home');
   }
 
@@ -119,4 +126,15 @@ export function OnboardingPage() {
 
 function splitList(value = '') {
   return value.split(',').map((item) => item.trim()).filter(Boolean);
+}
+
+function buildAiPreferences(answers: Answers) {
+  return [
+    `Почему цель важна: ${answers.why || 'не указано'}`,
+    `Время в день: ${answers.daily_minutes || '30'} минут`,
+    `Интересы: ${answers.interests || 'не указаны'}`,
+    `Сильные стороны: ${answers.strengths || 'не указаны'}`,
+    `Трудности: ${answers.challenges || 'не указаны'}`,
+    `Возраст: ${answers.age || 'не указан'}, занятие: ${answers.occupation || 'не указано'}`,
+  ].join('. ');
 }

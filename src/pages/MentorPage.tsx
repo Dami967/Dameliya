@@ -2,8 +2,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { AppShell } from '../components/AppShell';
 import { Icon } from '../components/Icon';
+import { askAi } from '../lib/ai';
 import { createAiQuest, loadAiQuest } from '../lib/aiQuest';
-import { supabase } from '../lib/supabase';
 import { useSession } from '../lib/useSession';
 
 type Message = { role: 'q' | 'user'; text: string };
@@ -33,8 +33,9 @@ export function MentorPage() {
     setMessages((old) => [...old, { role: 'user', text }]);
     form.reset();
     setBusy(true);
-    const { data } = await supabase.functions.invoke('ai', { body: { prompt: `Моя цель: ${goal || 'ещё не выбрана'}. Вопрос: ${text}`, system: 'Ты Q, добрый AI-наставник GoalQuest. Отвечай коротко, практично и на русском.' } });
-    setMessages((old) => [...old, { role: 'q', text: data?.text || 'Попробуй спросить ещё раз.' }]);
+    const answer = await askAi(`Моя цель: ${goal || 'ещё не выбрана'}. Вопрос: ${text}`,
+      'Ты Кью, добрый AI-наставник GoalQuest. Отвечай коротко, практично и на русском.');
+    setMessages((old) => [...old, { role: 'q', text: answer.text ?? answer.error.message }]);
     setBusy(false);
   }
   return <AppShell><div className="mentor-page">

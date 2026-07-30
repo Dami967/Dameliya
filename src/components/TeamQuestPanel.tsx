@@ -35,15 +35,16 @@ export function TeamQuestPanel({ teamId, userId, role }: { teamId: string; userI
 
   async function createGoal(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = new FormData(event.currentTarget);
+    setMessage('Кью создаёт общую карту…');
     const result = await createTeamQuest(teamId, userId, String(form.get('title')), String(form.get('description')));
-    result.error ? setMessage(result.error.message) : void refresh();
+    result.error ? setMessage(result.error.message) : void refresh().then(() => setMessage(''));
   }
 
   if (!goal) return <section className="team-section shared-quest-empty">
     <span>🗺️</span><h3>Создайте общую цель</h3><p>Это будет один проект и одна карта для всей команды.</p>
     {canManage ? <form onSubmit={createGoal}><input name="title" required minLength={2} placeholder="Название общей цели" />
       <textarea name="description" placeholder="Какого результата хочет достичь команда?" />
-      <button className="social-primary">Создать общий квест</button></form> : <small>Создатель или администратор скоро добавит цель.</small>}
+      <button className="social-primary">Создать общий квест с AI</button></form> : <small>Создатель или администратор скоро добавит цель.</small>}
     {message && <p className="form-error">{message}</p>}
   </section>;
 

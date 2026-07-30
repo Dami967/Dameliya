@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { Icon } from '../components/Icon';
 import { CompletionCelebration } from '../components/CompletionCelebration';
+import { TaskMentor } from '../components/TaskMentor';
 
 export function TaskPage() {
   const [note, setNote] = useState('');
-  const [message, setMessage] = useState('');
   const [done, setDone] = useState(false);
+  const task = 'Изучи своих конкурентов: найди три похожих проекта и определи, чем твоя идея отличается.';
   return (
     <div className="task-page">
       <header className="task-topbar">
@@ -42,22 +43,7 @@ export function TaskPage() {
             <Icon name="check" /> {done ? 'Задание выполнено! +100 XP' : 'Я выполнила задание'}
           </button>
         </article>
-        <aside className="ai-panel">
-          <div className="ai-panel__head"><span className="mentor-avatar">AI</span>
-            <div><h3>Квест · AI-наставник</h3><small><i /> Всегда на связи</small></div></div>
-          <div className="ai-chat">
-            <div className="ai-bubble">Привет! Я помогу тебе с исследованием. Если застрянешь — просто напиши. Вместе найдём другой путь ✨</div>
-            {message && <div className="user-bubble">{message}</div>}
-          </div>
-          <div className="quick-prompts">
-            <button onClick={() => setMessage('Помоги найти конкурентов')}>Найти конкурентов</button>
-            <button onClick={() => setMessage('Я застряла — предложи другой путь')}>Я застряла</button>
-          </div>
-          <form className="chat-form" onSubmit={(event) => { event.preventDefault(); const input = event.currentTarget.elements.namedItem('chat') as HTMLInputElement; setMessage(input.value); input.value = ''; }}>
-            <input name="chat" placeholder="Спроси наставника..." /><button aria-label="Отправить">↑</button>
-          </form>
-          <div className="ai-energy"><Icon name="zap" size={16} /><span>Это сообщение потратит ~2 Momentum</span><b>72</b></div>
-        </aside>
+        <TaskMentor task={task} notes={note} />
       </main>
       {done && <CompletionCelebration onClose={() => setDone(false)} />}
     </div>

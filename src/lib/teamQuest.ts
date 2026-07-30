@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { askAi, parseAiJson } from './ai';
 
 export type TeamStage = {
   id: string; goal_id: string; position: number; title: string; description: string;
@@ -40,12 +41,36 @@ export async function createTeamQuest(teamId: string, userId: string, title: str
     team_id: teamId, creator_id: userId, title, description,
   }).select('*').single<TeamGoal>();
   if (result.error || !result.data) return result;
-  const stageTitles = ['Определить общий результат', 'Собрать план действий', 'Выполнить основную работу', 'Подвести итоги'];
-  const stages = stageTitles.map((stageTitle, position) => ({
-    goal_id: result.data.id, position, title: stageTitle, created_by: userId,
+  const generated = await generateTeamStages(title, description);
+  const stages = generated.map((stage, position) => ({
+    goal_id: result.data.id, position, title: stage.title, description: stage.description, created_by: userId,
   }));
   const stageResult = await supabase.from('team_goal_stages').insert(stages);
   return { data: result.data, error: stageResult.error };
+}
+
+async function generateTeamStages(title: string, description: string) {
+  const result = await askAi(
+    `Общая цель команды: ${title}\nОписание результата: ${description || 'нет'}.
+Верни ТОЛЬКО JSON без markdown: {"stages":[{"title":"короткое действие","description":"что именно делает команда"}]}.
+Создай 6 последовательных, конкретных этапов. Этапы должны распределяться между людьми и вести к измеримому результату.`,
+    `Ты проектный AI-наставник GoalQuest. Создавай безопасный и реалистичный командный квест на русском языке.
+Не добавляй вымышленные достижения. Отвечай только валидным JSON.`,
+  );
+  if (result.text) {
+    try {
+      const parsed = parseAiJson<{ stages: Array<{ title: string; description: string }> }>(result.text);
+      if (parsed.stages.length >= 4) return parsed.stages.slice(0, 8);
+    } catch { /* используем надёжный запасной план */ }
+  }
+  return [
+    { title: 'Уточнить общий результат', description: 'Согласуйте, как выглядит успешное завершение цели.' },
+    { title: 'Распределить ответственность', description: 'Назначьте владельца и срок для каждого блока работы.' },
+    { title: 'Собрать план действий', description: 'Разбейте путь на небольшие проверяемые задачи.' },
+    { title: 'Выполнить основную работу', description: 'Двигайтесь по плану и отмечайте общий прогресс.' },
+    { title: 'Проверить результат', description: 'Соберите обратную связь и исправьте недочёты.' },
+    { title: 'Подвести итоги', description: 'Зафиксируйте результат и вклад участников.' },
+  ];
 }
 
 export function subscribeTeamQuest(goalId: string, refresh: () => void) {

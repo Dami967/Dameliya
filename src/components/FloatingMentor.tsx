@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { detectLanguage, languageName } from '../lib/languages';
-import { supabase } from '../lib/supabase';
+import { askAi } from '../lib/ai';
 import { loadSettings } from '../lib/userProfile';
 import { useSession } from '../lib/useSession';
 import { Icon } from './Icon';
@@ -26,15 +26,10 @@ export function FloatingMentor() {
     setBusy(true);
     setAnswer('');
     const selectedLanguage = languageName(language);
-    const { data, error } = await supabase.functions.invoke('ai', {
-      body: {
-        prompt: text.trim(),
-        system: `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
+    const result = await askAi(text.trim(), `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
 Keep the answer short, practical and age-appropriate. Help the user take a real next step.
-Never add combat or gambling mechanics. Do not claim professional medical, legal or financial expertise.`,
-      },
-    });
-    setAnswer(error ? fallback(language) : typeof data?.text === 'string' ? data.text : fallback(language));
+Never add combat or gambling mechanics. Do not claim professional medical, legal or financial expertise.`);
+    setAnswer(result.text ?? fallback(language));
     setBusy(false);
   }
 

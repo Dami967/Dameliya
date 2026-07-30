@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { QuestStep } from './questData';
+import { askAi, parseAiJson } from './ai';
 
 export type AiQuestPlan = {
   user_id: string;
@@ -14,20 +15,18 @@ export async function loadAiQuest(userId: string) {
 }
 
 export async function createAiQuest(userId: string, goal: string, request: string) {
-  const { data, error } = await supabase.functions.invoke('ai', {
-    body: {
-      prompt: `Цель пользователя: ${goal}. Пожелание: ${request || 'Создай понятный маршрут'}.
+  const { text, error } = await askAi(
+    `Цель пользователя: ${goal}. Пожелание: ${request || 'Создай понятный маршрут'}.
 Верни ТОЛЬКО JSON без markdown: {"map_title":"короткое название","steps":[{"title":"действие","subtitle":"короткое пояснение"}]}.
 Ровно 10 конкретных, безопасных и выполнимых шагов. Каждый шаг должен помогать именно этой цели.`,
-      system: 'Ты создаёшь персональные карты GoalQuest для подростков. Отвечай только валидным JSON на русском языке.',
-    },
-  });
+    'Ты создаёшь персональные карты GoalQuest для подростков. Отвечай только валидным JSON на русском языке.',
+  );
   if (error) return { data: null, error };
   try {
-    const parsed = JSON.parse(String(data.text).replace(/^```json\s*|\s*```$/g, '')) as {
+    const parsed = parseAiJson<{
       map_title: string;
       steps: Array<{ title: string; subtitle: string }>;
-    };
+    }>(text ?? '');
     const steps: QuestStep[] = parsed.steps.slice(0, 10).map((step, index) => ({
       id: index + 1,
       title: step.title,
