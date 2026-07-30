@@ -35,3 +35,5 @@
 .reset-password-card { width: min(440px, 100%); padding: 38px; border: 1px solid var(--line); border-radius: 24px; background: #fff; box-shadow: 0 24px 65px #31396417; }
 .reset-password-card .auth-callback__logo { margin-bottom: 22px; }.reset-password-card h1 { margin: 10px 0 8px; font-size: 29px; letter-spacing: -.045em; }
 .reset-password-card > p { margin: 0 0 24px; color: var(--muted); font-size: 12px; }.reset-password-card > .auth-submit { width: 100%; }
+.password-input { position: relative; }.password-input input { width: 100%; padding-right: 88px; }
+.password-input button { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); padding: 6px; border: 0; color: var(--blue); background: transparent; font-size: 9px; font-weight: 800; }

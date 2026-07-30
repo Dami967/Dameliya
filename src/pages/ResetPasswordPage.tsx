@@ -9,6 +9,7 @@ export function ResetPasswordPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [message, setMessage] = useState('Проверяем ссылку…');
   const [busy, setBusy] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -40,8 +41,14 @@ export function ResetPasswordPage() {
         {isSaved
           ? <><p>Теперь можно войти в аккаунт с новым паролем.</p><Link href="/auth" className="auth-submit">Перейти ко входу</Link></>
           : isReady && <form className="auth-form" onSubmit={savePassword}>
-            <label>Новый пароль<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} autoFocus required /></label>
-            <label>Повторите пароль<input type="password" value={repeatPassword} onChange={(event) => setRepeatPassword(event.target.value)} minLength={6} required /></label>
+            <label>Новый пароль<div className="password-input">
+              <input type={showPasswords ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} autoFocus required />
+              <button type="button" onClick={() => setShowPasswords((value) => !value)}>{showPasswords ? 'Скрыть' : 'Показать'}</button>
+            </div></label>
+            <label>Повторите пароль<div className="password-input">
+              <input type={showPasswords ? 'text' : 'password'} value={repeatPassword} onChange={(event) => setRepeatPassword(event.target.value)} minLength={6} required />
+              <button type="button" onClick={() => setShowPasswords((value) => !value)}>{showPasswords ? 'Скрыть' : 'Показать'}</button>
+            </div></label>
             <button className="auth-submit" disabled={busy}>{busy ? 'Сохраняем…' : 'Сохранить новый пароль'}</button>
           </form>}
         {message && <p className="auth-message" role="status">{message}</p>}
