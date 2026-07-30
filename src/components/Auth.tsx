@@ -17,6 +17,7 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
   const [busy, setBusy] = useState(false);
   const [language, setLanguage] = useState(detectLanguage);
   const [isRecovering, setIsRecovering] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   if (!isSupabaseConfigured) return <SupabaseSetupMessage />;
 
@@ -91,8 +92,13 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
         </label>}
         <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
           placeholder="name@example.com" required /></label>
-        <label>Пароль<input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-          placeholder="Минимум 6 символов" minLength={6} required /></label>
+        <label>Пароль<div className="password-input">
+          <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+            placeholder="Минимум 6 символов" minLength={6} required />
+          <button type="button" onClick={() => setShowPassword((value) => !value)}>
+            {showPassword ? 'Скрыть' : 'Показать'}
+          </button>
+        </div></label>
         {mode === 'signin' && <button type="button" className="text-button" onClick={() => setIsRecovering(true)}>Забыли пароль?</button>}
         <button className="auth-submit" disabled={busy}>{busy ? 'Подождите…' : mode === 'signin' ? 'Войти' : 'Зарегистрироваться'}</button>
       </form>
