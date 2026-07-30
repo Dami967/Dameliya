@@ -2,7 +2,6 @@
 .intro-dialog { position: relative; width: min(900px, 100%); min-height: 520px; overflow: hidden; display: grid; grid-template-columns: .9fr 1.1fr; border-radius: 30px; background: #fff; box-shadow: 0 35px 100px #0e123b59; }
 .intro-close { position: absolute; top: 18px; right: 20px; z-index: 4; width: 36px; height: 36px; border: 0; border-radius: 50%; color: #777e95; background: #f2f3f8; font-size: 22px; }
 .intro-visual { position: relative; overflow: hidden; display: grid; place-items: center; background: linear-gradient(145deg, #315ee9, #7445df); }
-.intro-visual::before { content: ""; position: absolute; width: 350px; height: 350px; top: 45px; border: 1px solid #ffffff35; border-radius: 50%; }
 .intro-visual__glow { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: #ffffff24; border: 1px solid #ffffff45; }
 .intro-visual img { position: relative; z-index: 2; width: min(82%, 340px); border-radius: 50%; box-shadow: 0 22px 55px #1619584f; }
 .intro-visual__icon { position: absolute; top: 55px; left: 38px; z-index: 3; display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid #ffffff80; border-radius: 20px; background: #ffffff2d; font-size: 32px; }
