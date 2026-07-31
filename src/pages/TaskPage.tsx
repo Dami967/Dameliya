@@ -11,6 +11,7 @@ import { completeQuestTask, loadTaskRecord, saveTaskRecord,
   type TaskChatMessage, type TaskRecord } from '../lib/taskRecords';
 import { adaptFutureQuest } from '../lib/adaptiveQuest';
 import { useSession } from '../lib/useSession';
+import { loadQuestLearning } from '../lib/questLearning';
 
 type View = 'lesson' | 'choice' | 'history';
 
@@ -25,6 +26,7 @@ export function TaskPage() {
   const [chat, setChat] = useState<TaskChatMessage[]>([]);
   const [view, setView] = useState<View>('lesson');
   const [completing, setCompleting] = useState(false);
+  const [learningContext, setLearningContext] = useState('');
   const stepId = Number(params?.id) || 0;
 
   useEffect(() => {
@@ -41,6 +43,8 @@ export function TaskPage() {
       setStep(immediate);
       const saved = await loadTaskRecord(session.user.id, currentPlan.goal, immediate.id);
       setRecord(saved.data ?? null); setNotes(saved.data?.notes ?? ''); setChat(saved.data?.chat ?? []);
+      const learning = await loadQuestLearning(session.user.id, currentPlan.goal);
+      setLearningContext(learning.context);
       setView(immediate.state === 'done' ? 'choice' : 'lesson');
       const detailResult = await ensureQuestTaskDetails(session.user.id, currentPlan, selectedId);
       const selected = detailResult.data ?? immediate;
@@ -103,7 +107,8 @@ export function TaskPage() {
         <small className="autosave">{notes ? 'Сохранено внутри задания' : 'Не попадёт в личную записную книжку'}</small></section>
       {view !== 'history' && <button className={`complete-button ${completing ? 'is-done' : ''}`} onClick={() => void finish()}>
         <Icon name="check" />{completing ? 'Кью анализирует результаты и обновляет маршрут…' : activeStep.state === 'done' ? 'Завершить повтор' : 'Я выполнила задание'}</button>}
-    </article><TaskMentor task={taskContext} notes={notes} initialMessages={chat} onMessages={setChat} /></main>
+    </article><TaskMentor task={taskContext} notes={notes} learningContext={learningContext}
+      initialMessages={chat} onMessages={setChat} /></main>
     {completing && <CompletionCelebration onClose={() => navigate('/quest')} />}
   </div>;
 }

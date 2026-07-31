@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     const rawAttachments = Array.isArray(body.attachments) ? body.attachments.slice(0, 3) as InlineAttachment[] : [];
 
     if (!prompt) return json({ error: 'Напиши запрос для AI.' }, 400);
-    if (prompt.length > 10_000 || system.length > 5_000) {
+    if (prompt.length > 30_000 || system.length > 5_000) {
       return json({ error: 'Запрос слишком длинный. Сделай его короче.' }, 400);
     }
     const attachments = rawAttachments.filter((item) =>

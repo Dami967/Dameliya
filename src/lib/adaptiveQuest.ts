@@ -1,27 +1,21 @@
 import { askAi, parseAiJson } from './ai';
 import type { AiQuestPlan } from './aiQuest';
 import type { QuestStep, QuestTaskDetails } from './questData';
+import { loadQuestLearning } from './questLearning';
 import { supabase } from './supabase';
-import type { TaskChatMessage, TaskRecord } from './taskRecords';
 
 type AdaptedStep = { title: string; subtitle: string } & QuestTaskDetails;
 
 export async function adaptFutureQuest(userId: string, plan: AiQuestPlan, completedStepId: number) {
   const remaining = plan.steps.filter((step) => step.id > completedStepId);
   if (!remaining.length) return { data: plan, error: null };
-  const records = await supabase.from('quest_task_records').select('*').eq('user_id', userId)
-    .eq('goal', plan.goal).order('step_id').returns<TaskRecord[]>();
-  const learning = (records.data ?? []).map((record) => ({
-    step: record.step_id,
-    notes: record.notes.slice(0, 4000),
-    conversation: usefulConversation(record.chat),
-  }));
+  const { context } = await loadQuestLearning(userId, plan.goal);
   const currentRoute = remaining.map((step) => ({
     step: step.id, title: step.title, objective: step.details?.objective ?? step.subtitle,
   }));
   const result = await askAi(
     `Цель пользователя: ${plan.goal}.
-Результаты и разговоры из выполненных заданий: ${JSON.stringify(learning)}.
+Результаты и полные разговоры из всех выполненных заданий: ${context || 'пока нет данных'}.
 Текущие будущие этапы: ${JSON.stringify(currentRoute)}.
 Перестрой только следующие ${remaining.length} этапов с учётом реального уровня, пробелов, успехов,
 интересов и темпа пользователя. Не повторяй уже освоенное. Каждый следующий этап должен приближать к цели.
@@ -46,11 +40,6 @@ export async function adaptFutureQuest(userId: string, plan: AiQuestPlan, comple
   } catch {
     return { data: null, error: new Error('Кью сохранит данные и попробует адаптировать следующий этап позже.') };
   }
-}
-
-function usefulConversation(chat: TaskChatMessage[]) {
-  return chat.filter((message) => message.role === 'user').slice(-12)
-    .map((message) => message.text.slice(0, 1000));
 }
 
 function buildStep(original: QuestStep, value: AdaptedStep, active: boolean): QuestStep {

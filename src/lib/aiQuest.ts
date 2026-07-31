@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import type { QuestResource, QuestStep, QuestTaskDetails } from './questData';
 import { askAi, parseAiJson, validateYoutubeVideo } from './ai';
 import { loadProfile } from './userProfile';
+import { loadQuestLearning } from './questLearning';
 
 export type AiQuestPlan = {
   user_id: string;
@@ -51,7 +52,8 @@ export async function createAiQuest(userId: string, goal: string, request: strin
 export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, stepId: number) {
   const step = plan.steps.find((item) => item.id === stepId);
   if (!step) return { data: null, error: null };
-  if (step.details && Array.isArray(step.details.resources)) {
+  const { context: learning } = await loadQuestLearning(userId, plan.goal);
+  if (step.state === 'done' || (!learning && step.details && Array.isArray(step.details.resources))) {
     const normalized = normalizeQuestStep(step);
     const details = await verifyDetailsResources(normalized.details!, `${plan.goal}: ${step.title}`);
     const updatedStep = { ...normalized, details };
@@ -63,6 +65,9 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
 Трудности: ${profile.challenges}. Доступно времени в день: ${profile.daily_minutes} минут.` : '';
   const result = await askAi(
     `Цель: ${plan.goal}. Этап: ${step.title}. Ожидаемый результат: ${step.subtitle}. ${context}
+Данные из заметок и разговоров ВСЕХ пройденных этапов: ${learning || 'пройденных этапов пока нет'}.
+Сначала определи подтверждённый уровень, пробелы, успехи и предпочтения. Создай задание именно под них.
+Не проси повторно сообщить сведения, которые уже есть в данных. Не повторяй уже выполненное.
 Верни ТОЛЬКО JSON без markdown: {"objective":"подробное персональное задание","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем нужен"}]}.
 В checklist должно быть ровно 3 выполнимых пункта. Если нужен урок или тест, обязательно добавь рабочую публичную https-ссылку.
 Для видео выбирай существующий ролик известного образовательного канала, доступный без входа; не выдумывай video ID.`,

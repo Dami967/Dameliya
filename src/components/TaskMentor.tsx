@@ -5,8 +5,8 @@ import type { TaskChatMessage } from '../lib/taskRecords';
 import { AiComposer } from './AiComposer';
 import { Icon } from './Icon';
 
-export function TaskMentor({ task, notes, initialMessages = [], onMessages }: {
-  task: string; notes: string; initialMessages?: TaskChatMessage[];
+export function TaskMentor({ task, notes, learningContext = '', initialMessages = [], onMessages }: {
+  task: string; notes: string; learningContext?: string; initialMessages?: TaskChatMessage[];
   onMessages?: (messages: TaskChatMessage[]) => void;
 }) {
   const [messages, setMessages] = useState<TaskChatMessage[]>(initialMessages.length ? initialMessages : [
@@ -26,10 +26,12 @@ export function TaskMentor({ task, notes, initialMessages = [], onMessages }: {
     const result = await askAi(
       `Задание: ${task}
 Заметки пользователя: ${notes || 'пока пусто'}
+История заметок и разговоров из всех пройденных этапов:
+${learningContext || 'пройденных этапов пока нет'}
 Предыдущий разговор:
 ${conversation || 'разговора ещё не было'}
 Новый вопрос: ${question}`,
-      `Ты Кью, AI-наставник GoalQuest. Изучи приложенные фото, файлы или голосовое, если они есть. Помоги выполнить текущее задание, но не делай всю работу вместо пользователя.
+      `Ты Кью, AI-наставник GoalQuest. Сначала используй уже известные сведения об уровне и пробелах пользователя и не спрашивай их повторно. Изучи приложенные фото, файлы или голосовое, если они есть. Помоги выполнить текущее задание, но не делай всю работу вместо пользователя.
 Дай короткую, конкретную и безопасную подсказку на русском. Если полезно, предложи 2–4 следующих шага.`,
       attachments,
     );
