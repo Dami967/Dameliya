@@ -8,6 +8,7 @@
 .content-card { margin-bottom: 14px; padding: 23px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }.content-card h2 { margin: 0 0 17px; font-size: 14px; }
 .steps-list { display: grid; gap: 17px; margin: 0; padding: 0; list-style: none; }.steps-list li { display: flex; gap: 13px; }.steps-list li > span { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 auto; border-radius: 9px; color: var(--blue); background: #edf0ff; font-size: 10px; font-weight: 800; }
 .steps-list p { display: grid; gap: 4px; margin: 0; }.steps-list b { font-size: 11px; }.steps-list small { color: var(--muted); font-size: 9px; }
+.task-inline-link{color:#426fe0;font-weight:700;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
 textarea { width: 100%; min-height: 100px; padding: 13px; resize: vertical; border: 1px solid var(--line); border-radius: 11px; outline: none; color: var(--ink); font-size: 10px; background: #fafbfe; }
 textarea:focus { border-color: #a7b0eb; }.autosave { color: #a0a4b3; font-size: 8px; }.complete-button { width: 100%; padding: 15px; color: #fff; background: var(--blue); font-size: 12px; box-shadow: 0 8px 20px #5268de35; }.complete-button.is-done { background: #4eb980; }
 .ai-panel { position: sticky; top: 90px; align-self: start; overflow: hidden; border: 1px solid var(--line); border-radius: 17px; background: #fff; box-shadow: 0 10px 30px #2630550d; }

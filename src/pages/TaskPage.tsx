@@ -91,7 +91,7 @@ export function TaskPage() {
         <span><Icon name="zap" size={18} />+{activeStep.xp} XP</span><span><Icon name="target" size={18} />{details.category}</span></div>
       <section className="content-card"><h2>Что нужно сделать</h2><ol className="steps-list">
         {details.checklist.map((item, index) => <li key={`${item.title}-${index}`}><span>{index + 1}</span>
-          <p><b>{item.title}</b><small>{item.hint}</small></p></li>)}</ol></section>
+          <p><b>{item.title}</b><small><LinkedText text={item.hint} /></small></p></li>)}</ol></section>
       <TaskResources resources={details.resources} notes={notes} task={taskContext} chat={chat}
         onNotes={setNotes} onChat={setChat} />
       <section className="content-card"><h2>Заметки этого квеста</h2><textarea value={notes}
@@ -102,6 +102,14 @@ export function TaskPage() {
     </article><TaskMentor task={taskContext} notes={notes} initialMessages={chat} onMessages={setChat} /></main>
     {completing && <CompletionCelebration onClose={() => navigate('/quest')} />}
   </div>;
+}
+
+function LinkedText({ text }: { text: string }) {
+  const parts = text.split(/(https:\/\/[^\s<>"']+)/gi);
+  return <>{parts.map((part, index) => part.startsWith('https://')
+    ? <a className="task-inline-link" href={part.replace(/[),.;!?]+$/g, '')}
+      target="_blank" rel="noreferrer" key={`${part}-${index}`}>{part}</a>
+    : part)}</>;
 }
 
 function defaultDetails(step: QuestStep): QuestTaskDetails {

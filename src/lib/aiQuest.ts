@@ -96,18 +96,22 @@ function normalizeDetails(value: Partial<QuestTaskDetails>, fallback: string): Q
     hint: String(item.hint || 'Сосредоточься на небольшом измеримом результате.'),
   })) : [];
   if (checklist.length !== 3) return fallbackDetails({ title: fallback, subtitle: fallback } as QuestStep);
+  const explicitResources = Array.isArray(value.resources) ? value.resources.slice(0, 2).flatMap((resource) => {
+    const type = resource.type;
+    const url = String(resource.url || '');
+    if (!['video', 'article', 'test'].includes(type) || !isSafeResourceUrl(url)) return [];
+    return [{ type, title: String(resource.title || 'Полезный материал'),
+      description: String(resource.description || ''), url }] as QuestTaskDetails['resources'];
+  }) : [];
+  const text = `${value.objective || ''} ${checklist.map((item) => `${item.title} ${item.hint}`).join(' ')}`;
+  const discovered = discoverResources(text, String(value.category || ''));
   return {
     objective: String(value.objective || fallback),
     duration_minutes: Math.min(180, Math.max(5, Number(value.duration_minutes) || 25)),
     category: String(value.category || 'Практика'),
     checklist,
-    resources: Array.isArray(value.resources) ? value.resources.slice(0, 2).flatMap((resource) => {
-      const type = resource.type;
-      const url = String(resource.url || '');
-      if (!['video', 'article', 'test'].includes(type) || !isSafeResourceUrl(url)) return [];
-      return [{ type, title: String(resource.title || 'Полезный материал'),
-        description: String(resource.description || ''), url }] as QuestTaskDetails['resources'];
-    }) : [],
+    resources: [...explicitResources, ...discovered.filter((item) =>
+      !explicitResources.some((resource) => resource.url === item.url))].slice(0, 3),
   };
 }
 
@@ -127,6 +131,21 @@ function fallbackDetails(step: QuestStep): QuestTaskDetails {
 
 function isSafeResourceUrl(value: string) {
   try { return new URL(value).protocol === 'https:'; } catch { return false; }
+}
+
+function discoverResources(text: string, category: string): QuestResource[] {
+  const urls = text.match(/https:\/\/[^\s<>"']+/gi) ?? [];
+  return [...new Set(urls.map((url) => url.replace(/[),.;!?]+$/g, '')))]
+    .filter(isSafeResourceUrl).map((url) => {
+      const isVideo = /youtu\.?be/i.test(url);
+      const isTest = /тест|test|quiz|диагност/i.test(`${category} ${text}`);
+      return {
+        type: isVideo ? 'video' : isTest ? 'test' : 'article',
+        title: isVideo ? 'Видеоурок' : isTest ? 'Пройти тест' : 'Открыть материал',
+        url,
+        description: 'Материал, указанный Кью в задании.',
+      };
+    });
 }
 
 async function verifyDetailsResources(details: QuestTaskDetails, topic: string) {
