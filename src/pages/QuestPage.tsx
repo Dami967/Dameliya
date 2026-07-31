@@ -35,7 +35,8 @@ export function QuestPage() {
         aria-label="Предыдущая карта">←</button>
       <div><span className="eyebrow">МОЙ КВЕСТ · {selectedIndex + 1} ИЗ {plans.length || 1}</span>
         <h1>{plan?.goal || 'Создай свою первую цель'}</h1>
-        <p>Большая цель становится простой, когда виден следующий шаг.</p></div>
+        <p>Большая цель становится простой, когда виден следующий шаг.</p>
+        <Link href="/mentor?new=1" className="new-quest-link">＋ Новая цель</Link></div>
       <button className="quest-switch" disabled={plans.length < 2} onClick={() => choose(selectedIndex + 1)}
         aria-label="Следующая карта">→</button>
     </header>

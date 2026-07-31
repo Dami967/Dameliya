@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'wouter';
 import { Icon } from './Icon';
 import { FloatingMentor } from './FloatingMentor';
+import { MomentumCard } from './MomentumCard';
 
 type AppShellProps = { children: React.ReactNode };
 
@@ -30,11 +31,7 @@ export function AppShell({ children }: AppShellProps) {
             </Link>
           ))}
         </nav>
-        <div className="momentum-card">
-          <div className="momentum-card__top"><span><Icon name="zap" size={17} /> Momentum</span><b>72/100</b></div>
-          <div className="meter"><span style={{ width: '72%' }} /></div>
-          <small>+1 через 12 минут</small>
-        </div>
+        <MomentumCard />
         <Link href="/profile" className={`sidebar-user ${location === '/profile' ? 'is-active' : ''}`}>
           <div className="avatar">Д</div>
           <div><b>Дамелия</b><small>Уровень 6</small></div>

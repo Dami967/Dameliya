@@ -17,7 +17,9 @@ export function MentorPage() {
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Message[]>([{ role: 'q', text: 'Привет! Расскажи о своей цели — я помогу превратить её в приключение.' }]);
   useEffect(() => {
-    if (session) void loadAiQuest(session.user.id).then(({ data }) => data && setGoal(data.goal));
+    if (!session) return;
+    if (new URLSearchParams(window.location.search).get('new') === '1') { setGoal(''); setRequest(''); return; }
+    void loadAiQuest(session.user.id).then(({ data }) => data && setGoal(data.goal));
   }, [session]);
   async function adaptMap() {
     if (!session || goal.trim().length < 2) return;
@@ -32,7 +34,7 @@ export function MentorPage() {
     setMessages((old) => [...old, { role: 'user', text }]);
     setBusy(true);
     const answer = await askAi(`Моя цель: ${goal || 'ещё не выбрана'}. Вопрос: ${text}`,
-      'Ты Кью, добрый AI-наставник GoalQuest. Отвечай коротко, практично и на русском. Изучи приложенные фото, файлы или голосовое сообщение.', attachments);
+      'Ты Кью, добрый AI-наставник GoalQuest. Отвечай коротко, практично и на русском. Изучи приложенные фото, файлы или голосовое сообщение.', attachments, true);
     setMessages((old) => [...old, { role: 'q', text: answer.text ?? answer.error.message }]);
     setBusy(false);
   }

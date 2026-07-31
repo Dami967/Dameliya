@@ -38,7 +38,7 @@ export function FloatingMentor() {
     const result = await askAi(text.trim(), `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
 Keep the answer short, practical and age-appropriate. Help the user take a real next step.
 Never add combat or gambling mechanics. Do not claim professional medical, legal or financial expertise.
-Understand attached images, documents and voice messages when present.`, attachments);
+Understand attached images, documents and voice messages when present.`, attachments, true);
     setAnswer(result.text ?? fallback(language));
     setBusy(false);
   }

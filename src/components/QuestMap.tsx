@@ -3,17 +3,11 @@ import { Link } from 'wouter';
 import { questSteps, type QuestStep } from '../lib/questData';
 import { Icon } from './Icon';
 
-const chapters = [
-  { title: 'Тропа идеи', subtitle: 'Задания 1–3', reward: 'Обычный сундук' },
-  { title: 'Лес открытий', subtitle: 'Задания 4–6', reward: 'Редкий сундук' },
-  { title: 'Гора смелости', subtitle: 'Задания 7–9', reward: 'Эпический сундук' },
-  { title: 'Вершина', subtitle: 'Финальное задание', reward: '' },
-];
-
 export function QuestMap({ steps = questSteps, title = 'Долина больших идей', planId }: {
   steps?: QuestStep[]; title?: string; planId?: string;
 }) {
   const doneCount = steps.filter((step) => step.state === 'done').length;
+  const chapters = Array.from({ length: Math.ceil(steps.length / 3) }, (_, index) => chapterInfo(index));
   return (
     <section className="quest-card">
       <div className="section-heading">
@@ -71,4 +65,14 @@ function RewardStop({ title, unlocked }: { title: string; unlocked: boolean }) {
     <div><small>ПОДАРОК ЗА 3 ЗАДАНИЯ</small><b>{title}</b></div>
     <em>{opened ? 'Открыт ✓' : unlocked ? 'Открыть' : 'Выполни все 3'}</em>
   </button>;
+}
+
+function chapterInfo(index: number) {
+  const names = ['Тропа открытий', 'Лес практики', 'Гора мастерства', 'Новый горизонт'];
+  const first = index * 3 + 1;
+  return {
+    title: names[index % names.length],
+    subtitle: `Задания ${first}–${first + 2}`,
+    reward: ['Обычный сундук', 'Редкий сундук', 'Эпический сундук'][index % 3],
+  };
 }

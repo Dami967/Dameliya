@@ -22,6 +22,7 @@ export type UserProfile = {
   level: number;
   streak: number;
   momentum: number;
+  momentum_updated_at: string;
   onboarding_completed: boolean;
   created_at: string;
 };

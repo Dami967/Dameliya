@@ -3,7 +3,13 @@ import type { AiAttachment } from './aiAttachments';
 
 type AiResponse = { text?: unknown; error?: unknown };
 
-export async function askAi(prompt: string, system: string, attachments: AiAttachment[] = []) {
+export async function askAi(prompt: string, system: string, attachments: AiAttachment[] = [], useMomentum = false) {
+  if (useMomentum) {
+    const energy = await supabase.rpc('use_ai_momentum');
+    if (energy.error) return { text: null, error: new Error('Не удалось проверить Momentum.') };
+    if (typeof energy.data !== 'number' || energy.data < 0) return { text: null, error: new Error('Momentum закончился. Пройди викторину, напиши отчёт или немного подожди.') };
+    window.dispatchEvent(new CustomEvent('momentum-changed', { detail: energy.data }));
+  }
   const { data, error } = await supabase.functions.invoke<AiResponse>('ai', {
     body: { prompt: prompt.trim(), system: system.trim(), attachments },
   });
