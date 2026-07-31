@@ -13,6 +13,10 @@ export type Reward = {
   isNew?: boolean;
 };
 
+export function isWearableReward(reward: Reward) {
+  return ['outfits', 'accessories', 'eagle', 'frames', 'themes'].includes(reward.category);
+}
+
 export const rewardCategories: { id: RewardCategory | 'all'; label: string; icon: string }[] = [
   { id: 'all', label: 'Все', icon: '✦' },
   { id: 'medals', label: 'Медали', icon: '🏅' },

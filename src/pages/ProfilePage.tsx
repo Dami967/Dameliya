@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { AppShell } from '../components/AppShell';
+import { DressedEagle } from '../components/DressedEagle';
 import { Icon } from '../components/Icon';
 import { achievements } from '../lib/questData';
+import { rewards, type Reward } from '../lib/rewardsData';
+import { loadUserRewards } from '../lib/userRewards';
 import { useSession } from '../lib/useSession';
 import { loadProfile, type UserProfile, xpProgress } from '../lib/userProfile';
 
 export function ProfilePage() {
   const { session, loading } = useSession();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [equipped, setEquipped] = useState<Reward[]>([]);
 
   useEffect(() => {
-    if (session) void loadProfile(session.user.id).then(({ data }) => setProfile(data));
+    if (!session) return;
+    void Promise.all([loadProfile(session.user.id), loadUserRewards(session.user.id)]).then(([profileResult, rewardResult]) => {
+      setProfile(profileResult.data);
+      const ids = (rewardResult.data ?? []).filter((item) => item.equipped).map((item) => item.reward_id);
+      setEquipped(rewards.filter((reward) => ids.includes(reward.id)));
+    });
   }, [session]);
 
   if (loading) return <main className="center-loader">Загружаем профиль…</main>;
@@ -29,7 +38,7 @@ export function ProfilePage() {
         <Link href="/settings" className="icon-button" aria-label="Настройки"><Icon name="settings" /></Link>
       </header>
       <section className="profile-hero">
-        <Avatar profile={profile} />
+        <Avatar profile={profile} equipped={equipped} />
         <div className="profile-copy">
           <span className="profile-username">@{profile.username || 'goal_seeker'}</span>
           <h2>{profile.display_name || 'Искатель целей'}</h2>
@@ -67,10 +76,13 @@ export function ProfilePage() {
   );
 }
 
-function Avatar({ profile }: { profile: UserProfile }) {
-  return <div className="profile-avatar">{profile.avatar_url
-    ? <img src={profile.avatar_url} alt="" />
-    : profile.display_name.slice(0, 1).toUpperCase() || 'G'}<span>{profile.level}</span></div>;
+function Avatar({ profile, equipped }: { profile: UserProfile; equipped: Reward[] }) {
+  return <div className="profile-avatar profile-avatar--eagle">
+    {equipped.length ? <DressedEagle equipped={equipped} size="profile" /> : profile.avatar_url
+      ? <img src={profile.avatar_url} alt="" />
+      : <img src="/goalquest-eagle.png" alt="Орлёнок Кью" />}
+    <span>{profile.level}</span>
+  </div>;
 }
 function Stat({ icon, value, label, tone }: { icon: string; value: string; label: string; tone: string }) {
   return <div className={`profile-stat profile-stat--${tone}`}><Icon name={icon} /><div><b>{value}</b><small>{label}</small></div></div>;

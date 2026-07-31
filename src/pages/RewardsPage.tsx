@@ -5,8 +5,8 @@ import { ExpeditionsPanel } from '../components/ExpeditionsPanel';
 import { RewardCard } from '../components/RewardCard';
 import { RewardDetails } from '../components/RewardDetails';
 import { RewardsHero } from '../components/RewardsHero';
-import { rewardCategories, rewards, type Reward, type RewardCategory } from '../lib/rewardsData';
-import { loadUserRewards, toggleEquipped } from '../lib/userRewards';
+import { isWearableReward, rewardCategories, rewards, type Reward, type RewardCategory } from '../lib/rewardsData';
+import { equipRewardForCategory, loadUserRewards } from '../lib/userRewards';
 import { useSession } from '../lib/useSession';
 import { NewRewardToast } from '../components/NewRewardToast';
 
@@ -33,16 +33,16 @@ export function RewardsPage() {
     [category],
   );
   const collected = rewards.filter((reward) => reward.unlocked).length;
-  const preview = rewards.find((reward) => equipped.includes(reward.id));
+  const equippedRewards = rewards.filter((reward) => equipped.includes(reward.id));
 
   async function equipReward() {
-    if (!selected) return;
+    if (!selected || !isWearableReward(selected)) return;
     const isEquipped = equipped.includes(selected.id);
     setSaving(true);
-    if (session) await toggleEquipped(session.user.id, selected.id, !isEquipped);
-    setEquipped((current) => isEquipped
-      ? current.filter((id) => id !== selected.id)
-      : [...current, selected.id]);
+    const sameCategory = rewards.filter((item) => item.category === selected.category).map((item) => item.id);
+    if (session) await equipRewardForCategory(session.user.id, selected, !isEquipped, sameCategory);
+    setEquipped((current) => isEquipped ? current.filter((id) => id !== selected.id)
+      : [...current.filter((id) => !sameCategory.includes(id)), selected.id]);
     setSaving(false);
   }
 
@@ -61,7 +61,7 @@ export function RewardsPage() {
       </nav>
 
       {section === 'collection' && <>
-        <RewardsHero collected={collected} total={rewards.length} preview={preview} />
+        <RewardsHero collected={collected} total={rewards.length} equipped={equippedRewards} />
         <div className="collection-heading"><div><h2>Коллекция наград</h2><p>Нажми на предмет, чтобы узнать условие или примерить его.</p></div>
           <span>{collected}/{rewards.length} открыто</span></div>
         <nav className="category-filter">

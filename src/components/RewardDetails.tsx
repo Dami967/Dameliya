@@ -1,5 +1,5 @@
 import { Icon } from './Icon';
-import { rarityLabels, type Reward } from '../lib/rewardsData';
+import { isWearableReward, rarityLabels, type Reward } from '../lib/rewardsData';
 
 type Props = {
   reward: Reward;
@@ -23,9 +23,10 @@ export function RewardDetails({ reward, equipped, saving, onEquip, onClose }: Pr
         {!reward.unlocked && reward.progress !== undefined && <div className="dialog-progress">
           <span><i style={{ width: `${reward.progress}%` }} /></span><b>{reward.progress}%</b>
         </div>}
-        {reward.unlocked ? <button className="primary-button" disabled={saving} onClick={onEquip}>
+        {reward.unlocked && isWearableReward(reward) ? <button className="primary-button" disabled={saving} onClick={onEquip}>
           <Icon name={equipped ? 'check' : 'sparkles'} size={17} />{saving ? 'Сохраняем…' : equipped ? 'Снять' : 'Примерить'}
-        </button> : <div className="locked-hint"><Icon name="lock" size={17} /><span><b>Как открыть</b><small>{reward.condition}</small></span></div>}
+        </button> : !reward.unlocked ? <div className="locked-hint"><Icon name="lock" size={17} /><span><b>Как открыть</b><small>{reward.condition}</small></span></div>
+          : <div className="locked-hint"><span><b>Награда получена</b><small>Этот предмет хранится в коллекции и не надевается на Кью.</small></span></div>}
       </section>
     </div>
   );
