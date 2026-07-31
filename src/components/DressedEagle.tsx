@@ -12,8 +12,9 @@ export function DressedEagle({ equipped, size = 'large' }: {
   return <div className={`dressed-eagle dressed-eagle--${size} eagle-frame--${frame?.id ?? 'default'} eagle-theme--${theme?.id ?? 'default'}`}>
     <span className="dressed-eagle__glow" />
     <img src="/goalquest-eagle.png" alt="Орлёнок Кью в выбранном образе" />
-    {outfit && <span className="eagle-item eagle-item--outfit" title={outfit.title}>{outfit.icon}</span>}
-    {accessory && <span className="eagle-item eagle-item--accessory" title={accessory.title}>{accessory.icon}</span>}
-    {eagle && <span className={`eagle-item eagle-item--special special--${eagle.id}`} title={eagle.title}>{eagle.icon}</span>}
+    {!!equipped.length && <span className="eagle-wardrobe">
+      {[outfit, accessory, eagle].filter(Boolean).map((item) =>
+        <i title={item!.title} key={item!.id}>{item!.icon}</i>)}
+    </span>}
   </div>;
 }

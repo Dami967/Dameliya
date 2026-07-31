@@ -5,6 +5,7 @@ import { loadProfile } from './userProfile';
 import { loadQuestLearning } from './questLearning';
 
 export type AiQuestPlan = {
+  id: string;
   user_id: string;
   goal: string;
   map_title: string;
@@ -13,7 +14,18 @@ export type AiQuestPlan = {
 };
 
 export async function loadAiQuest(userId: string) {
-  return supabase.from('ai_quest_plans').select('*').eq('user_id', userId).maybeSingle<AiQuestPlan>();
+  return supabase.from('ai_quest_plans').select('*').eq('user_id', userId)
+    .order('updated_at', { ascending: false }).limit(1).maybeSingle<AiQuestPlan>();
+}
+
+export async function loadAiQuestById(userId: string, planId: string) {
+  return supabase.from('ai_quest_plans').select('*').eq('user_id', userId)
+    .eq('id', planId).maybeSingle<AiQuestPlan>();
+}
+
+export async function loadAiQuests(userId: string) {
+  return supabase.from('ai_quest_plans').select('*').eq('user_id', userId)
+    .order('created_at', { ascending: true }).returns<AiQuestPlan[]>();
 }
 
 export async function createAiQuest(userId: string, goal: string, request: string) {
@@ -43,7 +55,7 @@ export async function createAiQuest(userId: string, goal: string, request: strin
     if (steps.length !== 10) throw new Error('AI returned an incomplete plan');
     return supabase.from('ai_quest_plans').upsert({
       user_id: userId, goal, map_title: parsed.map_title, steps, updated_at: new Date().toISOString(),
-    }).select().single<AiQuestPlan>();
+    }, { onConflict: 'user_id,goal' }).select().single<AiQuestPlan>();
   } catch {
     return { data: null, error: new Error('AI не смог собрать карту. Попробуй ещё раз.') };
   }
@@ -88,7 +100,7 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
 async function saveUpdatedStep(userId: string, plan: AiQuestPlan, step: QuestStep) {
   const steps = plan.steps.map((item) => item.id === step.id ? step : item);
   await supabase.from('ai_quest_plans').update({ steps, updated_at: new Date().toISOString() })
-    .eq('user_id', userId);
+    .eq('user_id', userId).eq('id', plan.id);
 }
 
 export function normalizeQuestStep(step: QuestStep): QuestStep {

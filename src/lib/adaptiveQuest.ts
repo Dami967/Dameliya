@@ -35,7 +35,7 @@ export async function adaptFutureQuest(userId: string, plan: AiQuestPlan, comple
     const steps = plan.steps.map((step) => future.find((item) => item.id === step.id) ?? completedState(step, completedStepId));
     const saved = await supabase.from('ai_quest_plans').update({
       steps, updated_at: new Date().toISOString(),
-    }).eq('user_id', userId).select('*').single<AiQuestPlan>();
+    }).eq('user_id', userId).eq('id', plan.id).select('*').single<AiQuestPlan>();
     return saved;
   } catch {
     return { data: null, error: new Error('Кью сохранит данные и попробует адаптировать следующий этап позже.') };

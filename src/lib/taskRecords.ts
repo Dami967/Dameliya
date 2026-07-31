@@ -34,7 +34,7 @@ export async function completeQuestTask(userId: string, plan: AiQuestPlan, stepI
     saveTaskRecord(userId, plan.goal, stepId, {
       notes, chat, status: 'done', completed_at: new Date().toISOString(),
     }),
-    supabase.from('ai_quest_plans').update({ steps }).eq('user_id', userId),
+    supabase.from('ai_quest_plans').update({ steps }).eq('user_id', userId).eq('id', plan.id),
   ]);
   return { error: record.error ?? quest.error };
 }

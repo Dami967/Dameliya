@@ -5,7 +5,7 @@ import { CompletionCelebration } from '../components/CompletionCelebration';
 import { Icon } from '../components/Icon';
 import { TaskMentor } from '../components/TaskMentor';
 import { TaskResources } from '../components/TaskResources';
-import { ensureQuestTaskDetails, loadAiQuest, normalizeQuestStep, type AiQuestPlan } from '../lib/aiQuest';
+import { ensureQuestTaskDetails, loadAiQuest, loadAiQuestById, normalizeQuestStep, type AiQuestPlan } from '../lib/aiQuest';
 import { questSteps, type QuestStep, type QuestTaskDetails } from '../lib/questData';
 import { completeQuestTask, loadTaskRecord, saveTaskRecord,
   type TaskChatMessage, type TaskRecord } from '../lib/taskRecords';
@@ -28,10 +28,12 @@ export function TaskPage() {
   const [completing, setCompleting] = useState(false);
   const [learningContext, setLearningContext] = useState('');
   const stepId = Number(params?.id) || 0;
+  const planId = new URLSearchParams(window.location.search).get('plan');
 
   useEffect(() => {
     if (!session) return;
-    void loadAiQuest(session.user.id).then(async ({ data: currentPlan }) => {
+    const request = planId ? loadAiQuestById(session.user.id, planId) : loadAiQuest(session.user.id);
+    void request.then(async ({ data: currentPlan }) => {
       const selectedId = stepId || currentPlan?.steps.find((item) => item.state === 'active')?.id || 1;
       if (!currentPlan) {
         setStep(questSteps.find((item) => item.id === selectedId) ?? questSteps[0]);
@@ -51,7 +53,7 @@ export function TaskPage() {
       setPlan({ ...currentPlan, steps: currentPlan.steps.map((item) => item.id === selected.id ? selected : item) });
       setStep(selected);
     });
-  }, [session, stepId]);
+  }, [planId, session, stepId]);
 
   useEffect(() => {
     if (!session || !plan || !step) return;
@@ -81,11 +83,11 @@ export function TaskPage() {
       await completeQuestTask(session.user.id, plan, activeStep.id, notes, chat);
       await adaptFutureQuest(session.user.id, plan, activeStep.id);
     }
-    window.setTimeout(() => navigate('/quest'), 900);
+    window.setTimeout(() => navigate(`/quest${plan ? `?plan=${plan.id}` : ''}`), 900);
   }
 
   return <div className="task-page">
-    <header className="task-topbar"><Link href="/quest" className="back-link">← <span>К карте</span></Link>
+    <header className="task-topbar"><Link href={`/quest${plan ? `?plan=${plan.id}` : ''}`} className="back-link">← <span>К карте</span></Link>
       <div className="task-topbar__progress"><span>Этап {activeStep.id} из {total}</span>
         <div><i style={{ width: `${activeStep.id / total * 100}%` }} /></div></div>
       <span className="stat-chip stat-chip--xp"><Icon name="zap" size={18} />+{activeStep.xp} XP</span>

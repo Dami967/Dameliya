@@ -10,7 +10,9 @@ const chapters = [
   { title: 'Вершина', subtitle: 'Финальное задание', reward: '' },
 ];
 
-export function QuestMap({ steps = questSteps, title = 'Долина больших идей' }: { steps?: QuestStep[]; title?: string }) {
+export function QuestMap({ steps = questSteps, title = 'Долина больших идей', planId }: {
+  steps?: QuestStep[]; title?: string; planId?: string;
+}) {
   const doneCount = steps.filter((step) => step.state === 'done').length;
   return (
     <section className="quest-card">
@@ -38,7 +40,8 @@ export function QuestMap({ steps = questSteps, title = 'Долина больш�
               </svg>
               <span className="chapter-scenery chapter-scenery--one">{chapterIndex === 0 ? '🌿' : chapterIndex === 1 ? '🌲' : '💎'}</span>
               <span className="chapter-scenery chapter-scenery--two">{chapterIndex === 0 ? '🌼' : chapterIndex === 1 ? '🌲' : '☁️'}</span>
-              {chapterSteps.map((step, stepIndex) => <QuestLevel step={step} index={chapterIndex * 3 + stepIndex} key={step.id} />)}
+              {chapterSteps.map((step, stepIndex) => <QuestLevel step={step} planId={planId}
+                index={chapterIndex * 3 + stepIndex} key={step.id} />)}
             </div>
             {chapter.reward && <RewardStop title={chapter.reward} unlocked={chapterSteps.every((step) => step.state === 'done')} />}
           </section>;
@@ -48,14 +51,15 @@ export function QuestMap({ steps = questSteps, title = 'Долина больш�
   );
 }
 
-function QuestLevel({ step, index }: { step: QuestStep; index: number }) {
+function QuestLevel({ step, index, planId }: { step: QuestStep; index: number; planId?: string }) {
   const content = <><span className={`level-node level-node--${step.state}`}>
     <Icon name={step.state === 'locked' ? 'lock' : step.icon} size={25} />
     {step.state === 'active' && <i className="unlock-spark">✦</i>}
   </span><span className="level-copy"><span className="level-row"><b>{step.title}</b><em>+{step.xp}</em></span>
     <small>{step.subtitle}</small></span></>;
   return step.state === 'active' || step.state === 'done'
-    ? <Link href={`/task/${step.id}`} className={`level level--${step.state} level--${index}`}>{content}</Link>
+    ? <Link href={`/task/${step.id}${planId ? `?plan=${planId}` : ''}`}
+      className={`level level--${step.state} level--${index}`}>{content}</Link>
     : <div className={`level level--${step.state} level--${index}`}>{content}</div>;
 }
 
