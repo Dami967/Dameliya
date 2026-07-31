@@ -13,6 +13,14 @@ export type QuestTaskDetails = {
   checklist: Array<{ title: string; hint: string }>;
   duration_minutes: number;
   category: string;
+  resources: QuestResource[];
+};
+
+export type QuestResource = {
+  type: 'video' | 'article' | 'test';
+  title: string;
+  url: string;
+  description: string;
 };
 
 export const questSteps: QuestStep[] = [

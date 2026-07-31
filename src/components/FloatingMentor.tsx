@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { detectLanguage, languageName } from '../lib/languages';
 import { askAi } from '../lib/ai';
 import { loadSettings } from '../lib/userProfile';
@@ -12,6 +12,10 @@ export function FloatingMentor() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [busy, setBusy] = useState(false);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(() => {
+    try { return JSON.parse(localStorage.getItem('goalquest_q_position') || 'null'); } catch { return null; }
+  });
+  const drag = useRef<{ startX: number; startY: number; x: number; y: number; moved: boolean } | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -19,6 +23,9 @@ export function FloatingMentor() {
       if (data?.language) setLanguage(data.language);
     });
   }, [session]);
+  useEffect(() => {
+    if (position) localStorage.setItem('goalquest_q_position', JSON.stringify(position));
+  }, [position]);
 
   async function ask(text: string) {
     if (!text.trim() || busy) return;
@@ -40,8 +47,31 @@ Never add combat or gambling mechanics. Do not claim professional medical, legal
     input.value = '';
   }
 
+  function startDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    const rect = event.currentTarget.parentElement?.getBoundingClientRect();
+    drag.current = { startX: event.clientX, startY: event.clientY, x: rect?.left ?? 0, y: rect?.top ?? 0, moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  function moveDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    if (!drag.current) return;
+    const dx = event.clientX - drag.current.startX;
+    const dy = event.clientY - drag.current.startY;
+    if (Math.abs(dx) + Math.abs(dy) > 5) drag.current.moved = true;
+    if (!drag.current.moved) return;
+    setPosition({
+      x: Math.max(8, Math.min(window.innerWidth - 66, drag.current.x + dx)),
+      y: Math.max(8, Math.min(window.innerHeight - 66, drag.current.y + dy)),
+    });
+  }
+  function stopDrag() {
+    const wasMoved = drag.current?.moved;
+    drag.current = null;
+    if (!wasMoved) setIsOpen((value) => !value);
+  }
+
   return (
-    <div className={`floating-mentor ${isOpen ? 'is-open' : ''}`}>
+    <div className={`floating-mentor ${isOpen ? 'is-open' : ''} ${position && position.y < 400 ? 'mentor-opens-down' : ''} ${position && position.x < 320 ? 'mentor-align-left' : ''}`}
+      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}>
       {isOpen && <section className="mentor-popover">
         <header><img src="/goalquest-eagle-quest.png" alt="" /><div><b>Q · AI Mentor</b>
           <small><i /> {languageName(language)}</small></div>
@@ -61,7 +91,9 @@ Never add combat or gambling mechanics. Do not claim professional medical, legal
         <small className="mentor-cost"><Icon name="zap" size={13} /> AI answers in {languageName(language)}</small>
       </section>}
       {!isOpen && <span className="mentor-hint">AI Mentor</span>}
-      <button className="mentor-fab" onClick={() => setIsOpen(!isOpen)} aria-label="Открыть AI Mentor">
+      <button className="mentor-fab" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={stopDrag}
+        onPointerCancel={() => { drag.current = null; }}
+        aria-label="Открыть или перетащить AI Mentor">
         <b className="mentor-fab__letter">Q</b>
         <span className="mentor-fab__status"><Icon name={isOpen ? 'plus' : 'message'} size={16} /></span>
       </button>

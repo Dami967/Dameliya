@@ -18,8 +18,9 @@ export async function loadAiQuest(userId: string) {
 export async function createAiQuest(userId: string, goal: string, request: string) {
   const { text, error } = await askAi(
     `Цель пользователя: ${goal}. Пожелание: ${request || 'Создай понятный маршрут'}.
-Верни ТОЛЬКО JSON без markdown: {"map_title":"короткое название","steps":[{"title":"действие","subtitle":"результат этапа","objective":"подробное персональное задание","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как его выполнить"}]}]}.
-Ровно 10 конкретных, безопасных и выполнимых этапов. В каждом этапе ровно 3 пункта checklist. Содержание каждого задания должно помогать именно этой цели и учитывать пожелания пользователя.`,
+Верни ТОЛЬКО JSON без markdown: {"map_title":"короткое название","steps":[{"title":"действие","subtitle":"результат этапа","objective":"подробное персональное задание","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как его выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем смотреть"}]}]}.
+Ровно 10 конкретных, безопасных и выполнимых этапов. В каждом этапе ровно 3 пункта checklist и 0–2 полезных ресурса.
+Если предлагаешь посмотреть урок, статью или пройти тест, обязательно добавь рабочую публичную https-ссылку в resources. Не выдумывай адреса и не указывай платные материалы.`,
     'Ты создаёшь персональные карты GoalQuest для подростков. Отвечай только валидным JSON на русском языке.',
   );
   if (error) return { data: null, error };
@@ -54,8 +55,8 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
 Трудности: ${profile.challenges}. Доступно времени в день: ${profile.daily_minutes} минут.` : '';
   const result = await askAi(
     `Цель: ${plan.goal}. Этап: ${step.title}. Ожидаемый результат: ${step.subtitle}. ${context}
-Верни ТОЛЬКО JSON без markdown: {"objective":"подробное персональное задание","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как выполнить"}]}.
-В checklist должно быть ровно 3 выполнимых пункта, подходящих этому человеку и его цели.`,
+Верни ТОЛЬКО JSON без markdown: {"objective":"подробное персональное задание","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем нужен"}]}.
+В checklist должно быть ровно 3 выполнимых пункта. Если нужен урок или тест, обязательно добавь рабочую публичную https-ссылку; не выдумывай адреса.`,
     'Ты создаёшь персональное задание GoalQuest для подростка. Отвечай безопасно, конкретно и только валидным JSON на русском.',
   );
   if (result.error) return { data: { ...step, details: fallbackDetails(step) }, error: result.error };
@@ -82,6 +83,13 @@ function normalizeDetails(value: Partial<QuestTaskDetails>, fallback: string): Q
     duration_minutes: Math.min(180, Math.max(5, Number(value.duration_minutes) || 25)),
     category: String(value.category || 'Практика'),
     checklist,
+    resources: Array.isArray(value.resources) ? value.resources.slice(0, 2).flatMap((resource) => {
+      const type = resource.type;
+      const url = String(resource.url || '');
+      if (!['video', 'article', 'test'].includes(type) || !isSafeResourceUrl(url)) return [];
+      return [{ type, title: String(resource.title || 'Полезный материал'),
+        description: String(resource.description || ''), url }] as QuestTaskDetails['resources'];
+    }) : [],
   };
 }
 
@@ -90,10 +98,15 @@ function fallbackDetails(step: QuestStep): QuestTaskDetails {
     objective: step.subtitle || `Выполни этап «${step.title}» и сохрани конкретный результат.`,
     duration_minutes: 25,
     category: 'Практика',
+    resources: [],
     checklist: [
       { title: 'Определи результат', hint: `Запиши, что должно получиться после этапа «${step.title}».` },
       { title: 'Сделай основной шаг', hint: 'Выдели 20 минут и сосредоточься только на этой задаче.' },
       { title: 'Зафиксируй итог', hint: 'Сохрани результат и коротко запиши, что получилось.' },
     ],
   };
+}
+
+function isSafeResourceUrl(value: string) {
+  try { return new URL(value).protocol === 'https:'; } catch { return false; }
 }

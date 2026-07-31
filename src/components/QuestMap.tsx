@@ -11,11 +11,12 @@ const chapters = [
 ];
 
 export function QuestMap({ steps = questSteps, title = 'Долина больших идей' }: { steps?: QuestStep[]; title?: string }) {
+  const doneCount = steps.filter((step) => step.state === 'done').length;
   return (
     <section className="quest-card">
       <div className="section-heading">
         <div><span className="eyebrow">КАРТА ПРИКЛЮЧЕНИЯ</span><h2>{title}</h2></div>
-        <span className="progress-pill"><Icon name="star" size={13} /> 2 / 10</span>
+        <span className="progress-pill"><Icon name="star" size={13} /> {doneCount} / {steps.length}</span>
       </div>
       <div className="quest-map">
         <div className="quest-scenery quest-scenery--one">✦</div>
@@ -53,7 +54,7 @@ function QuestLevel({ step, index }: { step: QuestStep; index: number }) {
     {step.state === 'active' && <i className="unlock-spark">✦</i>}
   </span><span className="level-copy"><span className="level-row"><b>{step.title}</b><em>+{step.xp}</em></span>
     <small>{step.subtitle}</small></span></>;
-  return step.state === 'active'
+  return step.state === 'active' || step.state === 'done'
     ? <Link href={`/task/${step.id}`} className={`level level--${step.state} level--${index}`}>{content}</Link>
     : <div className={`level level--${step.state} level--${index}`}>{content}</div>;
 }

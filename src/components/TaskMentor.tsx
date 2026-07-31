@@ -1,26 +1,39 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { askAi } from '../lib/ai';
+import type { TaskChatMessage } from '../lib/taskRecords';
 import { Icon } from './Icon';
 
-type ChatMessage = { role: 'q' | 'user'; text: string };
-
-export function TaskMentor({ task, notes }: { task: string; notes: string }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
+export function TaskMentor({ task, notes, initialMessages = [], onMessages }: {
+  task: string; notes: string; initialMessages?: TaskChatMessage[];
+  onMessages?: (messages: TaskChatMessage[]) => void;
+}) {
+  const [messages, setMessages] = useState<TaskChatMessage[]>(initialMessages.length ? initialMessages : [
     { role: 'q', text: 'Привет! Я помогу разобраться с заданием. Если застрянешь — напиши ✨' },
   ]);
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (initialMessages.length) setMessages(initialMessages);
+  }, [initialMessages]);
 
   async function ask(question: string) {
     if (!question.trim() || busy) return;
-    setMessages((current) => [...current, { role: 'user', text: question.trim() }]);
+    append({ role: 'user', text: question.trim() });
     setBusy(true);
     const result = await askAi(
       `Задание: ${task}\nЗаметки пользователя: ${notes || 'пока пусто'}\nВопрос: ${question}`,
       `Ты Кью, AI-наставник GoalQuest. Помоги выполнить текущее задание, но не делай всю работу вместо пользователя.
 Дай короткую, конкретную и безопасную подсказку на русском. Если полезно, предложи 2–4 следующих шага.`,
     );
-    setMessages((current) => [...current, { role: 'q', text: result.text ?? result.error.message }]);
+    append({ role: 'q', text: result.text ?? result.error.message });
     setBusy(false);
+  }
+
+  function append(message: TaskChatMessage) {
+    setMessages((current) => {
+      const next = [...current, message];
+      onMessages?.(next);
+      return next;
+    });
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
