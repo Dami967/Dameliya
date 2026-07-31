@@ -19,10 +19,16 @@ export function TaskMentor({ task, notes, initialMessages = [], onMessages }: {
 
   async function ask(question: string, attachments: AiAttachment[] = []) {
     if (!question.trim() || busy) return;
+    const conversation = messages.slice(-12).map((message) =>
+      `${message.role === 'user' ? 'Пользователь' : 'Кью'}: ${message.text}`).join('\n');
     append({ role: 'user', text: question.trim() });
     setBusy(true);
     const result = await askAi(
-      `Задание: ${task}\nЗаметки пользователя: ${notes || 'пока пусто'}\nВопрос: ${question}`,
+      `Задание: ${task}
+Заметки пользователя: ${notes || 'пока пусто'}
+Предыдущий разговор:
+${conversation || 'разговора ещё не было'}
+Новый вопрос: ${question}`,
       `Ты Кью, AI-наставник GoalQuest. Изучи приложенные фото, файлы или голосовое, если они есть. Помоги выполнить текущее задание, но не делай всю работу вместо пользователя.
 Дай короткую, конкретную и безопасную подсказку на русском. Если полезно, предложи 2–4 следующих шага.`,
       attachments,

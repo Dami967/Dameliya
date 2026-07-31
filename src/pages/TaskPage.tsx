@@ -9,6 +9,7 @@ import { ensureQuestTaskDetails, loadAiQuest, normalizeQuestStep, type AiQuestPl
 import { questSteps, type QuestStep, type QuestTaskDetails } from '../lib/questData';
 import { completeQuestTask, loadTaskRecord, saveTaskRecord,
   type TaskChatMessage, type TaskRecord } from '../lib/taskRecords';
+import { adaptFutureQuest } from '../lib/adaptiveQuest';
 import { useSession } from '../lib/useSession';
 
 type View = 'lesson' | 'choice' | 'history';
@@ -72,7 +73,10 @@ export function TaskPage() {
   async function finish() {
     if (completing) return;
     setCompleting(true);
-    if (session && plan) await completeQuestTask(session.user.id, plan, activeStep.id, notes, chat);
+    if (session && plan) {
+      await completeQuestTask(session.user.id, plan, activeStep.id, notes, chat);
+      await adaptFutureQuest(session.user.id, plan, activeStep.id);
+    }
     window.setTimeout(() => navigate('/quest'), 900);
   }
 
@@ -98,7 +102,7 @@ export function TaskPage() {
         onChange={(event) => setNotes(event.target.value)} placeholder="Записывай сюда результаты именно этого задания…" />
         <small className="autosave">{notes ? 'Сохранено внутри задания' : 'Не попадёт в личную записную книжку'}</small></section>
       {view !== 'history' && <button className={`complete-button ${completing ? 'is-done' : ''}`} onClick={() => void finish()}>
-        <Icon name="check" />{completing ? 'Готово! Возвращаемся к карте…' : activeStep.state === 'done' ? 'Завершить повтор' : 'Я выполнила задание'}</button>}
+        <Icon name="check" />{completing ? 'Кью анализирует результаты и обновляет маршрут…' : activeStep.state === 'done' ? 'Завершить повтор' : 'Я выполнила задание'}</button>}
     </article><TaskMentor task={taskContext} notes={notes} initialMessages={chat} onMessages={setChat} /></main>
     {completing && <CompletionCelebration onClose={() => navigate('/quest')} />}
   </div>;
