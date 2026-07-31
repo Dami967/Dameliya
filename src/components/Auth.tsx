@@ -89,15 +89,15 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
       </div>
       <div className="auth-divider"><span>или через email</span></div>
       <form onSubmit={submit} className="auth-form">
-        {mode === 'signup' && <label>Язык / Language
+        <label>Язык / Language
           <select value={language} onChange={(event) => {
             setLanguage(event.target.value);
             rememberLanguage(event.target.value);
           }}>
             {appLanguages.map((item) => <option key={item.code} value={item.code}>{item.nativeName} · {item.name}</option>)}
           </select>
-          <small className="language-hint">Мы определили язык автоматически. Его всегда можно изменить.</small>
-        </label>}
+          <small className="language-hint">Язык можно изменить до входа или регистрации.</small>
+        </label>
         <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
           placeholder="name@example.com" required /></label>
         <label>Пароль<div className="password-input">
