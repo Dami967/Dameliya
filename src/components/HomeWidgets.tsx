@@ -52,7 +52,7 @@ export function QuickActions() {
       <div>
         <Link href="/quest"><span><Icon name="map" /></span><b>Открыть карту</b></Link>
         <NewNoteButton />
-        <Link href="/profile"><span><Icon name="trophy" /></span><b>Мои награды</b></Link>
+        <Link href="/rewards"><span><Icon name="trophy" /></span><b>Мои награды</b></Link>
       </div>
     </section>
   );
