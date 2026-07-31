@@ -28,7 +28,9 @@ export async function uploadNoteAttachment(userId: string, noteId: string, file:
     storage_path: path, size_bytes: file.size,
   }).select('*').single<NoteAttachment>();
   if (saved.error) await supabase.storage.from('note-attachments').remove([path]);
-  return saved;
+  if (saved.error || !saved.data) return saved;
+  const signed = await supabase.storage.from('note-attachments').createSignedUrl(path, 3600);
+  return { ...saved, data: { ...saved.data, url: signed.data?.signedUrl } };
 }
 
 export async function deleteNoteAttachment(item: NoteAttachment) {

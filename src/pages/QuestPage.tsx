@@ -3,30 +3,64 @@ import { Link, useLocation } from 'wouter';
 import { AppShell } from '../components/AppShell';
 import { Icon } from '../components/Icon';
 import { QuestMap } from '../components/QuestMap';
-import { loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
+import { deleteAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
+import { ensureQuestInsights } from '../lib/questInsights';
 
 export function QuestPage() {
   const { session } = useSession();
   const [, navigate] = useLocation();
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const requestedId = new URLSearchParams(window.location.search).get('plan');
 
   useEffect(() => {
     if (!session) return;
-    void loadAiQuests(session.user.id).then(({ data }) => setPlans(data ?? []));
+    void loadAiQuests(session.user.id).then(({ data }) => {
+      const loaded = data ?? [];
+      setPlans(loaded);
+      setSelectedPlanId((current) => current ?? requestedId ?? loaded[0]?.id ?? null);
+    });
   }, [session]);
 
-  const selectedIndex = Math.max(0, plans.findIndex((plan) => plan.id === requestedId));
+  const selectedIndex = Math.max(0, plans.findIndex((plan) => plan.id === selectedPlanId));
   const plan = plans[selectedIndex] ?? null;
   const steps = plan?.steps ?? [];
   const done = steps.filter((step) => step.state === 'done');
   const percent = steps.length ? Math.round(done.length / steps.length * 100) : 0;
   const earnedXp = done.reduce((sum, step) => sum + step.xp, 0);
 
+  useEffect(() => {
+    if (!session || !plan || !done.length) return;
+    void ensureQuestInsights(session.user.id, plan).then(({ data }) => {
+      setPlans((current) => current.map((item) => item.id === plan.id ? { ...item, insights: data } : item));
+    });
+  }, [done.length, plan?.id, session]);
+
   function choose(index: number) {
     const next = plans[(index + plans.length) % plans.length];
-    if (next) navigate(`/quest?plan=${next.id}`);
+    if (next) {
+      setSelectedPlanId(next.id);
+      navigate(`/quest?plan=${next.id}`, { replace: true });
+    }
+  }
+
+  async function removePlan() {
+    if (!plan || deleting) return;
+    if (!window.confirm(`Удалить цель «${plan.goal}» и все записи её заданий? Это действие нельзя отменить.`)) return;
+    setDeleting(true);
+    const result = await deleteAiQuest(plan.id);
+    if (result.error) {
+      window.alert('Не удалось удалить цель. Попробуй ещё раз.');
+      setDeleting(false); return;
+    }
+    const remaining = plans.filter((item) => item.id !== plan.id);
+    const next = remaining[Math.min(selectedIndex, Math.max(0, remaining.length - 1))] ?? null;
+    setPlans(remaining);
+    setSelectedPlanId(next?.id ?? null);
+    navigate(next ? `/quest?plan=${next.id}` : '/quest', { replace: true });
+    setDeleting(false);
   }
 
   return <AppShell>
@@ -49,9 +83,17 @@ export function QuestPage() {
         <div className="summary-row"><span>Заданий готово</span><b>{done.length} / {steps.length}</b></div>
         <div className="summary-row"><span>Заработано</span><b>{earnedXp} XP</b></div>
         <div className="summary-row"><span>Активных карт</span><b>{plans.length}</b></div>
-        <Link href="/mentor" className="secondary-button"><Icon name="sparkles" size={18} /> Добавить или изменить цель</Link>
+        <section className="quest-insight"><span>✨ ЗАМЕТКИ ОТ КЬЮ</span>
+          {plan.insights?.length ? <div className="quest-insight-list">{plan.insights.map((item) =>
+            <article key={item.step_id}><b>Этап {item.step_id} · {item.title}</b><p>{item.note}</p></article>)}</div>
+            : <p>{done.length ? 'Кью анализирует разговор и заметки завершённого этапа…'
+              : `После этапа «${steps[0]?.title}» Кью сохранит здесь твою главную мысль.`}</p>}
+        </section>
+        <Link href="/mentor?choose=1" className="secondary-button"><Icon name="sparkles" size={18} /> Добавить или изменить цель</Link>
+        <button className="delete-quest-button" disabled={deleting} onClick={() => void removePlan()}>
+          {deleting ? 'Удаляем…' : 'Удалить эту цель'}</button>
       </aside>
-    </div> : <section className="empty-state"><Icon name="map" size={40} /><h2>Карт пока нет</h2>
+    </div> : <section className="empty-state"><Icon name="map" size={40} /><h2>Личных карт пока нет</h2>
       <p>Расскажи Кью о цели, и он создаст первую экспедицию.</p><Link href="/mentor" className="primary-button">Создать цель</Link></section>}
   </AppShell>;
 }

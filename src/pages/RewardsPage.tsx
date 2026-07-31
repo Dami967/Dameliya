@@ -9,12 +9,16 @@ import { isWearableReward, rewardCategories, rewards, type Reward, type RewardCa
 import { equipRewardForCategory, loadUserRewards } from '../lib/userRewards';
 import { useSession } from '../lib/useSession';
 import { NewRewardToast } from '../components/NewRewardToast';
+import { UserBalance } from '../components/UserBalance';
 
 type Section = 'collection' | 'expeditions' | 'competitions';
 
 export function RewardsPage() {
   const { session } = useSession();
-  const [section, setSection] = useState<Section>('collection');
+  const [section, setSection] = useState<Section>(() => {
+    const requested = new URLSearchParams(window.location.search).get('section');
+    return requested === 'competitions' || requested === 'expeditions' ? requested : 'collection';
+  });
   const [category, setCategory] = useState<RewardCategory | 'all'>('all');
   const [selected, setSelected] = useState<Reward | null>(null);
   const [equipped, setEquipped] = useState<string[]>([]);
@@ -51,7 +55,7 @@ export function RewardsPage() {
       <header className="page-header rewards-page-head">
         <div><span className="eyebrow">НАГРАДЫ И ПРИКЛЮЧЕНИЯ</span><h1>Твои достижения</h1>
           <p>Реальные дела превращаются в коллекцию, прогресс и дружеские победы.</p></div>
-        <div className="rewards-balance"><span>⚡ <b>72</b></span><span>💎 <b>1 240 XP</b></span></div>
+        <UserBalance />
       </header>
 
       <nav className="rewards-tabs" aria-label="Разделы наград">

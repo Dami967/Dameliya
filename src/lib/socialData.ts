@@ -36,9 +36,3 @@ export const activities = [
   { id: 2, user: socialUsers[1], icon: '🎯', title: 'выполнил цель', text: 'Закончил недельный челлендж «30 новых слов каждый день».', time: '1 ч', reactions: { '❤️': 11, '🔥': 6, '👏': 18, '💡': 1 } },
   { id: 3, user: socialUsers[3], icon: '🏆', title: 'получила награду', text: 'Медаль «Исследователь» за завершённый научный проект.', time: 'вчера', reactions: { '❤️': 16, '🔥': 9, '👏': 21, '💡': 4 } },
 ];
-
-export const teams = [
-  { name: 'Код будущего', emoji: '💻', topic: 'Программирование', members: 18, progress: 76, rank: 2, joined: true },
-  { name: 'Young Founders', emoji: '🚀', topic: 'Стартапы', members: 12, progress: 63, rank: 5, joined: false },
-  { name: 'Science Lab', emoji: '🔬', topic: 'Исследования', members: 24, progress: 88, rank: 1, joined: false },
-];

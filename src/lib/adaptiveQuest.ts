@@ -20,10 +20,12 @@ export async function adaptFutureQuest(userId: string, plan: AiQuestPlan, comple
   const result = await askAi(
     `Цель пользователя: ${plan.goal}.
 Результаты и полные разговоры из всех выполненных заданий: ${context || 'пока нет данных'}.
+Только что завершён этап ${completedStepId}. Поле insight должно содержать одну самую важную конкретную мысль
+пользователя именно из заметок или разговора этого этапа. Не давай общий совет и не придумывай сведения.
 Текущие будущие этапы: ${JSON.stringify(currentRoute)}.
 Создай следующие ${templates.length} этапов с учётом реального уровня, пробелов, успехов,
 интересов и темпа пользователя. Не повторяй уже освоенное. Каждый следующий этап должен приближать к цели.
-Верни ТОЛЬКО JSON без markdown: {"steps":[{"title":"действие","subtitle":"результат",
+Верни ТОЛЬКО JSON без markdown: {"insight":"главный вывод и короткое напоминание пользователю","steps":[{"title":"действие","subtitle":"результат",
 "objective":"персональное задание","duration_minutes":25,"category":"тип",
 "checklist":[{"title":"шаг","hint":"как сделать"},{"title":"шаг","hint":"как сделать"},{"title":"шаг","hint":"как сделать"}],
 "resources":[]}]}.
@@ -33,14 +35,22 @@ export async function adaptFutureQuest(userId: string, plan: AiQuestPlan, comple
   );
   if (result.error) return { data: null, error: result.error };
   try {
-    const parsed = parseAiJson<{ steps: AdaptedStep[] }>(result.text ?? '');
+    const parsed = parseAiJson<{ insight: string; steps: AdaptedStep[] }>(result.text ?? '');
     if (!Array.isArray(parsed.steps) || parsed.steps.length !== templates.length) throw new Error('Incomplete route');
     const future = parsed.steps.map((step, index) => buildStep(templates[index], step, index === 0));
     const steps = [...plan.steps.map((step) => completedState(step, completedStepId)),
       ...future.filter((item) => !plan.steps.some((step) => step.id === item.id))].map((step) =>
       future.find((item) => item.id === step.id) ?? step);
+    const completed = plan.steps.find((step) => step.id === completedStepId);
+    const insights = [...(plan.insights ?? []).filter((item) => item.step_id !== completedStepId), {
+      step_id: completedStepId,
+      title: completed?.title ?? `Этап ${completedStepId}`,
+      note: String(parsed.insight || 'Этап завершён, результат сохранён.').slice(0, 1000),
+    }].sort((a, b) => a.step_id - b.step_id);
     const saved = await supabase.from('ai_quest_plans').update({
-      steps, updated_at: new Date().toISOString(),
+      steps, insight: String(parsed.insight || 'Продолжай двигаться небольшими шагами и фиксируй результат.'),
+      insights,
+      updated_at: new Date().toISOString(),
     }).eq('user_id', userId).eq('id', plan.id).select('*').single<AiQuestPlan>();
     return saved;
   } catch {

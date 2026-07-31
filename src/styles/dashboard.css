@@ -21,6 +21,7 @@
 .hero-progress { width: min(300px, 100%); height: 8px; padding: 2px; border-radius: 8px; background: #ffffff30; }
 .hero-progress span { display: block; width: 20%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ffda62, #fff3a5); }.hero-card small { display: block; margin-top: 5px; font-size: 8px; color: #dfe1ff; }
 .hero-card .primary-button { position: relative; z-index: 1; color: #4757d5; background: #fff; box-shadow: none; }
+.hero-quest-actions{position:relative;z-index:1;display:grid;justify-items:center;gap:8px}.hero-quest-switcher{display:flex;align-items:center;gap:7px}.hero-quest-switcher button{display:grid;place-items:center;width:32px;height:32px;border:1px solid #ffffff70;border-radius:10px;color:#fff;background:#ffffff20;font-size:17px;cursor:pointer}.hero-quest-switcher span{min-width:36px;color:#fff;font-size:9px;font-weight:800;text-align:center}
 .dashboard-grid, .quest-page-grid { display: grid; grid-template-columns: minmax(440px, 1.8fr) minmax(265px, 1fr); gap: 20px; margin-top: 20px; }
 .quest-card, .daily-card, .streak-card, .mentor-mini, .goal-summary, .profile-hero, .profile-section {
   border: 1px solid var(--line); border-radius: 17px; background: #fff; box-shadow: 0 8px 24px #1f25440a;

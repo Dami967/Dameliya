@@ -10,8 +10,12 @@ export type AiQuestPlan = {
   goal: string;
   map_title: string;
   steps: QuestStep[];
+  insight?: string;
+  insights?: QuestInsight[];
   updated_at: string;
 };
+
+export type QuestInsight = { step_id: number; title: string; note: string };
 
 export async function loadAiQuest(userId: string) {
   return supabase.from('ai_quest_plans').select('*').eq('user_id', userId)
@@ -28,9 +32,18 @@ export async function loadAiQuests(userId: string) {
     .order('created_at', { ascending: true }).returns<AiQuestPlan[]>();
 }
 
-export async function createAiQuest(userId: string, goal: string, request: string) {
+export function deleteAiQuest(planId: string) {
+  return supabase.rpc('delete_quest_plan', { target_id: planId });
+}
+
+export async function createAiQuest(userId: string, goal: string, request: string, planId?: string) {
+  const previous = planId ? await loadAiQuestById(userId, planId) : null;
+  const { data: profile } = await loadProfile(userId);
+  const profileContext = profile ? `Возраст: ${profile.age || 'не указан'}. Интересы: ${profile.interests.join(', ') || 'не указаны'}.
+Сильные стороны: ${profile.strengths || 'не указаны'}. Трудности: ${profile.challenges || 'не указаны'}.
+Доступно времени в день: ${profile.daily_minutes} минут.` : '';
   const { text, error } = await askAi(
-    `Цель пользователя: ${goal}. Пожелание: ${request || 'Создай понятный маршрут'}.
+    `Цель пользователя: ${goal}. Пожелание: ${request || 'Создай понятный маршрут'}. ${profileContext}
 Верни ТОЛЬКО JSON без markdown: {"map_title":"короткое название","steps":[{"title":"действие","subtitle":"результат этапа","objective":"подробное персональное задание","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как его выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем смотреть"}]}]}.
 Ровно 10 конкретных, безопасных и выполнимых этапов. В каждом этапе ровно 3 пункта checklist и 0–2 полезных ресурса.
 Если предлагаешь посмотреть урок, статью или пройти тест, обязательно добавь рабочую публичную https-ссылку в resources.
@@ -43,19 +56,31 @@ export async function createAiQuest(userId: string, goal: string, request: strin
       map_title: string;
       steps: Array<{ title: string; subtitle: string } & QuestTaskDetails>;
     }>(text ?? '');
-    const steps: QuestStep[] = await Promise.all(parsed.steps.slice(0, 10).map(async (step, index) => ({
+    const steps: QuestStep[] = parsed.steps.slice(0, 10).map((step, index) => ({
       id: index + 1,
       title: step.title,
       subtitle: index === 0 ? 'Текущее задание' : step.subtitle,
       state: index === 0 ? 'active' : 'locked',
       xp: 50 + index * 30,
       icon: index === 9 ? 'rocket' : index % 3 === 0 ? 'sparkles' : 'book',
-      details: await verifyDetailsResources(normalizeDetails(step, step.subtitle), `${goal}: ${step.title}`),
-    })));
+      details: normalizeDetails(step, step.subtitle),
+    }));
     if (steps.length !== 10) throw new Error('AI returned an incomplete plan');
-    return supabase.from('ai_quest_plans').upsert({
-      user_id: userId, goal, map_title: parsed.map_title, steps, updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,goal' }).select().single<AiQuestPlan>();
+    const values = {
+      user_id: userId, goal, map_title: parsed.map_title, steps,
+      insight: `Главное сейчас — начать с этапа «${steps[0].title}» и сохранить конкретный результат.`,
+      updated_at: new Date().toISOString(),
+    };
+    if (planId) {
+      const updated = await supabase.from('ai_quest_plans').update({ ...values, insights: [] })
+        .eq('user_id', userId).eq('id', planId).select().single<AiQuestPlan>();
+      if (!updated.error && previous?.data) {
+        await supabase.from('quest_task_records').delete().eq('user_id', userId).eq('goal', previous.data.goal);
+      }
+      return updated;
+    }
+    return supabase.from('ai_quest_plans').upsert(values, { onConflict: 'user_id,goal' })
+      .select().single<AiQuestPlan>();
   } catch {
     return { data: null, error: new Error('AI не смог собрать карту. Попробуй ещё раз.') };
   }

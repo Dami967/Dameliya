@@ -6,6 +6,8 @@ import { loadSettings } from '../lib/userProfile';
 import { useSession } from '../lib/useSession';
 import { Icon } from './Icon';
 import { AiComposer } from './AiComposer';
+import { loadAiQuest } from '../lib/aiQuest';
+import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
 
 export function FloatingMentor() {
   const { session } = useSession();
@@ -35,11 +37,13 @@ export function FloatingMentor() {
     setBusy(true);
     setAnswer('');
     const selectedLanguage = languageName(language);
-    const result = await askAi(text.trim(), `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
-Keep the answer short, practical and age-appropriate. Help the user take a real next step.
+    const plan = session ? (await loadAiQuest(session.user.id)).data : null;
+    const context = plan ? `Current goal: ${plan.goal}. Current step: ${plan.steps.find((step) => step.state === 'active')?.title || 'not selected'}.\n` : '';
+    const result = await askAi(`${context}${text.trim()}`, `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
+${conciseMentorRules}
 Never add combat or gambling mechanics. Do not claim professional medical, legal or financial expertise.
 Understand attached images, documents and voice messages when present.`, attachments, true);
-    setAnswer(result.text ?? fallback(language));
+    setAnswer(compactMentorReply(result.text ?? fallback(language)));
     setBusy(false);
   }
 

@@ -21,6 +21,7 @@ import { WelcomePage } from './pages/WelcomePage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { FriendInvitePage } from './pages/FriendInvitePage';
+import { ChallengeInvitePage } from './pages/ChallengeInvitePage';
 import { NotesPage } from './pages/NotesPage';
 
 const protectedPage = (Page: React.ComponentType) => () => <RequireAuth><Page /></RequireAuth>;
@@ -35,6 +36,7 @@ export default function App() {
       <Route path="/auth/callback" component={AuthCallbackPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/friends/invite/:token" component={FriendInvitePage} />
+      <Route path="/challenges/invite/:token" component={ChallengeInvitePage} />
       <Route path="/quest" component={protectedPage(QuestPage)} />
       <Route path="/notes/:id" component={protectedPage(NotesPage)} />
       <Route path="/notes" component={protectedPage(NotesPage)} />

@@ -36,6 +36,12 @@ export async function completeQuestTask(userId: string, plan: AiQuestPlan, stepI
     }),
     supabase.from('ai_quest_plans').update({ steps }).eq('user_id', userId).eq('id', plan.id),
   ]);
-  if (!record.error && current?.state !== 'done') await supabase.rpc('add_challenge_score', { points: current?.xp ?? 50 });
+  if (!record.error && current?.state !== 'done') {
+    await Promise.all([
+      supabase.rpc('add_challenge_score', { points: current?.xp ?? 50 }),
+      supabase.rpc('award_task_progress', { points: current?.xp ?? 50 }),
+    ]);
+    window.dispatchEvent(new Event('profile-stats-changed'));
+  }
   return { error: record.error ?? quest.error };
 }

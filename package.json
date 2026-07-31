@@ -16,7 +16,8 @@
     "db:push": "supabase db push",
     "keep-awake:setup": "node scripts/setup-keep-awake.mjs",
     "ai:secret": "node scripts/setup-ai-secret.mjs",
-    "ai:deploy": "supabase functions deploy ai"
+    "ai:deploy": "supabase functions deploy ai",
+    "support:setup": "node scripts/setup-telegram-support.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",

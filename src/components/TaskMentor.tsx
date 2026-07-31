@@ -4,6 +4,7 @@ import type { AiAttachment } from '../lib/aiAttachments';
 import type { TaskChatMessage } from '../lib/taskRecords';
 import { AiComposer } from './AiComposer';
 import { Icon } from './Icon';
+import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
 
 export function TaskMentor({ task, notes, learningContext = '', initialMessages = [], onMessages }: {
   task: string; notes: string; learningContext?: string; initialMessages?: TaskChatMessage[];
@@ -31,12 +32,12 @@ ${learningContext || 'пройденных этапов пока нет'}
 Предыдущий разговор:
 ${conversation || 'разговора ещё не было'}
 Новый вопрос: ${question}`,
-      `Ты Кью, AI-наставник GoalQuest. Сначала используй уже известные сведения об уровне и пробелах пользователя и не спрашивай их повторно. Изучи приложенные фото, файлы или голосовое, если они есть. Помоги выполнить текущее задание, но не делай всю работу вместо пользователя.
-Дай короткую, конкретную и безопасную подсказку на русском. Если полезно, предложи 2–4 следующих шага.`,
+      `Ты Кью, AI-наставник GoalQuest. Изучи приложенные фото, файлы или голосовое, если они есть.
+Помоги выполнить текущее задание, но не делай всю работу вместо пользователя. ${conciseMentorRules}`,
       attachments,
       true,
     );
-    append({ role: 'q', text: result.text ?? result.error.message });
+    append({ role: 'q', text: compactMentorReply(result.text ?? result.error.message) });
     setBusy(false);
   }
 
