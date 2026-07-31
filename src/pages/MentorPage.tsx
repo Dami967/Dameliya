@@ -1,8 +1,10 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
+import { AiComposer } from '../components/AiComposer';
 import { AppShell } from '../components/AppShell';
 import { Icon } from '../components/Icon';
 import { askAi } from '../lib/ai';
+import type { AiAttachment } from '../lib/aiAttachments';
 import { createAiQuest, loadAiQuest } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 
@@ -25,16 +27,12 @@ export function MentorPage() {
     setMessages((old) => [...old, { role: 'q', text: error ? error.message : `Готово! Я создал карту «${data?.map_title}» из 10 шагов.` }]);
     setBusy(false);
   }
-  async function send(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const text = new FormData(form).get('message')?.toString().trim();
+  async function send(text: string, attachments: AiAttachment[] = []) {
     if (!text || busy) return;
     setMessages((old) => [...old, { role: 'user', text }]);
-    form.reset();
     setBusy(true);
     const answer = await askAi(`Моя цель: ${goal || 'ещё не выбрана'}. Вопрос: ${text}`,
-      'Ты Кью, добрый AI-наставник GoalQuest. Отвечай коротко, практично и на русском.');
+      'Ты Кью, добрый AI-наставник GoalQuest. Отвечай коротко, практично и на русском. Изучи приложенные фото, файлы или голосовое сообщение.', attachments);
     setMessages((old) => [...old, { role: 'q', text: answer.text ?? answer.error.message }]);
     setBusy(false);
   }
@@ -47,6 +45,6 @@ export function MentorPage() {
       <small>Существующий прогресс изменится только после подтверждения новой карты.</small>
     </aside>
     <section className="mentor-chat-page"><div className="mentor-chat-log">{messages.map((message, index) => <p className={message.role} key={`${message.text}-${index}`}>{message.text}</p>)}{busy && <p className="q">Q думает…</p>}</div>
-      <form onSubmit={(event) => void send(event)}><input name="message" placeholder="Спроси Q о своей цели…" /><button disabled={busy}>↑</button></form></section></div>
+      <AiComposer busy={busy} name="message" placeholder="Спроси Q о своей цели…" onSend={(text, files) => void send(text, files)} /></section></div>
   </div></AppShell>;
 }

@@ -24,6 +24,8 @@ type GeminiResponse = {
 type YouTubePlayerResponse = {
   playabilityStatus?: { status?: string; playableInEmbed?: boolean };
 };
+type InlineAttachment = { name?: unknown; mimeType?: unknown; data?: unknown };
+type GeminiPart = { text: string } | { inlineData: { mimeType: string; data: string } };
 
 function json(body: object, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -42,7 +44,10 @@ Deno.serve(async (req) => {
       return json({ error: 'AI пока не настроен. Попроси наставника проверить секрет.' }, 503);
     }
 
-    const body = (await req.json()) as { prompt?: unknown; system?: unknown; action?: unknown; videoId?: unknown };
+    const body = (await req.json()) as {
+      prompt?: unknown; system?: unknown; action?: unknown; videoId?: unknown;
+      attachments?: unknown;
+    };
     if (body.action === 'validate_youtube') {
       const videoId = typeof body.videoId === 'string' && /^[\w-]{6,15}$/.test(body.videoId) ? body.videoId : '';
       if (!videoId) return json({ valid: false });
@@ -61,11 +66,21 @@ Deno.serve(async (req) => {
     }
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
     const system = typeof body.system === 'string' ? body.system.trim() : '';
+    const rawAttachments = Array.isArray(body.attachments) ? body.attachments.slice(0, 3) as InlineAttachment[] : [];
 
     if (!prompt) return json({ error: 'Напиши запрос для AI.' }, 400);
     if (prompt.length > 10_000 || system.length > 5_000) {
       return json({ error: 'Запрос слишком длинный. Сделай его короче.' }, 400);
     }
+    const attachments = rawAttachments.filter((item) =>
+      typeof item.mimeType === 'string' && typeof item.data === 'string'
+      && item.data.length <= 14_000_000 && /^(image\/|audio\/|application\/pdf|text\/plain)/.test(item.mimeType));
+    const totalSize = attachments.reduce((sum, item) => sum + String(item.data).length, 0);
+    if (totalSize > 18_000_000) return json({ error: 'Вложения слишком большие.' }, 400);
+    const parts: GeminiPart[] = [{ text: prompt }];
+    attachments.forEach((item) => parts.push({
+      inlineData: { mimeType: String(item.mimeType), data: String(item.data) },
+    }));
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -74,7 +89,7 @@ Deno.serve(async (req) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemInstruction: system ? { parts: [{ text: system }] } : undefined,
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts }],
         }),
       },
     );

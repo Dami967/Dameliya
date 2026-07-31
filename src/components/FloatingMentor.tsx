@@ -1,9 +1,11 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { detectLanguage, languageName } from '../lib/languages';
 import { askAi } from '../lib/ai';
+import type { AiAttachment } from '../lib/aiAttachments';
 import { loadSettings } from '../lib/userProfile';
 import { useSession } from '../lib/useSession';
 import { Icon } from './Icon';
+import { AiComposer } from './AiComposer';
 
 export function FloatingMentor() {
   const { session } = useSession();
@@ -27,7 +29,7 @@ export function FloatingMentor() {
     if (position) localStorage.setItem('goalquest_q_position', JSON.stringify(position));
   }, [position]);
 
-  async function ask(text: string) {
+  async function ask(text: string, attachments: AiAttachment[] = []) {
     if (!text.trim() || busy) return;
     setQuestion(text.trim());
     setBusy(true);
@@ -35,16 +37,10 @@ export function FloatingMentor() {
     const selectedLanguage = languageName(language);
     const result = await askAi(text.trim(), `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
 Keep the answer short, practical and age-appropriate. Help the user take a real next step.
-Never add combat or gambling mechanics. Do not claim professional medical, legal or financial expertise.`);
+Never add combat or gambling mechanics. Do not claim professional medical, legal or financial expertise.
+Understand attached images, documents and voice messages when present.`, attachments);
     setAnswer(result.text ?? fallback(language));
     setBusy(false);
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const input = event.currentTarget.elements.namedItem('mentor') as HTMLInputElement;
-    void ask(input.value);
-    input.value = '';
   }
 
   function startDrag(event: React.PointerEvent<HTMLButtonElement>) {
@@ -86,8 +82,7 @@ Never add combat or gambling mechanics. Do not claim professional medical, legal
           <button onClick={() => void ask('I feel stuck. Help me choose one small next step.')}>🧩 Small step</button>
           <button onClick={() => void ask('Help me plan my goal for today.')}>🎯 Today’s plan</button>
         </div>
-        <form onSubmit={submit}><input name="mentor" placeholder="Ask Q…" />
-          <button aria-label="Отправить" disabled={busy}>↑</button></form>
+        <AiComposer busy={busy} name="mentor" placeholder="Ask Q…" onSend={(text, files) => void ask(text, files)} />
         <small className="mentor-cost"><Icon name="zap" size={13} /> AI answers in {languageName(language)}</small>
       </section>}
       {!isOpen && <span className="mentor-hint">AI Mentor</span>}

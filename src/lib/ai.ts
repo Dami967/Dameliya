@@ -1,10 +1,11 @@
 import { supabase } from './supabase';
+import type { AiAttachment } from './aiAttachments';
 
 type AiResponse = { text?: unknown; error?: unknown };
 
-export async function askAi(prompt: string, system: string) {
+export async function askAi(prompt: string, system: string, attachments: AiAttachment[] = []) {
   const { data, error } = await supabase.functions.invoke<AiResponse>('ai', {
-    body: { prompt: prompt.trim(), system: system.trim() },
+    body: { prompt: prompt.trim(), system: system.trim(), attachments },
   });
   if (error) return { text: null, error: new Error(readFunctionError(error.message)) };
   if (typeof data?.error === 'string') return { text: null, error: new Error(data.error) };
