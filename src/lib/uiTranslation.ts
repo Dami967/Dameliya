@@ -1,10 +1,11 @@
 import { askAi, parseAiJson } from './ai';
 import { languageName } from './languages';
+import { builtInUiTranslation } from './uiBuiltInTranslations';
 
 const cachePrefix = 'goalquest-ui-translations-v1-';
 
 export function readUiTranslation(language: string, source: string) {
-  return readCache(language)[source];
+  return builtInUiTranslation(language, source) ?? readCache(language)[source];
 }
 
 export function saveUiTranslations(language: string, translations: Record<string, string>) {

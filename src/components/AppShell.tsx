@@ -2,6 +2,8 @@ import { Link, useLocation } from 'wouter';
 import { Icon } from './Icon';
 import { FloatingMentor } from './FloatingMentor';
 import { MomentumCard } from './MomentumCard';
+import { useSession } from '../lib/useSession';
+import { currentUserName, useCurrentProfile } from '../lib/useCurrentProfile';
 
 type AppShellProps = { children: React.ReactNode };
 
@@ -16,6 +18,9 @@ const navigation = [
 
 export function AppShell({ children }: AppShellProps) {
   const [location] = useLocation();
+  const { session } = useSession();
+  const profile = useCurrentProfile(session?.user.id);
+  const displayName = currentUserName(session?.user, profile);
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -33,8 +38,8 @@ export function AppShell({ children }: AppShellProps) {
         </nav>
         <MomentumCard />
         <Link href="/profile" className={`sidebar-user ${location === '/profile' ? 'is-active' : ''}`}>
-          <div className="avatar">Д</div>
-          <div><b>Дамелия</b><small>Уровень 6</small></div>
+          <div className="avatar" data-no-auto-translate>{displayName[0]?.toUpperCase() || 'G'}</div>
+          <div><b data-no-auto-translate>{profile?.username ? `@${profile.username}` : displayName}</b><small>Уровень {profile?.level ?? 1}</small></div>
           <Icon name="arrow" size={16} />
         </Link>
       </aside>

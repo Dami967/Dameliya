@@ -6,9 +6,11 @@ import { AiTip, QuickActions, TodayTasks, WeekProgress } from '../components/Hom
 import { loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { UserBalance } from '../components/UserBalance';
+import { currentUserName, useCurrentProfile } from '../lib/useCurrentProfile';
 
 export function HomePage() {
   const { session } = useSession();
+  const profile = useCurrentProfile(session?.user.id);
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [planIndex, setPlanIndex] = useState(0);
   useEffect(() => {
@@ -22,10 +24,10 @@ export function HomePage() {
   return (
     <AppShell>
       <header className="topbar">
-        <div><p>Твоё новое приключение</p><h1>Привет, Дамелия! <span>👋</span></h1></div>
+        <div><p>Твоё новое приключение</p><h1>Привет, {currentUserName(session?.user, profile)}! <span>👋</span></h1></div>
         <div className="top-stats">
           <UserBalance />
-          <div className="avatar">Д</div>
+          <div className="avatar">{currentUserName(session?.user, profile)[0]?.toUpperCase() || 'G'}</div>
         </div>
       </header>
 

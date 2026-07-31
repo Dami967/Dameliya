@@ -8,7 +8,7 @@ const english: InterviewCopy = {
   titles: ['Let’s meet', 'Tell us about yourself', 'What is your superpower?', 'Choose your main goal'],
   texts: ['This will help create your personal AI profile.', 'We will suggest tasks that fit you.', 'There are no wrong answers — be yourself.', 'It will become your first personal quest.'],
   labels: ['What is your name?', 'Choose a username', 'How old are you?', 'Which country do you live in?', 'Where do you study or work?', 'Your interests', 'Your strengths', 'What feels difficult?', 'What do you want to achieve?', 'Why is it important?', 'Minutes per day'],
-  placeholders: ['Alex', 'alex', '15', 'Your country', 'School, university or work', 'Design, technology, music', 'Creativity, curiosity', 'Planning', 'Launch my first project', 'I want to create something useful', '30'],
+  placeholders: ['Alice', 'alice', '15', 'Your country', 'School, university or work', 'Design, technology, music', 'Creativity, curiosity', 'Planning', 'Launch my first project', 'I want to create something useful', '30'],
 };
 
 const copies: Record<string, Partial<InterviewCopy>> = {

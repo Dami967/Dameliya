@@ -53,8 +53,8 @@ export function ProfileSetupStep(props: ProfileSetupStepProps) {
         <small>Фото можно добавить позже</small>
       </div>
       <div className="interview-fields profile-setup-fields">
-        <label>Как тебя зовут?<input value={props.displayName} onChange={(event) => props.onChange({ displayName: event.target.value })} placeholder="Дамелия" /></label>
-        <label>Придумай username<input value={props.username} onChange={(event) => props.onChange({ username: event.target.value })} placeholder="dameliya" /></label>
+        <label>Как тебя зовут?<input value={props.displayName} onChange={(event) => props.onChange({ displayName: event.target.value })} placeholder="Алиса" /></label>
+        <label>Придумай username<input value={props.username} onChange={(event) => props.onChange({ username: event.target.value })} placeholder="alisa" /></label>
       </div>
       {message && <p className="form-error">{message}</p>}
       <div className="onboarding-actions">
