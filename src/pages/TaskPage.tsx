@@ -5,7 +5,7 @@ import { CompletionCelebration } from '../components/CompletionCelebration';
 import { Icon } from '../components/Icon';
 import { TaskMentor } from '../components/TaskMentor';
 import { TaskResources } from '../components/TaskResources';
-import { ensureQuestTaskDetails, loadAiQuest, type AiQuestPlan } from '../lib/aiQuest';
+import { ensureQuestTaskDetails, loadAiQuest, normalizeQuestStep, type AiQuestPlan } from '../lib/aiQuest';
 import { questSteps, type QuestStep, type QuestTaskDetails } from '../lib/questData';
 import { completeQuestTask, loadTaskRecord, saveTaskRecord,
   type TaskChatMessage, type TaskRecord } from '../lib/taskRecords';
@@ -34,13 +34,16 @@ export function TaskPage() {
         setStep(questSteps.find((item) => item.id === selectedId) ?? questSteps[0]);
         return;
       }
+      const immediate = normalizeQuestStep(currentPlan.steps.find((item) => item.id === selectedId) ?? currentPlan.steps[0]);
+      setPlan({ ...currentPlan, steps: currentPlan.steps.map((item) => item.id === immediate.id ? immediate : item) });
+      setStep(immediate);
+      const saved = await loadTaskRecord(session.user.id, currentPlan.goal, immediate.id);
+      setRecord(saved.data ?? null); setNotes(saved.data?.notes ?? ''); setChat(saved.data?.chat ?? []);
+      setView(immediate.state === 'done' ? 'choice' : 'lesson');
       const detailResult = await ensureQuestTaskDetails(session.user.id, currentPlan, selectedId);
-      const selected = detailResult.data ?? currentPlan.steps[0];
-      const saved = await loadTaskRecord(session.user.id, currentPlan.goal, selected.id);
+      const selected = detailResult.data ?? immediate;
       setPlan({ ...currentPlan, steps: currentPlan.steps.map((item) => item.id === selected.id ? selected : item) });
-      setStep(selected); setRecord(saved.data ?? null);
-      setNotes(saved.data?.notes ?? ''); setChat(saved.data?.chat ?? []);
-      setView(selected.state === 'done' ? 'choice' : 'lesson');
+      setStep(selected);
     });
   }, [session, stepId]);
 

@@ -49,7 +49,10 @@ export async function createAiQuest(userId: string, goal: string, request: strin
 
 export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, stepId: number) {
   const step = plan.steps.find((item) => item.id === stepId);
-  if (!step || step.details) return { data: step ?? null, error: null };
+  if (!step) return { data: null, error: null };
+  if (step.details && Array.isArray(step.details.resources)) {
+    return { data: normalizeQuestStep(step), error: null };
+  }
   const { data: profile } = await loadProfile(userId);
   const context = profile ? `Интересы: ${profile.interests.join(', ')}. Сильные стороны: ${profile.strengths}.
 Трудности: ${profile.challenges}. Доступно времени в день: ${profile.daily_minutes} минут.` : '';
@@ -70,6 +73,10 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
   } catch {
     return { data: { ...step, details: fallbackDetails(step) }, error: new Error('Не удалось адаптировать задание.') };
   }
+}
+
+export function normalizeQuestStep(step: QuestStep): QuestStep {
+  return { ...step, details: step.details ? normalizeDetails(step.details, step.subtitle) : fallbackDetails(step) };
 }
 
 function normalizeDetails(value: Partial<QuestTaskDetails>, fallback: string): QuestTaskDetails {
