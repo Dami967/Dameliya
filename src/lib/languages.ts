@@ -58,6 +58,7 @@ export function rememberLanguage(code: string) {
   window.localStorage.setItem('goalquest-language', code);
   document.documentElement.lang = code;
   document.documentElement.dir = appLanguages.find((language) => language.code === code)?.direction ?? 'ltr';
+  window.dispatchEvent(new CustomEvent('goalquest-language-changed', { detail: code }));
 }
 
 export function languageName(code: string) {

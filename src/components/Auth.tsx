@@ -90,7 +90,10 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
       <div className="auth-divider"><span>или через email</span></div>
       <form onSubmit={submit} className="auth-form">
         {mode === 'signup' && <label>Язык / Language
-          <select value={language} onChange={(event) => setLanguage(event.target.value)}>
+          <select value={language} onChange={(event) => {
+            setLanguage(event.target.value);
+            rememberLanguage(event.target.value);
+          }}>
             {appLanguages.map((item) => <option key={item.code} value={item.code}>{item.nativeName} · {item.name}</option>)}
           </select>
           <small className="language-hint">Мы определили язык автоматически. Его всегда можно изменить.</small>
