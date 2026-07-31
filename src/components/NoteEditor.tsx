@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { PersonalNote } from '../lib/personalNotes';
+import { NoteAttachments } from './NoteAttachments';
 
 export function NoteEditor({ note, onSave, onDelete }: {
   note: PersonalNote; onSave: (title: string, content: string) => Promise<void>; onDelete: () => void;
@@ -28,6 +29,7 @@ export function NoteEditor({ note, onSave, onDelete }: {
     <textarea className="note-content" value={content} maxLength={50000}
       onChange={(event) => setContent(event.target.value)} onBlur={saveNow}
       placeholder={'Начни писать здесь…\n\nИдеи, планы, мысли, списки — всё, что важно сохранить.'} />
+    <NoteAttachments noteId={note.id} userId={note.user_id} />
     <footer>{content.length.toLocaleString('ru-RU')} символов</footer>
   </article>;
 }

@@ -5,6 +5,7 @@ import { NoteEditor } from '../components/NoteEditor';
 import { NotesSidebar } from '../components/NotesSidebar';
 import { deletePersonalNote, loadPersonalNote, loadPersonalNotes, updatePersonalNote,
   type PersonalNote } from '../lib/personalNotes';
+import { deleteAllNoteAttachments } from '../lib/noteAttachments';
 import { useSession } from '../lib/useSession';
 
 export function NotesPage() {
@@ -37,6 +38,7 @@ export function NotesPage() {
   }
   async function remove() {
     if (!active || !confirm('Удалить эту заметку? Восстановить её не получится.')) return;
+    await deleteAllNoteAttachments(active.id);
     const { error } = await deletePersonalNote(active.id);
     if (!error) { await refresh(); navigate('/notes'); }
   }
