@@ -34,11 +34,19 @@ function VideoLesson({ resource, notes, task, chat, onNotes, onChat, onClose }: 
       <div className="video-frame"><iframe src={embed ?? ''} title={resource.title}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
         allowFullScreen /></div>
+      <div className="video-fallback"><span>Если автор запретил просмотр внутри приложения:</span>
+        <a href={resource.url} target="_blank" rel="noreferrer">Открыть в YouTube</a>
+        <a href={youtubeSearch(resource.title, task)} target="_blank" rel="noreferrer">Найти похожий урок</a>
+      </div>
       <label>Заметки к уроку<textarea value={notes} onChange={(event) => onNotes(event.target.value)}
         placeholder="Записывай важные мысли во время просмотра…" /></label>
     </div><div className="video-q"><TaskMentor task={`${task}. Видео: ${resource.title}`}
       notes={notes} initialMessages={chat} onMessages={onChat} /></div></div>
   </section></div>;
+}
+
+function youtubeSearch(title: string, task: string) {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${title} ${task.slice(0, 90)}`)}`;
 }
 
 function youtubeEmbed(value: string) {
