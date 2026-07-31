@@ -30,6 +30,12 @@ export function FloatingMentor() {
   useEffect(() => {
     if (position) localStorage.setItem('goalquest_q_position', JSON.stringify(position));
   }, [position]);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [isOpen]);
 
   async function ask(text: string, attachments: AiAttachment[] = []) {
     if (!text.trim() || busy) return;
@@ -59,8 +65,8 @@ Understand attached images, documents and voice messages when present.`, attachm
     if (Math.abs(dx) + Math.abs(dy) > 5) drag.current.moved = true;
     if (!drag.current.moved) return;
     setPosition({
-      x: Math.max(8, Math.min(window.innerWidth - 66, drag.current.x + dx)),
-      y: Math.max(8, Math.min(window.innerHeight - 66, drag.current.y + dy)),
+      x: Math.max(8, Math.min(window.innerWidth - 76, drag.current.x + dx)),
+      y: Math.max(8, Math.min(window.innerHeight - 76, drag.current.y + dy)),
     });
   }
   function stopDrag() {
