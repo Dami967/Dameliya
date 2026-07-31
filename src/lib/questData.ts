@@ -5,6 +5,14 @@ export type QuestStep = {
   state: 'done' | 'active' | 'locked';
   xp: number;
   icon: 'check' | 'sparkles' | 'book' | 'code' | 'rocket';
+  details?: QuestTaskDetails;
+};
+
+export type QuestTaskDetails = {
+  objective: string;
+  checklist: Array<{ title: string; hint: string }>;
+  duration_minutes: number;
+  category: string;
 };
 
 export const questSteps: QuestStep[] = [

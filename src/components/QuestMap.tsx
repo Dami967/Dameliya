@@ -54,7 +54,7 @@ function QuestLevel({ step, index }: { step: QuestStep; index: number }) {
   </span><span className="level-copy"><span className="level-row"><b>{step.title}</b><em>+{step.xp}</em></span>
     <small>{step.subtitle}</small></span></>;
   return step.state === 'active'
-    ? <Link href="/task" className={`level level--${step.state} level--${index}`}>{content}</Link>
+    ? <Link href={`/task/${step.id}`} className={`level level--${step.state} level--${index}`}>{content}</Link>
     : <div className={`level level--${step.state} level--${index}`}>{content}</div>;
 }
 

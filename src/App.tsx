@@ -38,6 +38,7 @@ export default function App() {
       <Route path="/quest" component={protectedPage(QuestPage)} />
       <Route path="/notes/:id" component={protectedPage(NotesPage)} />
       <Route path="/notes" component={protectedPage(NotesPage)} />
+      <Route path="/task/:id" component={protectedPage(TaskPage)} />
       <Route path="/task" component={protectedPage(TaskPage)} />
       <Route path="/rewards" component={protectedPage(RewardsPage)} />
       <Route path="/profile" component={protectedPage(ProfilePage)} />
