@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { publicAppUrl } from './appUrl';
 
 export async function createFriendInvite(userId: string) {
   return supabase.from('friend_invites').insert({ inviter_id: userId })
@@ -11,7 +12,7 @@ export async function acceptFriendInvite(token: string) {
 }
 
 export function friendInviteUrl(token: string) {
-  return `${window.location.origin}/friends/invite/${token}`;
+  return publicAppUrl(`/friends/invite/${token}`);
 }
 
 export function readInviteToken(value: string) {

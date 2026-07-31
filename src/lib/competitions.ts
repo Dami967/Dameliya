@@ -1,5 +1,6 @@
 import type { ChallengeDraft } from './collaborationData';
 import { supabase } from './supabase';
+import { publicAppUrl } from './appUrl';
 
 export type Competition = {
   id: string; creator_id: string; title: string; type: string; starts_at: string;
@@ -64,7 +65,7 @@ export function acceptCompetitionInvite(token: string) {
 }
 
 export function competitionInviteUrl(token: string) {
-  return `${window.location.origin}/challenges/invite/${token}`;
+  return publicAppUrl(`/challenges/invite/${token}`);
 }
 
 export function readCompetitionInviteToken(value: string) {
