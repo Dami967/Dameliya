@@ -21,6 +21,9 @@ type GeminiResponse = {
     };
   }>;
 };
+type YouTubePlayerResponse = {
+  playabilityStatus?: { status?: string; playableInEmbed?: boolean };
+};
 
 function json(body: object, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -39,7 +42,23 @@ Deno.serve(async (req) => {
       return json({ error: 'AI пока не настроен. Попроси наставника проверить секрет.' }, 503);
     }
 
-    const body = (await req.json()) as { prompt?: unknown; system?: unknown };
+    const body = (await req.json()) as { prompt?: unknown; system?: unknown; action?: unknown; videoId?: unknown };
+    if (body.action === 'validate_youtube') {
+      const videoId = typeof body.videoId === 'string' && /^[\w-]{6,15}$/.test(body.videoId) ? body.videoId : '';
+      if (!videoId) return json({ valid: false });
+      const check = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: { client: { clientName: 'ANDROID', clientVersion: '20.10.38',
+            androidSdkVersion: 30, hl: 'ru', gl: 'KZ' } },
+          videoId,
+        }),
+      });
+      const video = (await check.json()) as YouTubePlayerResponse;
+      return json({ valid: check.ok && video.playabilityStatus?.status === 'OK'
+        && video.playabilityStatus?.playableInEmbed === true });
+    }
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
     const system = typeof body.system === 'string' ? body.system.trim() : '';
 

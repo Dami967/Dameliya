@@ -34,7 +34,8 @@ export function TaskPage() {
         setStep(questSteps.find((item) => item.id === selectedId) ?? questSteps[0]);
         return;
       }
-      const immediate = normalizeQuestStep(currentPlan.steps.find((item) => item.id === selectedId) ?? currentPlan.steps[0]);
+      const normalized = normalizeQuestStep(currentPlan.steps.find((item) => item.id === selectedId) ?? currentPlan.steps[0]);
+      const immediate = { ...normalized, details: { ...normalized.details!, resources: [] } };
       setPlan({ ...currentPlan, steps: currentPlan.steps.map((item) => item.id === immediate.id ? immediate : item) });
       setStep(immediate);
       const saved = await loadTaskRecord(session.user.id, currentPlan.goal, immediate.id);

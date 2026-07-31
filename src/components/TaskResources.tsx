@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { askAi, parseAiJson } from '../lib/ai';
+import { askAi, parseAiJson, validateYoutubeVideo } from '../lib/ai';
 import type { QuestResource } from '../lib/questData';
 import type { TaskChatMessage } from '../lib/taskRecords';
 import { TaskMentor } from './TaskMentor';
@@ -44,7 +44,8 @@ function VideoLesson({ resource, notes, task, chat, onNotes, onChat, onClose }: 
     );
     try {
       const alternative = parseAiJson<QuestResource>(result.text ?? '');
-      if (!youtubeEmbed(alternative.url) || alternative.url === activeVideo.url) throw new Error();
+      if (!youtubeEmbed(alternative.url) || alternative.url === activeVideo.url
+        || !await validateYoutubeVideo(alternative.url)) throw new Error();
       setActiveVideo({ ...alternative, type: 'video' }); setMessage('Новое видео готово ✓');
     } catch {
       setMessage(result.error?.message ?? 'Не получилось найти замену. Попробуй ещё раз.');

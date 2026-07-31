@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
-import type { QuestStep, QuestTaskDetails } from './questData';
-import { askAi, parseAiJson } from './ai';
+import type { QuestResource, QuestStep, QuestTaskDetails } from './questData';
+import { askAi, parseAiJson, validateYoutubeVideo } from './ai';
 import { loadProfile } from './userProfile';
 
 export type AiQuestPlan = {
@@ -30,15 +30,15 @@ export async function createAiQuest(userId: string, goal: string, request: strin
       map_title: string;
       steps: Array<{ title: string; subtitle: string } & QuestTaskDetails>;
     }>(text ?? '');
-    const steps: QuestStep[] = parsed.steps.slice(0, 10).map((step, index) => ({
+    const steps: QuestStep[] = await Promise.all(parsed.steps.slice(0, 10).map(async (step, index) => ({
       id: index + 1,
       title: step.title,
       subtitle: index === 0 ? 'Текущее задание' : step.subtitle,
       state: index === 0 ? 'active' : 'locked',
       xp: 50 + index * 30,
       icon: index === 9 ? 'rocket' : index % 3 === 0 ? 'sparkles' : 'book',
-      details: normalizeDetails(step, step.subtitle),
-    }));
+      details: await verifyDetailsResources(normalizeDetails(step, step.subtitle), `${goal}: ${step.title}`),
+    })));
     if (steps.length !== 10) throw new Error('AI returned an incomplete plan');
     return supabase.from('ai_quest_plans').upsert({
       user_id: userId, goal, map_title: parsed.map_title, steps, updated_at: new Date().toISOString(),
@@ -52,7 +52,11 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
   const step = plan.steps.find((item) => item.id === stepId);
   if (!step) return { data: null, error: null };
   if (step.details && Array.isArray(step.details.resources)) {
-    return { data: normalizeQuestStep(step), error: null };
+    const normalized = normalizeQuestStep(step);
+    const details = await verifyDetailsResources(normalized.details!, `${plan.goal}: ${step.title}`);
+    const updatedStep = { ...normalized, details };
+    await saveUpdatedStep(userId, plan, updatedStep);
+    return { data: updatedStep, error: null };
   }
   const { data: profile } = await loadProfile(userId);
   const context = profile ? `Интересы: ${profile.interests.join(', ')}. Сильные стороны: ${profile.strengths}.
@@ -66,15 +70,20 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
   );
   if (result.error) return { data: { ...step, details: fallbackDetails(step) }, error: result.error };
   try {
-    const details = normalizeDetails(parseAiJson<QuestTaskDetails>(result.text ?? ''), step.subtitle);
+    const generated = normalizeDetails(parseAiJson<QuestTaskDetails>(result.text ?? ''), step.subtitle);
+    const details = await verifyDetailsResources(generated, `${plan.goal}: ${step.title}`);
     const updatedStep = { ...step, details };
-    const steps = plan.steps.map((item) => item.id === stepId ? updatedStep : item);
-    await supabase.from('ai_quest_plans').update({ steps, updated_at: new Date().toISOString() })
-      .eq('user_id', userId);
+    await saveUpdatedStep(userId, plan, updatedStep);
     return { data: updatedStep, error: null };
   } catch {
     return { data: { ...step, details: fallbackDetails(step) }, error: new Error('Не удалось адаптировать задание.') };
   }
+}
+
+async function saveUpdatedStep(userId: string, plan: AiQuestPlan, step: QuestStep) {
+  const steps = plan.steps.map((item) => item.id === step.id ? step : item);
+  await supabase.from('ai_quest_plans').update({ steps, updated_at: new Date().toISOString() })
+    .eq('user_id', userId);
 }
 
 export function normalizeQuestStep(step: QuestStep): QuestStep {
@@ -118,4 +127,37 @@ function fallbackDetails(step: QuestStep): QuestTaskDetails {
 
 function isSafeResourceUrl(value: string) {
   try { return new URL(value).protocol === 'https:'; } catch { return false; }
+}
+
+async function verifyDetailsResources(details: QuestTaskDetails, topic: string) {
+  const resources: QuestResource[] = [];
+  for (const resource of details.resources) {
+    if (resource.type !== 'video') { resources.push(resource); continue; }
+    if (await validateYoutubeVideo(resource.url)) { resources.push(resource); continue; }
+    const replacement = await findVerifiedVideo(topic, resource.url);
+    if (replacement) resources.push(replacement);
+  }
+  return { ...details, resources };
+}
+
+async function findVerifiedVideo(topic: string, unavailableUrl: string) {
+  let excluded = unavailableUrl;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const result = await askAi(
+      `Тема: ${topic}. Подбери существующий бесплатный YouTube-видеоурок, разрешённый для встраивания.
+Не используй эти ссылки: ${excluded}. Верни только JSON: {"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"польза"}.`,
+      'Ты подбираешь реальные образовательные видео. Не выдумывай video ID. Отвечай только JSON.',
+    );
+    try {
+      const candidate = parseAiJson<QuestResource>(result.text ?? '');
+      if (youtubeResource(candidate) && await validateYoutubeVideo(candidate.url)) return candidate;
+      excluded += `, ${candidate.url}`;
+    } catch { /* пробуем следующий вариант */ }
+  }
+  return null;
+}
+
+function youtubeResource(resource: QuestResource) {
+  return resource.type === 'video' && isSafeResourceUrl(resource.url)
+    && (resource.url.includes('youtube.com/') || resource.url.includes('youtu.be/'));
 }

@@ -19,6 +19,24 @@ export function parseAiJson<T>(text: string): T {
   return JSON.parse(cleaned) as T;
 }
 
+export async function validateYoutubeVideo(url: string) {
+  const videoId = youtubeId(url);
+  if (!videoId) return false;
+  const { data, error } = await supabase.functions.invoke<{ valid?: unknown }>('ai', {
+    body: { action: 'validate_youtube', videoId },
+  });
+  return !error && data?.valid === true;
+}
+
+function youtubeId(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.hostname.includes('youtu.be')) return url.pathname.slice(1);
+    if (url.pathname.startsWith('/embed/')) return url.pathname.split('/')[2];
+    return url.searchParams.get('v');
+  } catch { return null; }
+}
+
 function readFunctionError(message: string) {
   if (message.includes('non-2xx')) return 'AI сейчас недоступен. Попробуй ещё раз немного позже.';
   return message || 'Не получилось обратиться к AI.';
