@@ -18,6 +18,7 @@ export function FriendsList({ friends, onOpen, onChat, onPin, onChallenge }: Pro
       </div>
       <div className="friend-grid">
         {sorted.map((friend) => <FriendCard key={friend.id} user={friend} onOpen={onOpen} onChat={onChat} onPin={onPin} />)}
+        {!sorted.length && <p>Здесь появятся реальные друзья после принятия приглашения по ссылке или QR-коду.</p>}
       </div>
     </section>
   );

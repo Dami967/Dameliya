@@ -14,6 +14,19 @@ type SocialProfileRow = {
   last_seen_at: string;
 };
 
+function toSocialUser(profile: SocialProfileRow, pinned = false): SocialUser {
+  const placeholder = ['Искатель целей', 'Пользователь', 'Goal Seeker'].includes(profile.display_name.trim());
+  return {
+    id: profile.user_id,
+    name: !placeholder && profile.display_name ? profile.display_name : profile.username || 'Пользователь GoalQuest',
+    username: profile.username || profile.user_id.slice(0, 8),
+    avatar: profile.display_name.slice(0, 2).toUpperCase() || 'GQ',
+    level: profile.level, xp: profile.xp, streak: profile.streak,
+    online: Date.now() - new Date(profile.last_seen_at).getTime() < 5 * 60 * 1000,
+    interests: profile.interests, goal: profile.main_goal || 'Главная цель скрыта', pinned,
+  };
+}
+
 export async function loadMutualFriends(userId: string): Promise<SocialUser[]> {
   const [{ data: outgoing }, { data: incoming }] = await Promise.all([
     supabase.from('follows').select('following_id,is_pinned').eq('follower_id', userId),
@@ -25,19 +38,14 @@ export async function loadMutualFriends(userId: string): Promise<SocialUser[]> {
   const { data } = await supabase.from('social_profiles').select('*')
     .in('user_id', mutual.map((row) => row.following_id));
   const pinned = new Set(mutual.filter((row) => row.is_pinned).map((row) => row.following_id));
-  return ((data ?? []) as SocialProfileRow[]).map((profile) => ({
-    id: profile.user_id,
-    name: profile.display_name || 'Искатель целей',
-    username: profile.username || profile.user_id.slice(0, 8),
-    avatar: profile.display_name.slice(0, 2).toUpperCase() || 'GQ',
-    level: profile.level,
-    xp: profile.xp,
-    streak: profile.streak,
-    online: Date.now() - new Date(profile.last_seen_at).getTime() < 5 * 60 * 1000,
-    interests: profile.interests,
-    goal: profile.main_goal || 'Главная цель скрыта',
-    pinned: pinned.has(profile.user_id),
-  }));
+  return ((data ?? []) as SocialProfileRow[]).map((profile) =>
+    toSocialUser(profile, pinned.has(profile.user_id)));
+}
+
+export async function loadRealPeople(userId: string) {
+  const { data, error } = await supabase.from('social_profiles').select('*')
+    .neq('user_id', userId).order('last_seen_at', { ascending: false }).limit(50);
+  return { data: ((data ?? []) as SocialProfileRow[]).map((profile) => toSocialUser(profile)), error };
 }
 
 export function subscribeToFriendships(userId: string, refresh: () => void) {
