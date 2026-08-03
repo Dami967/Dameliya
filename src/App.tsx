@@ -23,14 +23,18 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { FriendInvitePage } from './pages/FriendInvitePage';
 import { ChallengeInvitePage } from './pages/ChallengeInvitePage';
 import { NotesPage } from './pages/NotesPage';
+import { RecoveryLinkErrorPage } from './pages/RecoveryLinkErrorPage';
 
 const protectedPage = (Page: React.ComponentType) => () => <RequireAuth><Page /></RequireAuth>;
 
 // Здесь живут только маршруты. Сами экраны складывай в src/pages/.
 export default function App() {
+  const params = new URLSearchParams(window.location.search);
+  const RootPage = params.has('error') && params.has('error_code') ? RecoveryLinkErrorPage : WelcomePage;
+
   return (
     <Switch>
-      <Route path="/" component={WelcomePage} />
+      <Route path="/" component={RootPage} />
       <Route path="/home" component={protectedPage(HomePage)} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/auth/callback" component={AuthCallbackPage} />

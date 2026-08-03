@@ -3,21 +3,24 @@ import { Link } from 'wouter';
 import { AppShell } from '../components/AppShell';
 import { DressedEagle } from '../components/DressedEagle';
 import { Icon } from '../components/Icon';
-import { achievements } from '../lib/questData';
 import { rewards, type Reward } from '../lib/rewardsData';
 import { loadUserRewards } from '../lib/userRewards';
 import { useSession } from '../lib/useSession';
 import { loadProfile, type UserProfile, xpProgress } from '../lib/userProfile';
+import { loadHomeProgress } from '../lib/homeProgress';
 
 export function ProfilePage() {
   const { session, loading } = useSession();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [equipped, setEquipped] = useState<Reward[]>([]);
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     if (!session) return;
-    void Promise.all([loadProfile(session.user.id), loadUserRewards(session.user.id)]).then(([profileResult, rewardResult]) => {
+    void Promise.all([loadProfile(session.user.id), loadUserRewards(session.user.id), loadHomeProgress(session.user.id)])
+      .then(([profileResult, rewardResult, progress]) => {
       setProfile(profileResult.data);
+      setStreak(progress.streak);
       const ids = (rewardResult.data ?? []).filter((item) => item.equipped).map((item) => item.reward_id);
       setEquipped(rewards.filter((reward) => ids.includes(reward.id)));
     });
@@ -30,6 +33,11 @@ export function ProfilePage() {
   const completion = profile.completed_goals
     ? Math.min(100, Math.round((profile.completed_goals / Math.max(profile.completed_goals + 2, 1)) * 100))
     : 0;
+  const achievements = [
+    { icon: 'flame', title: streak >= 7 ? '7 дней в пути' : `${streak} / 7 дней`, tone: 'orange', unlocked: streak >= 7 },
+    { icon: 'target', title: 'Первый шаг', tone: 'blue', unlocked: profile.completed_tasks > 0 },
+    { icon: 'zap', title: 'На волне', tone: 'purple', unlocked: profile.momentum >= 100 },
+  ];
 
   return (
     <AppShell>
@@ -52,14 +60,14 @@ export function ProfilePage() {
         <Stat icon="target" value={`${completion}%`} label="целей завершено" tone="blue" />
         <Stat icon="check" value={profile.completed_tasks.toString()} label="заданий выполнено" tone="mint" />
         <Stat icon="clock" value={`${Math.round(profile.learning_minutes / 60)} ч`} label="время обучения" tone="purple" />
-        <Stat icon="flame" value={profile.streak.toString()} label="дней подряд" tone="orange" />
+        <Stat icon="flame" value={streak.toString()} label="дней подряд" tone="orange" />
         <Stat icon="zap" value={profile.momentum.toString()} label="AI Momentum" tone="pink" />
       </section>
       <div className="profile-grid">
         <section className="profile-section">
           <div className="section-heading"><h2>Достижения</h2><span className="link-label">Уровень {profile.level}</span></div>
           <div className="achievement-list">{achievements.map((item) => (
-            <div className={`achievement achievement--${item.tone}`} key={item.title}>
+            <div className={`achievement achievement--${item.tone} ${item.unlocked ? '' : 'is-locked'}`} key={item.title}>
               <span><Icon name={item.icon} /></span><b>{item.title}</b>
             </div>
           ))}</div>

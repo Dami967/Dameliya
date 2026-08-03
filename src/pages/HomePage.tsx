@@ -6,7 +6,7 @@ import { AiTip, QuickActions, TodayTasks, WeekProgress } from '../components/Hom
 import { loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { UserBalance } from '../components/UserBalance';
-import { currentUserName, useCurrentProfile } from '../lib/useCurrentProfile';
+import { currentUserName, currentUsername, useCurrentProfile } from '../lib/useCurrentProfile';
 import { loadHomeProgress, type HomeProgress } from '../lib/homeProgress';
 
 const emptyProgress: HomeProgress = {
@@ -39,13 +39,19 @@ export function HomePage() {
   const done = plan?.steps.filter((step) => step.state === 'done').length ?? 0;
   const total = plan?.steps.length ?? 0;
   const taskUrl = active ? `/task/${active.id}?plan=${plan?.id}` : '/mentor?new=1';
+  const userName = currentUserName(session?.user, profile);
+  const username = currentUsername(session?.user, profile);
+  const needsName = !profile?.display_name?.trim()
+    || ['Искатель целей', 'Пользователь', 'Goal Seeker'].includes(profile.display_name.trim());
   return (
     <AppShell>
       <header className="topbar">
-        <div><p>Твоё новое приключение</p><h1>Привет, {currentUserName(session?.user, profile)}! <span>👋</span></h1></div>
+        <div><p>Твоё новое приключение</p><h1>Привет, {needsName
+          ? <Link href="/profile/edit" className="home-name-prompt">добавь имя</Link> : userName}!
+          <span className="home-username">{username}</span> <span>👋</span></h1></div>
         <div className="top-stats">
           <UserBalance />
-          <div className="avatar">{currentUserName(session?.user, profile)[0]?.toUpperCase() || 'G'}</div>
+          <div className="avatar">{userName[0]?.toUpperCase() || 'G'}</div>
         </div>
       </header>
 

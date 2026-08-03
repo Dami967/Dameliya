@@ -12,6 +12,8 @@
 .auth-form input:focus, .auth-form select:focus { border-color: #8c83e8; box-shadow: 0 0 0 4px #6757e810; }.language-hint { color: var(--muted); font-size: 7px; font-weight: 500; }.text-button { justify-self: end; margin-top: -7px; border: 0; background: none; color: var(--blue); font-size: 9px; font-weight: 800; }
 .auth-submit { height: 48px; border: 0; border-radius: 12px; color: #fff; background: linear-gradient(100deg, var(--blue), var(--purple)); box-shadow: 0 10px 24px #4f4ed633; font-weight: 800; }
 .auth-message { padding: 10px 12px; border-radius: 10px; color: #6a4ec5 !important; background: #f1edff; text-align: center; }.auth-switch, .guest-button { width: 100%; margin-top: 13px; }.auth-switch { border: 0; background: none; color: var(--blue); font-size: 10px; font-weight: 800; }
+.existing-account-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.existing-account-actions button{min-height:44px;padding:9px;border:1px solid #dcd7ff;border-radius:11px;color:var(--blue);background:#fff;font-size:9px;font-weight:800}.existing-account-actions button:first-child{border:0;color:#fff;background:linear-gradient(120deg,var(--blue),var(--purple))}
+@media(max-width:480px){.existing-account-actions{grid-template-columns:1fr}.existing-account-actions button{min-height:50px;font-size:14px}}
 .guest-button { color: var(--muted); }.auth-terms { display: block; margin-top: 20px; color: #a1a5b3; font-size: 7px; line-height: 1.6; text-align: center; }
 .center-loader, .empty-state { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 25px; color: var(--muted); text-align: center; }.empty-state h1, .empty-state p { margin: 0; }.empty-state p { max-width: 360px; }
 @media (max-width: 760px) { .auth-page { display: block; }.auth-showcase { min-height: 235px; padding: 24px; }.auth-showcase__copy { margin-top: 45px; }.auth-showcase h1 { font-size: 34px; }.auth-showcase p { display: none; }.auth-eagle { width: 130px; right: 15px; bottom: -22px; border-radius: 25px; }.auth-panel { padding: 38px 22px; } }
@@ -22,6 +24,7 @@
 .auth-callback__logo { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; color: #fff; background: linear-gradient(145deg, var(--blue), var(--purple)); box-shadow: 0 14px 30px #5148d43d; font-size: 30px; }
 .auth-callback h1 { margin: 18px 0 4px; font-size: 27px; letter-spacing: -.05em; }.auth-callback p { color: var(--muted); font-size: 12px; }
 .auth-callback__loader { width: 24px; height: 24px; margin-top: 12px; border: 3px solid #dedbed; border-top-color: var(--purple); border-radius: 50%; animation: auth-spin .75s linear infinite; }
+.auth-callback__actions{display:grid;width:min(290px,90vw);gap:8px;margin-top:16px}.auth-callback__actions .auth-submit{display:grid;place-items:center;text-decoration:none}.auth-callback__actions .auth-switch{display:grid;place-items:center;min-height:38px;text-decoration:none}
 @keyframes auth-spin { to { transform: rotate(360deg); } }
 .password-recovery { width: min(430px, 100%); }.password-recovery > h2 { margin: 10px 0 7px; font-size: 30px; letter-spacing: -.045em; }
 .password-recovery > p { margin: 0 0 25px; color: var(--muted); font-size: 11px; line-height: 1.6; }
@@ -34,6 +37,7 @@
 .reset-password-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 50% 25%, #e7e1ff, transparent 30%), #f9f9fd; }
 .reset-password-card { width: min(440px, 100%); padding: 38px; border: 1px solid var(--line); border-radius: 24px; background: #fff; box-shadow: 0 24px 65px #31396417; }
 .reset-password-card .auth-callback__logo { margin-bottom: 22px; }.reset-password-card h1 { margin: 10px 0 8px; font-size: 29px; letter-spacing: -.045em; }
+.recovery-error-card{display:grid;gap:20px}.recovery-link-warning{display:flex;gap:13px;padding:15px;border:1px solid #f0d28b;border-radius:14px;background:#fff8e7}.recovery-link-warning>span{font-size:25px}.recovery-link-warning h1{margin:0 0 5px;font-size:18px}.recovery-link-warning p{margin:0;color:#7b6740;font-size:9px;line-height:1.55}.recovery-error-card .password-recovery{padding:0}
 .reset-password-card > p { margin: 0 0 24px; color: var(--muted); font-size: 12px; }.reset-password-card > .auth-submit { width: 100%; }
 .password-input { position: relative; }.password-input input { width: 100%; padding-right: 88px; }
 .password-input button { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); padding: 6px; border: 0; color: var(--blue); background: transparent; font-size: 9px; font-weight: 800; }
