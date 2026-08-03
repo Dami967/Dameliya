@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'wouter';
 import { Icon } from './Icon';
 import { NewNoteButton } from './NewNoteButton';
@@ -6,8 +7,9 @@ import type { HomeProgress } from '../lib/homeProgress';
 
 export function TodayTasks({ plan }: { plan: AiQuestPlan | null }) {
   const activeIndex = plan?.steps.findIndex((step) => step.state === 'active') ?? -1;
+  const groupStart = activeIndex >= 0 ? Math.floor(activeIndex / 3) * 3 : 0;
   const tasks = plan && activeIndex >= 0
-    ? plan.steps.slice(activeIndex, activeIndex + 3)
+    ? plan.steps.slice(groupStart, groupStart + 3)
     : plan?.steps.filter((step) => step.state === 'done').slice(-3) ?? [];
   const completed = tasks.filter((task) => task.state === 'done').length;
   return (
@@ -28,32 +30,31 @@ export function TodayTasks({ plan }: { plan: AiQuestPlan | null }) {
   );
 }
 
-function dailyTip(goal: string | undefined, task: string | undefined, progress: HomeProgress) {
-  const variant = Math.floor(Date.now() / 86_400_000) % 3;
-  if (progress.completedToday > 0) return [
-    `Отличный темп: сегодня выполнено заданий — ${progress.completedToday}. Запиши, что получилось лучше всего.`,
-    `Сегодня уже готово ${progress.completedToday}. Сделай короткую паузу и выбери следующий небольшой шаг.`,
-    `Ты продвинулась сегодня на ${progress.completedToday} заданий. Закрепи результат одной заметкой.`,
-  ][variant];
-  if (progress.streak > 0 && task) return [
-    `Сохрани серию из ${progress.streak} дн.: начни «${task}» всего с 10 минут сосредоточенной работы.`,
-    `Серия уже ${progress.streak} дн. Открой «${task}» и выполни сначала самый лёгкий пункт.`,
-    `Не прерывай ритм: сегодня достаточно сделать один конкретный шаг в задании «${task}».`,
-  ][variant];
-  if (task) return [
-    `Твой следующий шаг — «${task}». Сначала сделай самую маленькую понятную часть задания.`,
-    `Начни «${task}» с результата, который можно получить за 15 минут.`,
-    `Открой «${task}» и выбери один пункт, который реально закончить сегодня.`,
-  ][variant];
-  if (goal) return `Вернись к цели «${goal}» и выбери один результат, которого реально достичь сегодня.`;
-  return 'Начни с одной важной цели — Кью поможет разбить её на небольшие шаги.';
+const qFacts = [
+  'Осьминоги имеют три сердца, а их кровь голубая из-за содержащей медь молекулы гемоцианина.',
+  'Мозг лучше запоминает материал, когда повторения распределены по нескольким дням, а не сделаны за один раз.',
+  'На Венере один оборот вокруг своей оси длится дольше, чем её год вокруг Солнца.',
+  'Во время короткой прогулки внимание часто восстанавливается, поэтому после неё легче вернуться к сложной задаче.',
+  'Пчёлы передают другим пчёлам направление к цветам с помощью особого танца.',
+  'Небольшие цели легче начать: мозгу проще выполнить конкретное действие, чем неопределённое «заняться делом».',
+  'Свет от Солнца добирается до Земли примерно за 8 минут 20 секунд.',
+  'Сон помогает мозгу закреплять новые знания, полученные в течение дня.',
+];
+
+function factForThisVisit() {
+  const previous = Number(sessionStorage.getItem('goalquest_last_fact'));
+  const choices = qFacts.map((_, index) => index).filter((index) => index !== previous);
+  const index = choices[Math.floor(Math.random() * choices.length)] ?? 0;
+  sessionStorage.setItem('goalquest_last_fact', String(index));
+  return qFacts[index];
 }
 
-export function AiTip({ goal, task, progress }: { goal?: string; task?: string; progress: HomeProgress }) {
+export function AiTip(_props: { goal?: string; task?: string; progress: HomeProgress }) {
+  const fact = useState(factForThisVisit)[0];
   return (
     <section className="home-panel ai-tip">
       <img src="/goalquest-q-tip-star.png" alt="Фиолетовая звезда GoalQuest" />
-      <div><span className="eyebrow">СОВЕТ ОТ КЬЮ</span><p>{dailyTip(goal, task, progress)}</p></div>
+      <div><span className="eyebrow">ИНТЕРЕСНЫЙ ФАКТ ОТ КЬЮ</span><p>{fact}</p></div>
     </section>
   );
 }

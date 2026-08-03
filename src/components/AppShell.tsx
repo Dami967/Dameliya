@@ -5,6 +5,7 @@ import { MomentumCard } from './MomentumCard';
 import { useSession } from '../lib/useSession';
 import { currentUserName, useCurrentProfile } from '../lib/useCurrentProfile';
 import { ReminderManager } from './ReminderManager';
+import { NotificationBell } from './NotificationBell';
 
 type AppShellProps = { children: React.ReactNode };
 
@@ -44,6 +45,7 @@ export function AppShell({ children }: AppShellProps) {
           <Icon name="arrow" size={16} />
         </Link>
       </aside>
+      {session && <div className="global-notifications"><NotificationBell userId={session.user.id} /></div>}
       <main className="main-content">{children}</main>
       <nav className="bottom-nav">
         {navigation.map((item) => (
