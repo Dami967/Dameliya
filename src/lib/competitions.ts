@@ -1,6 +1,7 @@
 import type { ChallengeDraft } from './collaborationData';
 import { supabase } from './supabase';
 import { publicAppUrl } from './appUrl';
+import { asReward, createGeneratedReward, saveGeneratedChallengeReward } from './generatedRewards';
 
 export type Competition = {
   id: string; creator_id: string; title: string; type: string; starts_at: string;
@@ -43,8 +44,12 @@ export async function answerCompetition(challengeId: string, userId: string, acc
   return answered;
 }
 
-export function finishCompetition(challengeId: string) {
-  return supabase.rpc('finish_challenge', { target_id: challengeId });
+export async function finishCompetition(challengeId: string) {
+  const result = await supabase.rpc('finish_challenge', { target_id: challengeId });
+  if (result.error || result.data !== '🏆 Все уникальные призы уже собраны') return result;
+  const generated = await createGeneratedReward('challenge');
+  if (!generated) return result;
+  return saveGeneratedChallengeReward(challengeId, asReward(generated));
 }
 
 export function cancelCompetition(challengeId: string) {

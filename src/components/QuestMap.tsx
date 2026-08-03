@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { questSteps, type QuestStep } from '../lib/questData';
 import { Icon } from './Icon';
 import { loadQuestChestOpenings, openQuestChest } from '../lib/questChests';
+import { asReward, createGeneratedReward, saveGeneratedChestReward } from '../lib/generatedRewards';
 
 export function QuestMap({ steps = questSteps, title = 'Долина больших идей', planId }: {
   steps?: QuestStep[]; title?: string; planId?: string;
@@ -77,8 +78,14 @@ function RewardStop({ title, unlocked, planId, chapterIndex, prize, onOpened }: 
     if (!planId || opening) return;
     setOpening(true);
     const result = await openQuestChest(planId, chapterIndex);
+    if (!result.error && result.data === '🏆 Все уникальные призы уже собраны') {
+      const generated = await createGeneratedReward('chest');
+      if (generated) {
+        const saved = await saveGeneratedChestReward(planId, chapterIndex, asReward(generated));
+        if (!saved.error && typeof saved.data === 'string') onOpened(saved.data);
+      }
+    } else if (!result.error && typeof result.data === 'string') onOpened(result.data);
     setOpening(false);
-    if (!result.error && typeof result.data === 'string') onOpened(result.data);
   }
   return <button type="button" disabled={!unlocked || Boolean(prize) || opening} onClick={() => void open()}
     className={`reward-stop ${unlocked ? 'is-ready' : 'is-locked'} ${prize ? 'is-opened' : ''}`}>

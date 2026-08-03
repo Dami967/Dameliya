@@ -11,6 +11,7 @@ import { useSession } from '../lib/useSession';
 import { NewRewardToast } from '../components/NewRewardToast';
 import { UserBalance } from '../components/UserBalance';
 import { ChestPreview } from '../components/ChestPreview';
+import { asReward, loadGeneratedRewards } from '../lib/generatedRewards';
 
 type Section = 'collection' | 'expeditions' | 'competitions';
 
@@ -27,26 +28,30 @@ export function RewardsPage() {
   const [showNewReward, setShowNewReward] = useState(true);
   const [showChestPreview, setShowChestPreview] = useState(() =>
     new URLSearchParams(window.location.search).get('preview') === 'chest');
+  const [aiRewards, setAiRewards] = useState<Reward[]>([]);
 
   useEffect(() => {
     if (!session) return;
-    void loadUserRewards(session.user.id).then(({ data }) => {
-      setEquipped((data ?? []).filter((item) => item.equipped).map((item) => item.reward_id));
+    void Promise.all([loadUserRewards(session.user.id), loadGeneratedRewards()]).then(([owned, generated]) => {
+      setEquipped((owned.data ?? []).filter((item) => item.equipped).map((item) => item.reward_id));
+      setAiRewards((generated.data ?? []).map((item) => asReward(item)));
     });
   }, [session]);
 
+  const allRewards = [...aiRewards, ...rewards];
+
   const visibleRewards = useMemo(
-    () => category === 'all' ? rewards : rewards.filter((reward) => reward.category === category),
-    [category],
+    () => category === 'all' ? allRewards : allRewards.filter((reward) => reward.category === category),
+    [aiRewards, category],
   );
-  const collected = rewards.filter((reward) => reward.unlocked).length;
-  const equippedRewards = rewards.filter((reward) => equipped.includes(reward.id));
+  const collected = allRewards.filter((reward) => reward.unlocked).length;
+  const equippedRewards = allRewards.filter((reward) => equipped.includes(reward.id));
 
   async function equipReward() {
     if (!selected || !isWearableReward(selected)) return;
     const isEquipped = equipped.includes(selected.id);
     setSaving(true);
-    const sameCategory = rewards.filter((item) => item.category === selected.category).map((item) => item.id);
+    const sameCategory = allRewards.filter((item) => item.category === selected.category).map((item) => item.id);
     if (session) await equipRewardForCategory(session.user.id, selected, !isEquipped, sameCategory);
     setEquipped((current) => isEquipped ? current.filter((id) => id !== selected.id)
       : [...current.filter((id) => !sameCategory.includes(id)), selected.id]);
@@ -68,9 +73,9 @@ export function RewardsPage() {
       </nav>
 
       {section === 'collection' && <>
-        <RewardsHero collected={collected} total={rewards.length} equipped={equippedRewards} />
+        <RewardsHero collected={collected} total={allRewards.length} equipped={equippedRewards} />
         <div className="collection-heading"><div><h2>Коллекция наград</h2><p>Нажми на предмет, чтобы узнать условие или примерить его.</p></div>
-          <span>{collected}/{rewards.length} открыто</span></div>
+          <span>{collected}/{allRewards.length} открыто</span></div>
         <nav className="category-filter">
           {rewardCategories.map((item) => <button key={item.id} className={category === item.id ? 'is-active' : ''}
             onClick={() => setCategory(item.id)}><span>{item.icon}</span>{item.label}</button>)}
