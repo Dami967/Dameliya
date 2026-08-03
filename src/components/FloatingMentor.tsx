@@ -6,7 +6,7 @@ import { loadSettings } from '../lib/userProfile';
 import { useSession } from '../lib/useSession';
 import { Icon } from './Icon';
 import { AiComposer } from './AiComposer';
-import { loadAiQuest } from '../lib/aiQuest';
+import { loadActiveQuest } from '../lib/activeQuest';
 import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
 import { loadInterviewContext } from '../lib/interviewContext';
 
@@ -45,13 +45,17 @@ export function FloatingMentor() {
     setAnswer('');
     const selectedLanguage = languageName(language);
     const [planResult, interview] = session
-      ? await Promise.all([loadAiQuest(session.user.id), loadInterviewContext(session.user.id)])
+      ? await Promise.all([loadActiveQuest(session.user.id,
+        new URLSearchParams(window.location.search).get('plan')), loadInterviewContext(session.user.id)])
       : [{ data: null }, 'Interview data is unavailable.'] as const;
     const plan = planResult.data;
-    const context = plan ? `Current goal: ${plan.goal}. Current step: ${plan.steps.find((step) => step.state === 'active')?.title || 'not selected'}.\n` : '';
+    const context = plan ? `PRIMARY AND CURRENT MAP: ${plan.map_title}. CURRENT GOAL: ${plan.goal}.
+Current step: ${plan.steps.find((step) => step.state === 'active')?.title || 'not selected'}.
+Focus only on this map. Do not replace it with another user goal unless the user explicitly asks to switch.\n` : '';
     const result = await askAi(`${interview}\n${context}${text.trim()}`, `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
 ${conciseMentorRules}
 Never add combat or gambling mechanics. Do not claim professional medical, legal or financial expertise.
+The current map in the prompt always has priority over interests and other goals from the interview.
 Understand attached images, documents and voice messages when present.`, attachments, true);
     setAnswer(compactMentorReply(result.text ?? fallback(language)));
     setBusy(false);

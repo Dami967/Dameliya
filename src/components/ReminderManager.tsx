@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { loadAiQuest } from '../lib/aiQuest';
+import { loadActiveQuest } from '../lib/activeQuest';
 import { loadHomeProgress } from '../lib/homeProgress';
 import { loadSettings } from '../lib/userProfile';
 
@@ -27,7 +27,7 @@ export function ReminderManager({ userId }: ReminderManagerProps) {
         timer = window.setTimeout(() => void showReminder(useNotification, reminderTime), millisecondsUntilTomorrow(reminderTime));
         return;
       }
-      const [progress, quest] = await Promise.all([loadHomeProgress(userId), loadAiQuest(userId)]);
+      const [progress, quest] = await Promise.all([loadHomeProgress(userId), loadActiveQuest(userId)]);
       if (!active) return;
       timer = window.setTimeout(() => void showReminder(useNotification, reminderTime), millisecondsUntilTomorrow(reminderTime));
       if (progress.completedToday > 0) return;

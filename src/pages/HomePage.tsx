@@ -8,6 +8,7 @@ import { useSession } from '../lib/useSession';
 import { UserBalance } from '../components/UserBalance';
 import { currentUserName, currentUsername, useCurrentProfile } from '../lib/useCurrentProfile';
 import { loadHomeProgress, type HomeProgress } from '../lib/homeProgress';
+import { activeQuestId, rememberActiveQuest } from '../lib/activeQuest';
 
 const emptyProgress: HomeProgress = {
   streak: 0, weekCounts: Array(7).fill(0), activeWeekdays: Array(7).fill(false),
@@ -23,7 +24,13 @@ export function HomePage() {
   useEffect(() => {
     if (!session) return;
     const refresh = () => void loadHomeProgress(session.user.id).then(setProgress);
-    void loadAiQuests(session.user.id).then(({ data }) => setPlans(data ?? []));
+    void loadAiQuests(session.user.id).then(({ data }) => {
+      const loaded = data ?? [];
+      setPlans(loaded);
+      const activeId = activeQuestId();
+      const index = loaded.findIndex((plan) => plan.id === activeId);
+      setPlanIndex(index >= 0 ? index : 0);
+    });
     refresh();
     const interval = window.setInterval(refresh, 5 * 60 * 1000);
     window.addEventListener('profile-stats-changed', refresh);
@@ -68,9 +75,9 @@ export function HomePage() {
         </div>
         <div className="hero-quest-actions">
           {plans.length > 1 && <div className="hero-quest-switcher">
-            <button onClick={() => setPlanIndex((planIndex - 1 + plans.length) % plans.length)}
+            <button onClick={() => selectPlan((planIndex - 1 + plans.length) % plans.length)}
               aria-label="Предыдущий квест">←</button><span>{planIndex + 1} / {plans.length}</span>
-            <button onClick={() => setPlanIndex((planIndex + 1) % plans.length)} aria-label="Следующий квест">→</button>
+            <button onClick={() => selectPlan((planIndex + 1) % plans.length)} aria-label="Следующий квест">→</button>
           </div>}
           <Link href={taskUrl} className="primary-button">{active ? 'Продолжить' : 'Создать цель'} <Icon name="arrow" size={18} /></Link>
         </div>
@@ -108,4 +115,9 @@ export function HomePage() {
       </aside>
     </AppShell>
   );
+
+  function selectPlan(index: number) {
+    setPlanIndex(index);
+    if (plans[index]) rememberActiveQuest(plans[index].id);
+  }
 }

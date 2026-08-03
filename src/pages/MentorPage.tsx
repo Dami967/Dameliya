@@ -5,10 +5,11 @@ import { AppShell } from '../components/AppShell';
 import { Icon } from '../components/Icon';
 import { askAi } from '../lib/ai';
 import type { AiAttachment } from '../lib/aiAttachments';
-import { createAiQuest, loadAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
+import { createAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
 import { loadInterviewContext } from '../lib/interviewContext';
+import { loadActiveQuest, rememberActiveQuest } from '../lib/activeQuest';
 
 type Message = { role: 'q' | 'user'; text: string };
 
@@ -28,7 +29,7 @@ export function MentorPage() {
     void loadAiQuests(session.user.id).then(({ data }) => setPlans(data ?? []));
     if (params.get('new') === '1') { setMode('add'); setGoal(''); setRequest(''); return; }
     if (params.get('choose') === '1') { setMode(null); setGoal(''); setRequest(''); return; }
-    void loadAiQuest(session.user.id).then(({ data }) => data && setGoal(data.goal));
+    void loadActiveQuest(session.user.id).then(({ data }) => data && setGoal(data.goal));
   }, [session]);
   async function adaptMap() {
     if (!session || goal.trim().length < 2) return;
@@ -38,7 +39,7 @@ export function MentorPage() {
     const { data, error } = await createAiQuest(session.user.id, goal.trim(), request.trim(), editingId ?? undefined);
     setMessages((old) => [...old, { role: 'q', text: error ? error.message : `Готово! Я создал карту «${data?.map_title}» из 10 шагов.` }]);
     setBusy(false);
-    if (data && !error) navigate(`/quest?plan=${data.id}`);
+    if (data && !error) { rememberActiveQuest(data.id); navigate(`/quest?plan=${data.id}`); }
   }
   async function send(text: string, attachments: AiAttachment[] = []) {
     if (!text || busy) return;
@@ -59,7 +60,7 @@ export function MentorPage() {
       }}>＋ Добавить цель</button><button className={mode === 'edit' ? 'is-active' : ''} onClick={() => setMode('edit')}>✎ Изменить цель</button></div>
       {mode === 'edit' && <div className="goal-edit-list">{plans.map((plan) => <button
         className={editingId === plan.id ? 'is-active' : ''} key={plan.id} onClick={() => {
-          setEditingId(plan.id); setGoal(plan.goal); setRequest('');
+          setEditingId(plan.id); setGoal(plan.goal); setRequest(''); rememberActiveQuest(plan.id);
         }}>{plan.goal}</button>)}</div>}
       <textarea value={goal} onChange={(event) => setGoal(event.target.value)} placeholder="Например: подготовиться к IELTS за 4 месяца" maxLength={300} />
       <label>Как адаптировать маршрут?<textarea value={request} onChange={(event) => setRequest(event.target.value)} placeholder="У меня есть 30 минут в день, добавь больше практики…" /></label>

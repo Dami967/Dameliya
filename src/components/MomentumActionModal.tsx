@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { askAi, parseAiJson } from '../lib/ai';
-import { loadAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
+import { loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { loadQuestLearning } from '../lib/questLearning';
 import { supabase } from '../lib/supabase';
 import { detectLanguage, languageName } from '../lib/languages';
 import { loadInterviewContext } from '../lib/interviewContext';
+import { loadActiveQuest } from '../lib/activeQuest';
 
 type Quiz = { question: string; options: string[]; correct_index: number };
 
@@ -144,7 +145,7 @@ function countWords(value: string) {
 
 async function personalContext(userId: string, selectedPlan?: AiQuestPlan) {
   const [planResult, interview] = await Promise.all([
-    selectedPlan ? Promise.resolve({ data: selectedPlan }) : loadAiQuest(userId),
+    selectedPlan ? Promise.resolve({ data: selectedPlan }) : loadActiveQuest(userId),
     loadInterviewContext(userId),
   ]);
   const { data: latestPlan } = planResult;

@@ -7,6 +7,7 @@ import { QuestGoalPicker, QuestGoalTabs } from '../components/QuestGoalPicker';
 import { deleteAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { ensureQuestInsights } from '../lib/questInsights';
+import { activeQuestId, rememberActiveQuest } from '../lib/activeQuest';
 
 export function QuestPage() {
   const { session } = useSession();
@@ -21,7 +22,10 @@ export function QuestPage() {
     void loadAiQuests(session.user.id).then(({ data }) => {
       const loaded = data ?? [];
       setPlans(loaded);
-      setSelectedPlanId((current) => current ?? requestedId ?? loaded[0]?.id ?? null);
+      const preferred = requestedId ?? activeQuestId();
+      const selected = loaded.some((plan) => plan.id === preferred) ? preferred : loaded[0]?.id ?? null;
+      setSelectedPlanId((current) => current ?? selected);
+      if (selected) rememberActiveQuest(selected);
     });
   }, [session]);
 
@@ -43,12 +47,14 @@ export function QuestPage() {
     const next = plans[(index + plans.length) % plans.length];
     if (next) {
       setSelectedPlanId(next.id);
+      rememberActiveQuest(next.id);
       navigate(`/quest?plan=${next.id}`, { replace: true });
     }
   }
 
   function chooseById(id: string) {
     setSelectedPlanId(id);
+    rememberActiveQuest(id);
     navigate(`/quest?plan=${id}`, { replace: true });
   }
 
