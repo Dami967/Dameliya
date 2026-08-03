@@ -6,8 +6,9 @@ import { AiComposer } from './AiComposer';
 import { Icon } from './Icon';
 import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
 
-export function TaskMentor({ task, notes, learningContext = '', initialMessages = [], onMessages }: {
+export function TaskMentor({ task, notes, learningContext = '', initialMessages = [], readOnly = false, onMessages }: {
   task: string; notes: string; learningContext?: string; initialMessages?: TaskChatMessage[];
+  readOnly?: boolean;
   onMessages?: (messages: TaskChatMessage[]) => void;
 }) {
   const [messages, setMessages] = useState<TaskChatMessage[]>(initialMessages.length ? initialMessages : [
@@ -51,16 +52,16 @@ ${conversation || 'разговора ещё не было'}
 
   return <aside className="ai-panel">
     <div className="ai-panel__head"><span className="mentor-avatar">AI</span>
-      <div><h3>Кью · AI-наставник</h3><small><i /> Учитывает текущее задание</small></div></div>
+      <div><h3>Кью · AI-наставник</h3><small><i /> {readOnly ? 'Сохранённый разговор' : 'Учитывает текущее задание'}</small></div></div>
     <div className="ai-chat">{messages.map((message, index) =>
       <div className={message.role === 'q' ? 'ai-bubble' : 'user-bubble'} key={`${message.text}-${index}`}>{message.text}</div>)}
       {busy && <div className="ai-bubble">Кью думает…</div>}
     </div>
-    <div className="quick-prompts">
+    {!readOnly && <><div className="quick-prompts">
       <button disabled={busy} onClick={() => void ask('Разбей это задание на маленькие шаги')}>Разбить на шаги</button>
       <button disabled={busy} onClick={() => void ask('Я застрял. Предложи другой подход')}>Я застрял</button>
     </div>
-    <AiComposer busy={busy} name="chat" placeholder="Спроси наставника..." onSend={(text, files) => void ask(text, files)} />
+    <AiComposer busy={busy} name="chat" placeholder="Спроси наставника..." onSend={(text, files) => void ask(text, files)} /></>}
     <div className="ai-energy"><Icon name="sparkles" size={16} /><span>Ответ создаётся персонально для тебя</span></div>
   </aside>;
 }

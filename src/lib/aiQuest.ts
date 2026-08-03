@@ -44,7 +44,7 @@ export async function createAiQuest(userId: string, goal: string, request: strin
 Доступно времени в день: ${profile.daily_minutes} минут.` : '';
   const { text, error } = await askAi(
     `Цель пользователя: ${goal}. Пожелание: ${request || 'Создай понятный маршрут'}. ${profileContext}
-Верни ТОЛЬКО JSON без markdown: {"map_title":"короткое название","steps":[{"title":"действие","subtitle":"результат этапа","objective":"подробное персональное задание","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как его выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем смотреть"}]}]}.
+Верни ТОЛЬКО JSON без markdown: {"map_title":"короткое название","steps":[{"title":"действие","subtitle":"результат этапа","objective":"подробное персональное задание","expected_answer":"эталон готового правильного результата для проверки","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как его выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем смотреть"}]}]}.
 Ровно 10 конкретных, безопасных и выполнимых этапов. В каждом этапе ровно 3 пункта checklist и 0–2 полезных ресурса.
 Если предлагаешь посмотреть урок, статью или пройти тест, обязательно добавь рабочую публичную https-ссылку в resources.
 Для видео выбирай существующий ролик известного образовательного канала, доступный без входа. Не выдумывай video ID, адреса и не указывай платные материалы.`,
@@ -125,7 +125,7 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
 Данные из заметок и разговоров ВСЕХ пройденных этапов: ${learning || 'пройденных этапов пока нет'}.
 Сначала определи подтверждённый уровень, пробелы, успехи и предпочтения. Создай задание именно под них.
 Не проси повторно сообщить сведения, которые уже есть в данных. Не повторяй уже выполненное.
-Верни ТОЛЬКО JSON без markdown: {"objective":"подробное персональное задание","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем нужен"}]}.
+Верни ТОЛЬКО JSON без markdown: {"objective":"подробное персональное задание","expected_answer":"эталон готового правильного результата для проверки","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем нужен"}]}.
 В checklist должно быть ровно 3 выполнимых пункта. Если нужен урок или тест, обязательно добавь рабочую публичную https-ссылку.
 Для видео выбирай существующий ролик известного образовательного канала, доступный без входа; не выдумывай video ID.`,
     'Ты создаёшь персональное задание GoalQuest для подростка. Отвечай безопасно, конкретно и только валидным JSON на русском.',
@@ -175,6 +175,7 @@ function normalizeDetails(value: Partial<QuestTaskDetails>, fallback: string): Q
   const discovered = discoverResources(text, String(value.category || ''));
   return {
     objective: String(value.objective || fallback),
+    expected_answer: String(value.expected_answer || `Готовый результат «${fallback}», подтверждающий выполнение всех пунктов.`),
     duration_minutes: Math.min(180, Math.max(5, Number(value.duration_minutes) || 25)),
     category: String(value.category || 'Практика'),
     checklist,
@@ -186,6 +187,7 @@ function normalizeDetails(value: Partial<QuestTaskDetails>, fallback: string): Q
 function fallbackDetails(step: QuestStep): QuestTaskDetails {
   return {
     objective: step.subtitle || `Выполни этап «${step.title}» и сохрани конкретный результат.`,
+    expected_answer: `Конкретный результат этапа «${step.title}», подтверждающий выполнение всех трёх пунктов.`,
     duration_minutes: 25,
     category: 'Практика',
     resources: [],

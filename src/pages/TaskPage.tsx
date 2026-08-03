@@ -6,12 +6,19 @@ import { Icon } from '../components/Icon';
 import { TaskMentor } from '../components/TaskMentor';
 import { TaskResources } from '../components/TaskResources';
 import { ensureQuestTaskDetails, loadAiQuest, loadAiQuestById, normalizeQuestStep, type AiQuestPlan } from '../lib/aiQuest';
-import { questSteps, type QuestStep, type QuestTaskDetails } from '../lib/questData';
+import { questSteps, type QuestStep } from '../lib/questData';
 import { completeQuestTask, loadTaskRecord, saveTaskRecord,
   type TaskChatMessage, type TaskRecord } from '../lib/taskRecords';
 import { adaptFutureQuest } from '../lib/adaptiveQuest';
 import { useSession } from '../lib/useSession';
 import { loadQuestLearning } from '../lib/questLearning';
+import { validateTaskResult, type ValidationResult } from '../lib/taskValidation';
+import { loadProfile } from '../lib/userProfile';
+import { loadHomeProgress } from '../lib/homeProgress';
+import { defaultTaskDetails, LinkedTaskText } from '../components/TaskChecklist';
+import { TaskAttachments } from '../components/TaskAttachments';
+import type { TaskAttachment } from '../lib/taskAttachments';
+import { TaskValidationResult } from '../components/TaskValidationResult';
 
 type View = 'lesson' | 'choice' | 'history';
 
@@ -26,7 +33,12 @@ export function TaskPage() {
   const [chat, setChat] = useState<TaskChatMessage[]>([]);
   const [view, setView] = useState<View>('lesson');
   const [completing, setCompleting] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [rewardStats, setRewardStats] = useState({ xp: 0, streak: 0, level: 1 });
+  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [learningContext, setLearningContext] = useState('');
+  const [resourcesLoading, setResourcesLoading] = useState(false);
   const stepId = Number(params?.id) || 0;
   const planId = new URLSearchParams(window.location.search).get('plan');
 
@@ -40,7 +52,7 @@ export function TaskPage() {
         return;
       }
       const normalized = normalizeQuestStep(currentPlan.steps.find((item) => item.id === selectedId) ?? currentPlan.steps[0]);
-      const immediate = { ...normalized, details: { ...normalized.details!, resources: [] } };
+      const immediate = normalized;
       setPlan({ ...currentPlan, steps: currentPlan.steps.map((item) => item.id === immediate.id ? immediate : item) });
       setStep(immediate);
       const saved = await loadTaskRecord(session.user.id, currentPlan.goal, immediate.id);
@@ -48,10 +60,12 @@ export function TaskPage() {
       const learning = await loadQuestLearning(session.user.id, currentPlan.goal);
       setLearningContext(learning.context);
       setView(immediate.state === 'done' ? 'choice' : 'lesson');
+      setResourcesLoading(true);
       const detailResult = await ensureQuestTaskDetails(session.user.id, currentPlan, selectedId);
       const selected = detailResult.data ?? immediate;
       setPlan({ ...currentPlan, steps: currentPlan.steps.map((item) => item.id === selected.id ? selected : item) });
       setStep(selected);
+      setResourcesLoading(false);
     });
   }, [planId, session, stepId]);
 
@@ -72,18 +86,45 @@ export function TaskPage() {
     }} />;
 
   const activeStep = step;
-  const details = activeStep.details ?? defaultDetails(activeStep);
+  const details = activeStep.details ?? defaultTaskDetails(activeStep);
+  const expectsVideo = /видео|video|youtube|прослушай/i.test(`${details.objective} ${details.checklist.map((item) => `${item.title} ${item.hint}`).join(' ')}`);
   const total = plan?.steps.length ?? 10;
   const taskContext = `Цель: ${plan?.goal || 'пройти квест'}. Задание: ${activeStep.title}. ${details.objective}`;
 
   async function finish() {
     if (completing) return;
     setCompleting(true);
+    setValidationResult(null);
     if (session && plan) {
-      await completeQuestTask(session.user.id, plan, activeStep.id, notes, chat);
-      await adaptFutureQuest(session.user.id, plan, activeStep.id);
+      const validation = await validateTaskResult(plan.goal, activeStep, notes, chat, attachments);
+      setValidationResult(validation);
+      if (!validation.passed) {
+        setCompleting(false); return;
+      }
+      const completion = await completeQuestTask(session.user.id, plan, activeStep.id, notes, chat);
+      if (completion.error) {
+        setValidationResult({ passed: false, feedback: 'Не удалось сохранить результат. Попробуй ещё раз.',
+          expected_answer: details.expected_answer, comparisons: [] }); setCompleting(false); return;
+      }
+      const [profileResult, progress] = await Promise.all([
+        loadProfile(session.user.id), loadHomeProgress(session.user.id),
+      ]);
+      setRewardStats({ xp: activeStep.state === 'done' ? 0 : activeStep.xp,
+        streak: progress.streak, level: profileResult.data?.level ?? 1 });
+      setCelebrating(true); setCompleting(false);
+      void adaptFutureQuest(session.user.id, plan, activeStep.id);
     }
-    window.setTimeout(() => navigate(`/quest${plan ? `?plan=${plan.id}` : ''}`), 900);
+  }
+
+  async function findTaskVideo() {
+    if (!session || !plan || resourcesLoading) return;
+    setResourcesLoading(true);
+    const result = await ensureQuestTaskDetails(session.user.id, plan, activeStep.id);
+    if (result.data) {
+      setStep(result.data);
+      setPlan({ ...plan, steps: plan.steps.map((item) => item.id === result.data?.id ? result.data : item) });
+    }
+    setResourcesLoading(false);
   }
 
   return <div className="task-page">
@@ -101,32 +142,22 @@ export function TaskPage() {
         <span><Icon name="zap" size={18} />+{activeStep.xp} XP</span><span><Icon name="target" size={18} />{details.category}</span></div>
       <section className="content-card"><h2>Что нужно сделать</h2><ol className="steps-list">
         {details.checklist.map((item, index) => <li key={`${item.title}-${index}`}><span>{index + 1}</span>
-          <p><b>{item.title}</b><small><LinkedText text={item.hint} /></small></p></li>)}</ol></section>
-      <TaskResources resources={details.resources} notes={notes} task={taskContext} chat={chat}
+          <p><b>{item.title}</b><small><LinkedTaskText text={item.hint} /></small></p></li>)}</ol></section>
+      <TaskResources resources={details.resources} loading={resourcesLoading} expectsVideo={expectsVideo}
+        notes={notes} task={taskContext} chat={chat} readOnly={view === 'history'} onFindVideo={() => void findTaskVideo()}
         onNotes={setNotes} onChat={setChat} />
-      <section className="content-card"><h2>Заметки этого квеста</h2><textarea value={notes}
+      <section className="content-card"><h2>Заметки этого квеста</h2><textarea value={notes} readOnly={view === 'history'}
         onChange={(event) => setNotes(event.target.value)} placeholder="Записывай сюда результаты именно этого задания…" />
         <small className="autosave">{notes ? 'Сохранено внутри задания' : 'Не попадёт в личную записную книжку'}</small></section>
+      {session && plan && <section className="content-card"><TaskAttachments userId={session.user.id}
+        planId={plan.id} stepId={activeStep.id} readOnly={view === 'history'} onChange={setAttachments} /></section>}
       {view !== 'history' && <button className={`complete-button ${completing ? 'is-done' : ''}`} onClick={() => void finish()}>
-        <Icon name="check" />{completing ? 'Кью анализирует результаты и обновляет маршрут…' : activeStep.state === 'done' ? 'Завершить повтор' : 'Я выполнила задание'}</button>}
-    </article><TaskMentor task={taskContext} notes={notes} learningContext={learningContext}
+        <Icon name="check" />{completing ? 'Кью проверяет качество результата…' : activeStep.state === 'done' ? 'Завершить повтор' : 'Я выполнила задание'}</button>}
+      {validationResult && !validationResult.passed && <TaskValidationResult result={validationResult} />}
+    </article><TaskMentor task={taskContext} notes={notes} learningContext={learningContext} readOnly={view === 'history'}
       initialMessages={chat} onMessages={setChat} /></main>
-    {completing && <CompletionCelebration onClose={() => navigate('/quest')} />}
+    {celebrating && <CompletionCelebration xp={rewardStats.xp} streak={rewardStats.streak}
+      level={rewardStats.level} goal={plan?.goal || 'своей цели'}
+      onClose={() => navigate(`/quest${plan ? `?plan=${plan.id}` : ''}`)} />}
   </div>;
-}
-
-function LinkedText({ text }: { text: string }) {
-  const parts = text.split(/(https:\/\/[^\s<>"']+)/gi);
-  return <>{parts.map((part, index) => part.startsWith('https://')
-    ? <a className="task-inline-link" href={part.replace(/[),.;!?]+$/g, '')}
-      target="_blank" rel="noreferrer" key={`${part}-${index}`}>{part}</a>
-    : part)}</>;
-}
-
-function defaultDetails(step: QuestStep): QuestTaskDetails {
-  return { objective: step.subtitle, duration_minutes: 25, category: 'Практика', resources: [], checklist: [
-    { title: 'Определи результат', hint: `Запиши ожидаемый итог этапа «${step.title}».` },
-    { title: 'Выполни основной шаг', hint: 'Сосредоточься на одном небольшом измеримом результате.' },
-    { title: 'Зафиксируй итог', hint: 'Сохрани результат и отметь, что получилось.' },
-  ] };
 }

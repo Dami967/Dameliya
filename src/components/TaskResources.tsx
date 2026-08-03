@@ -4,28 +4,42 @@ import type { QuestResource } from '../lib/questData';
 import type { TaskChatMessage } from '../lib/taskRecords';
 import { TaskMentor } from './TaskMentor';
 
-export function TaskResources({ resources, notes, task, chat, onNotes, onChat }: {
-  resources: QuestResource[]; notes: string; task: string; chat: TaskChatMessage[];
+export function TaskResources({ resources, loading, expectsVideo, notes, task, chat, readOnly, onFindVideo, onNotes, onChat }: {
+  resources: QuestResource[]; loading: boolean; expectsVideo: boolean; notes: string; task: string; chat: TaskChatMessage[];
+  readOnly: boolean; onFindVideo: () => void;
   onNotes: (value: string) => void; onChat: (messages: TaskChatMessage[]) => void;
 }) {
   const [video, setVideo] = useState<QuestResource | null>(null);
-  if (!resources.length) return null;
+  const [checking, setChecking] = useState('');
+  if (!resources.length && !expectsVideo) return null;
+  const hasVideo = resources.some((resource) => resource.type === 'video' && youtubeEmbed(resource.url));
   return <><section className="content-card task-resources"><h2>Материалы от Кью</h2>
     <div>{resources.map((resource) => {
       const embed = resource.type === 'video' && youtubeEmbed(resource.url);
       return <article key={resource.url}><span>{resource.type === 'video' ? '▶' : resource.type === 'test' ? '✓' : '↗'}</span>
         <div><b>{resource.title}</b><p>{resource.description}</p></div>
-        {embed ? <button onClick={() => setVideo(resource)}>Смотреть</button>
+        {embed ? <button disabled={checking === resource.url} onClick={() => {
+          setChecking(resource.url);
+          void validateYoutubeVideo(resource.url).then((valid) => {
+            setChecking('');
+            if (valid) setVideo(resource); else onFindVideo();
+          });
+        }}>{checking === resource.url ? 'Проверяем…' : 'Смотреть'}</button>
           : <a href={resource.url} target="_blank" rel="noreferrer">Открыть</a>}
       </article>;
-    })}</div>
+    })}{expectsVideo && !hasVideo && <article className="resource-loading"><span>▶</span>
+      <div><b>{loading ? 'Кью подбирает видео к этому заданию…' : 'Видео не удалось подобрать автоматически'}</b>
+        <p>{loading ? 'Ищем один конкретный и доступный видеоурок.' : 'Попробуй подбор ещё раз — Кью найдёт другой ролик.'}</p></div>
+      <button disabled={loading} onClick={onFindVideo}>{loading ? 'Подбираем…' : 'Подобрать видео'}</button>
+    </article>}</div>
   </section>
-  {video && <VideoLesson resource={video} notes={notes} task={task} chat={chat}
+  {video && <VideoLesson resource={video} notes={notes} task={task} chat={chat} readOnly={readOnly}
     onNotes={onNotes} onChat={onChat} onClose={() => setVideo(null)} />}</>;
 }
 
-function VideoLesson({ resource, notes, task, chat, onNotes, onChat, onClose }: {
+function VideoLesson({ resource, notes, task, chat, readOnly, onNotes, onChat, onClose }: {
   resource: QuestResource; notes: string; task: string; chat: TaskChatMessage[];
+  readOnly: boolean;
   onNotes: (value: string) => void; onChat: (messages: TaskChatMessage[]) => void; onClose: () => void;
 }) {
   const [activeVideo, setActiveVideo] = useState(resource);
@@ -44,8 +58,7 @@ function VideoLesson({ resource, notes, task, chat, onNotes, onChat, onClose }: 
     );
     try {
       const alternative = parseAiJson<QuestResource>(result.text ?? '');
-      if (!youtubeEmbed(alternative.url) || alternative.url === activeVideo.url
-        || !await validateYoutubeVideo(alternative.url)) throw new Error();
+      if (!youtubeEmbed(alternative.url) || alternative.url === activeVideo.url) throw new Error();
       setActiveVideo({ ...alternative, type: 'video' }); setMessage('Новое видео готово ✓');
     } catch {
       setMessage(result.error?.message ?? 'Не получилось найти замену. Попробуй ещё раз.');
@@ -67,9 +80,9 @@ function VideoLesson({ resource, notes, task, chat, onNotes, onChat, onClose }: 
         </button>
         {message && <small>{message}</small>}
       </div>
-      <label>Заметки к уроку<textarea value={notes} onChange={(event) => onNotes(event.target.value)}
+      <label>Заметки к уроку<textarea value={notes} readOnly={readOnly} onChange={(event) => onNotes(event.target.value)}
         placeholder="Записывай важные мысли во время просмотра…" /></label>
-    </div><div className="video-q"><TaskMentor task={`${task}. Видео: ${activeVideo.title}`}
+    </div><div className="video-q"><TaskMentor task={`${task}. Видео: ${activeVideo.title}`} readOnly={readOnly}
       notes={notes} initialMessages={chat} onMessages={onChat} /></div></div>
   </section></div>;
 }

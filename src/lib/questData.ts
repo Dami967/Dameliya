@@ -10,6 +10,7 @@ export type QuestStep = {
 
 export type QuestTaskDetails = {
   objective: string;
+  expected_answer: string;
   checklist: Array<{ title: string; hint: string }>;
   duration_minutes: number;
   category: string;
