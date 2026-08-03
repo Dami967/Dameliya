@@ -7,14 +7,32 @@ import { loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { UserBalance } from '../components/UserBalance';
 import { currentUserName, useCurrentProfile } from '../lib/useCurrentProfile';
+import { loadHomeProgress, type HomeProgress } from '../lib/homeProgress';
+
+const emptyProgress: HomeProgress = {
+  streak: 0, weekCounts: Array(7).fill(0), activeWeekdays: Array(7).fill(false),
+  growth: null, completedToday: 0,
+};
 
 export function HomePage() {
   const { session } = useSession();
   const profile = useCurrentProfile(session?.user.id);
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [planIndex, setPlanIndex] = useState(0);
+  const [progress, setProgress] = useState<HomeProgress>(emptyProgress);
   useEffect(() => {
-    if (session) void loadAiQuests(session.user.id).then(({ data }) => setPlans(data ?? []));
+    if (!session) return;
+    const refresh = () => void loadHomeProgress(session.user.id).then(setProgress);
+    void loadAiQuests(session.user.id).then(({ data }) => setPlans(data ?? []));
+    refresh();
+    const interval = window.setInterval(refresh, 5 * 60 * 1000);
+    window.addEventListener('profile-stats-changed', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('profile-stats-changed', refresh);
+      window.removeEventListener('focus', refresh);
+    };
   }, [session]);
   const plan = plans[planIndex] ?? null;
   const active = plan?.steps.find((step) => step.state === 'active');
@@ -55,7 +73,7 @@ export function HomePage() {
       <QuickActions />
       <div className="home-overview">
         <TodayTasks plan={plan} />
-        <div className="home-overview__side"><AiTip goal={plan?.goal} /><WeekProgress /></div>
+        <div className="home-overview__side"><AiTip goal={plan?.goal} task={active?.title} progress={progress} /><WeekProgress progress={progress} /></div>
       </div>
 
       <aside className="dashboard-side dashboard-side--home">
@@ -69,10 +87,10 @@ export function HomePage() {
           </section>
           <section className="streak-card">
             <div className="streak-head"><span className="flame-circle"><Icon name="flame" /></span>
-              <div><small>ТВОЯ СЕРИЯ</small><h3>7 дней подряд!</h3></div></div>
+              <div><small>ТВОЯ СЕРИЯ</small><h3>{progress.streak ? `${progress.streak} дн. подряд!` : 'Начни серию сегодня!'}</h3></div></div>
             <div className="week-row">
               {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((day, i) => (
-                <div key={day} className={i < 7 ? 'checked' : ''}><span><Icon name="check" size={13} /></span><small>{day}</small></div>
+                <div key={day} className={progress.activeWeekdays[i] ? 'checked' : ''}><span>{progress.activeWeekdays[i] && <Icon name="check" size={13} />}</span><small>{day}</small></div>
               ))}
             </div>
           </section>

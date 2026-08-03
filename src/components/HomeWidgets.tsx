@@ -2,6 +2,7 @@ import { Link } from 'wouter';
 import { Icon } from './Icon';
 import { NewNoteButton } from './NewNoteButton';
 import type { AiQuestPlan } from '../lib/aiQuest';
+import type { HomeProgress } from '../lib/homeProgress';
 
 export function TodayTasks({ plan }: { plan: AiQuestPlan | null }) {
   const activeIndex = plan?.steps.findIndex((step) => step.state === 'active') ?? -1;
@@ -27,24 +28,46 @@ export function TodayTasks({ plan }: { plan: AiQuestPlan | null }) {
   );
 }
 
-export function AiTip({ goal }: { goal?: string }) {
+function dailyTip(goal: string | undefined, task: string | undefined, progress: HomeProgress) {
+  const variant = Math.floor(Date.now() / 86_400_000) % 3;
+  if (progress.completedToday > 0) return [
+    `Отличный темп: сегодня выполнено заданий — ${progress.completedToday}. Запиши, что получилось лучше всего.`,
+    `Сегодня уже готово ${progress.completedToday}. Сделай короткую паузу и выбери следующий небольшой шаг.`,
+    `Ты продвинулась сегодня на ${progress.completedToday} заданий. Закрепи результат одной заметкой.`,
+  ][variant];
+  if (progress.streak > 0 && task) return [
+    `Сохрани серию из ${progress.streak} дн.: начни «${task}» всего с 10 минут сосредоточенной работы.`,
+    `Серия уже ${progress.streak} дн. Открой «${task}» и выполни сначала самый лёгкий пункт.`,
+    `Не прерывай ритм: сегодня достаточно сделать один конкретный шаг в задании «${task}».`,
+  ][variant];
+  if (task) return [
+    `Твой следующий шаг — «${task}». Сначала сделай самую маленькую понятную часть задания.`,
+    `Начни «${task}» с результата, который можно получить за 15 минут.`,
+    `Открой «${task}» и выбери один пункт, который реально закончить сегодня.`,
+  ][variant];
+  if (goal) return `Вернись к цели «${goal}» и выбери один результат, которого реально достичь сегодня.`;
+  return 'Начни с одной важной цели — Кью поможет разбить её на небольшие шаги.';
+}
+
+export function AiTip({ goal, task, progress }: { goal?: string; task?: string; progress: HomeProgress }) {
   return (
     <section className="home-panel ai-tip">
       <img src="/goalquest-q-tip-star.png" alt="Фиолетовая звезда GoalQuest" />
-      <div><span className="eyebrow">СОВЕТ ОТ КЬЮ</span><p>{goal
-        ? `Сегодня сделай один небольшой шаг к цели «${goal}». Сосредоточься на результате, а не на идеальности.`
-        : 'Начни с одной важной цели — Кью поможет разбить её на небольшие шаги.'}</p></div>
+      <div><span className="eyebrow">СОВЕТ ОТ КЬЮ</span><p>{dailyTip(goal, task, progress)}</p></div>
     </section>
   );
 }
 
-export function WeekProgress() {
-  const values = [42, 68, 55, 84, 62, 94, 74];
+export function WeekProgress({ progress }: { progress: HomeProgress }) {
+  const max = Math.max(...progress.weekCounts, 1);
   return (
     <section className="home-panel week-panel">
-      <div className="section-heading"><div><span className="eyebrow">ТВОЙ РИТМ</span><h2>Недельный прогресс</h2></div><span className="week-growth">↗ 18%</span></div>
+      <div className="section-heading"><div><span className="eyebrow">ТВОЙ РИТМ</span><h2>Недельный прогресс</h2></div>
+        <span className="week-growth">{progress.growth === null ? 'Новая неделя' : `${progress.growth >= 0 ? '↗' : '↘'} ${Math.abs(progress.growth)}%`}</span></div>
       <div className="week-chart">
-        {values.map((value, index) => <div key={index}><i style={{ height: `${value}%` }} /><small>{['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][index]}</small></div>)}
+        {progress.weekCounts.map((value, index) => <div key={index} title={`${value} выполнено`}>
+          <b>{value}</b><i style={{ height: value ? `${Math.max(18, value / max * 100)}%` : '4%' }} />
+          <small>{['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][index]}</small></div>)}
       </div>
     </section>
   );
