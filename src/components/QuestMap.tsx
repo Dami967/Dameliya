@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { questSteps, type QuestStep } from '../lib/questData';
 import { Icon } from './Icon';
+import { loadQuestChestOpenings, openQuestChest } from '../lib/questChests';
 
 export function QuestMap({ steps = questSteps, title = 'Долина больших идей', planId }: {
   steps?: QuestStep[]; title?: string; planId?: string;
 }) {
   const doneCount = steps.filter((step) => step.state === 'done').length;
+  const [openedChests, setOpenedChests] = useState<Record<number, string>>({});
   const chapters = Array.from({ length: Math.ceil(steps.length / 3) }, (_, index) => chapterInfo(index));
+  useEffect(() => {
+    if (!planId) return;
+    void loadQuestChestOpenings(planId).then(({ data }) => setOpenedChests(Object.fromEntries(
+      (data ?? []).map((opening) => [opening.chapter_index, opening.reward_label]),
+    )));
+  }, [planId]);
   return (
     <section className="quest-card">
       <div className="section-heading">
@@ -37,7 +45,10 @@ export function QuestMap({ steps = questSteps, title = 'Долина больш�
               {chapterSteps.map((step, stepIndex) => <QuestLevel step={step} planId={planId}
                 index={chapterIndex * 3 + stepIndex} key={step.id} />)}
             </div>
-            {chapter.reward && <RewardStop title={chapter.reward} unlocked={chapterSteps.every((step) => step.state === 'done')} />}
+            {chapter.reward && chapterSteps.length === 3 && <RewardStop title={chapter.reward}
+              unlocked={chapterSteps.every((step) => step.state === 'done')} planId={planId}
+              chapterIndex={chapterIndex} prize={openedChests[chapterIndex]}
+              onOpened={(prize) => setOpenedChests((current) => ({ ...current, [chapterIndex]: prize }))} />}
           </section>;
         })}
       </div>
@@ -57,13 +68,23 @@ function QuestLevel({ step, index, planId }: { step: QuestStep; index: number; p
     : <div className={`level level--${step.state} level--${index}`}>{content}</div>;
 }
 
-function RewardStop({ title, unlocked }: { title: string; unlocked: boolean }) {
-  const [opened, setOpened] = useState(false);
-  return <button type="button" disabled={!unlocked || opened} onClick={() => setOpened(true)}
-    className={`reward-stop ${unlocked ? 'is-ready' : 'is-locked'} ${opened ? 'is-opened' : ''}`}>
-    <span>{opened ? '✨' : '🎁'}</span>
-    <div><small>ПОДАРОК ЗА 3 ЗАДАНИЯ</small><b>{title}</b></div>
-    <em>{opened ? 'Открыт ✓' : unlocked ? 'Открыть' : 'Выполни все 3'}</em>
+function RewardStop({ title, unlocked, planId, chapterIndex, prize, onOpened }: {
+  title: string; unlocked: boolean; planId?: string; chapterIndex: number; prize?: string;
+  onOpened: (prize: string) => void;
+}) {
+  const [opening, setOpening] = useState(false);
+  async function open() {
+    if (!planId || opening) return;
+    setOpening(true);
+    const result = await openQuestChest(planId, chapterIndex);
+    setOpening(false);
+    if (!result.error && typeof result.data === 'string') onOpened(result.data);
+  }
+  return <button type="button" disabled={!unlocked || Boolean(prize) || opening} onClick={() => void open()}
+    className={`reward-stop ${unlocked ? 'is-ready' : 'is-locked'} ${prize ? 'is-opened' : ''}`}>
+    <span>{prize ? '✨' : '🎁'}</span>
+    <div><small>ПОДАРОК ЗА 3 ЗАДАНИЯ</small><b>{prize || title}</b></div>
+    <em>{prize ? 'Получен ✓' : opening ? 'Открываем…' : unlocked ? 'Открыть' : 'Выполни все 3'}</em>
   </button>;
 }
 
