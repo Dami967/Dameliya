@@ -8,6 +8,7 @@ import { Icon } from './Icon';
 import { AiComposer } from './AiComposer';
 import { loadAiQuest } from '../lib/aiQuest';
 import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
+import { loadInterviewContext } from '../lib/interviewContext';
 
 export function FloatingMentor() {
   const { session } = useSession();
@@ -43,9 +44,12 @@ export function FloatingMentor() {
     setBusy(true);
     setAnswer('');
     const selectedLanguage = languageName(language);
-    const plan = session ? (await loadAiQuest(session.user.id)).data : null;
+    const [planResult, interview] = session
+      ? await Promise.all([loadAiQuest(session.user.id), loadInterviewContext(session.user.id)])
+      : [{ data: null }, 'Interview data is unavailable.'] as const;
+    const plan = planResult.data;
     const context = plan ? `Current goal: ${plan.goal}. Current step: ${plan.steps.find((step) => step.state === 'active')?.title || 'not selected'}.\n` : '';
-    const result = await askAi(`${context}${text.trim()}`, `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
+    const result = await askAi(`${interview}\n${context}${text.trim()}`, `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
 ${conciseMentorRules}
 Never add combat or gambling mechanics. Do not claim professional medical, legal or financial expertise.
 Understand attached images, documents and voice messages when present.`, attachments, true);

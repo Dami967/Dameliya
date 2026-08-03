@@ -24,9 +24,11 @@ export function ProfileEditPage() {
 
   async function changeAvatar(file?: File) {
     if (!file || !session) return;
+    if (!file.type.startsWith('image/')) { setStatus('Выбери фотографию в формате JPG, PNG или WEBP.'); return; }
+    if (file.size > 5 * 1024 * 1024) { setStatus('Фото слишком большое. Максимальный размер — 5 МБ.'); return; }
     setStatus('Загружаем фото…');
     const result = await uploadAvatar(session.user.id, file);
-    result.error ? setStatus(result.error.message) : void save({ avatar_url: result.url });
+    result.error ? setStatus('Не удалось загрузить фото. Попробуй ещё раз.') : void save({ avatar_url: result.url });
   }
 
   if (!profile) return <main className="center-loader">Загружаем данные…</main>;

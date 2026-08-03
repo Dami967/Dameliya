@@ -4,6 +4,7 @@ import { loadAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { loadQuestLearning } from '../lib/questLearning';
 import { supabase } from '../lib/supabase';
 import { detectLanguage, languageName } from '../lib/languages';
+import { loadInterviewContext } from '../lib/interviewContext';
 
 type Quiz = { question: string; options: string[]; correct_index: number };
 
@@ -142,10 +143,14 @@ function countWords(value: string) {
 }
 
 async function personalContext(userId: string, selectedPlan?: AiQuestPlan) {
-  const { data: latestPlan } = selectedPlan ? { data: selectedPlan } : await loadAiQuest(userId);
+  const [planResult, interview] = await Promise.all([
+    selectedPlan ? Promise.resolve({ data: selectedPlan }) : loadAiQuest(userId),
+    loadInterviewContext(userId),
+  ]);
+  const { data: latestPlan } = planResult;
   const plan = selectedPlan ?? latestPlan;
-  if (!plan) return 'У пользователя пока нет активной цели.';
+  if (!plan) return `${interview}\nУ пользователя пока нет активной цели.`;
   const { context } = await loadQuestLearning(userId, plan.goal);
-  return `Цель: ${plan.goal}. Текущий этап: ${plan.steps.find((step) => step.state === 'active')?.title || 'не выбран'}.
+  return `${interview}\nЦель: ${plan.goal}. Текущий этап: ${plan.steps.find((step) => step.state === 'active')?.title || 'не выбран'}.
 Результаты прошлых заданий: ${context || 'пока нет'}.`;
 }

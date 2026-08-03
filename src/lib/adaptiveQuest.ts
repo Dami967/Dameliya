@@ -3,6 +3,7 @@ import type { AiQuestPlan } from './aiQuest';
 import type { QuestStep, QuestTaskDetails } from './questData';
 import { loadQuestLearning } from './questLearning';
 import { supabase } from './supabase';
+import { loadInterviewContext } from './interviewContext';
 
 type AdaptedStep = { title: string; subtitle: string } & QuestTaskDetails;
 
@@ -13,12 +14,16 @@ export async function adaptFutureQuest(userId: string, plan: AiQuestPlan, comple
     subtitle: 'Продолжение пути', state: 'locked' as const, xp: 100 + index * 20,
     icon: index === 9 ? 'rocket' as const : 'book' as const,
   }));
-  const { context } = await loadQuestLearning(userId, plan.goal);
+  const [{ context }, interview] = await Promise.all([
+    loadQuestLearning(userId, plan.goal),
+    loadInterviewContext(userId),
+  ]);
   const currentRoute = templates.map((step) => ({
     step: step.id, title: step.title, objective: step.details?.objective ?? step.subtitle,
   }));
   const result = await askAi(
-    `Цель пользователя: ${plan.goal}.
+    `${interview}
+Цель пользователя: ${plan.goal}.
 Результаты и полные разговоры из всех выполненных заданий: ${context || 'пока нет данных'}.
 Только что завершён этап ${completedStepId}. Поле insight должно содержать одну самую важную конкретную мысль
 пользователя именно из заметок или разговора этого этапа. Не давай общий совет и не придумывай сведения.

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { AiComposer } from '../components/AiComposer';
 import { AppShell } from '../components/AppShell';
 import { Icon } from '../components/Icon';
@@ -8,11 +8,13 @@ import type { AiAttachment } from '../lib/aiAttachments';
 import { createAiQuest, loadAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
+import { loadInterviewContext } from '../lib/interviewContext';
 
 type Message = { role: 'q' | 'user'; text: string };
 
 export function MentorPage() {
   const { session } = useSession();
+  const [, navigate] = useLocation();
   const [goal, setGoal] = useState('');
   const [request, setRequest] = useState('');
   const [busy, setBusy] = useState(false);
@@ -36,12 +38,14 @@ export function MentorPage() {
     const { data, error } = await createAiQuest(session.user.id, goal.trim(), request.trim(), editingId ?? undefined);
     setMessages((old) => [...old, { role: 'q', text: error ? error.message : `Готово! Я создал карту «${data?.map_title}» из 10 шагов.` }]);
     setBusy(false);
+    if (data && !error) navigate(`/quest?plan=${data.id}`);
   }
   async function send(text: string, attachments: AiAttachment[] = []) {
     if (!text || busy) return;
     setMessages((old) => [...old, { role: 'user', text }]);
     setBusy(true);
-    const answer = await askAi(`Моя цель: ${goal || 'ещё не выбрана'}. Вопрос: ${text}`,
+    const interview = session ? await loadInterviewContext(session.user.id) : 'Данные интервью недоступны.';
+    const answer = await askAi(`${interview}\nМоя цель: ${goal || 'ещё не выбрана'}. Вопрос: ${text}`,
       `Ты Кью, добрый AI-наставник GoalQuest. Изучи приложенные фото, файлы или голосовое сообщение.
 Отвечай практично и на русском. ${conciseMentorRules}`, attachments, true);
     setMessages((old) => [...old, { role: 'q', text: compactMentorReply(answer.text ?? answer.error.message) }]);
