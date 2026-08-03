@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { Icon } from './Icon';
 import { loadNotifications, markAllNotificationsRead, markNotificationRead,
   subscribeToNotifications, type AppNotification } from '../lib/notifications';
+import { playNotificationSound, unlockNotificationSound } from '../lib/notificationSound';
 
 export function NotificationBell({ userId }: { userId: string }) {
   const [, navigate] = useLocation();
@@ -10,9 +11,16 @@ export function NotificationBell({ userId }: { userId: string }) {
   const [items, setItems] = useState<AppNotification[]>([]);
   const refresh = useCallback(() => void loadNotifications(userId).then(({ data }) => setItems(data ?? [])), [userId]);
   useEffect(() => {
+    const unlock = () => unlockNotificationSound();
+    window.addEventListener('pointerdown', unlock, { once: true });
     refresh();
-    const channel = subscribeToNotifications(userId, refresh);
-    return () => { void channel.unsubscribe(); };
+    const channel = subscribeToNotifications(userId, (item) => {
+      playNotificationSound(); refresh();
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(item.title, { body: item.body, tag: item.id });
+      }
+    });
+    return () => { void channel.unsubscribe(); window.removeEventListener('pointerdown', unlock); };
   }, [refresh, userId]);
   const unread = items.filter((item) => !item.read_at).length;
 
@@ -31,7 +39,8 @@ export function NotificationBell({ userId }: { userId: string }) {
         <button onClick={() => setOpen(false)} aria-label="Закрыть">×</button></header>
       <div className="notification-list">{items.map((item) => <button className={!item.read_at ? 'is-unread' : ''}
         key={item.id} onClick={() => void openItem(item)}>
-        <span>{item.actor_avatar ? <img src={item.actor_avatar} alt="" /> : item.kind === 'follow' ? '👤' : '💬'}</span>
+        <span>{item.actor_avatar ? <img src={item.actor_avatar} alt="" />
+          : item.kind === 'follow' ? '👤' : item.kind === 'competition' ? '🏆' : '💬'}</span>
         <div><b>{item.actor_name}</b><strong>{item.title}</strong><p>{item.body}</p><small>{relativeTime(item.created_at)}</small></div>
       </button>)}{!items.length && <p className="notification-empty">Здесь появятся новые подписчики и сообщения.</p>}</div>
       {unread > 0 && <button className="notification-read-all" onClick={() => void readAll()}>Отметить всё прочитанным</button>}

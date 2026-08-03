@@ -9,6 +9,7 @@ import { ChallengeModal } from './ChallengeModal';
 import { Icon } from './Icon';
 import { ChallengeCountdown } from './ChallengeCountdown';
 import { CompetitionInvitation } from './CompetitionInvitation';
+import { challengeRule, challengeUnit } from '../lib/challengeRules';
 
 export function CompetitionsPanel() {
   const { session } = useSession();
@@ -40,16 +41,19 @@ export function CompetitionsPanel() {
     <section className="competition-main">
       <header><div><span className="live-dot">{active ? statusLabel(active.status) : 'Пока тихо'}</span>
         <h2>{active?.title || 'Создай первое соревнование'}</h2>
-        <p>{active ? 'Выполняйте задания и зарабатывайте очки.' : 'Позови настоящего друга и устрой дружеский вызов.'}</p>
+        <p>{active ? challengeRule(active.type) : 'Позови настоящего друга и устрой дружеский вызов.'}</p>
       </div>{canCancel && <button className="cancel-challenge" aria-label="Отменить челлендж"
         onClick={() => window.confirm('Отменить этот челлендж?') && void cancelCompetition(active!.id).then(refresh)}>×</button>}
         <span className="competition-cup">🏆</span></header>
       {active && active.status !== 'finished' && <ChallengeCountdown endsAt={active.ends_at} />}
+      {active && <div className="competition-rule-badge"><span>🎯 ЦЕЛЬ ЧЕЛЛЕНДЖА</span>
+        <b>{challengeRule(active.type)}</b></div>}
       {active ? <div className="leaderboard">{[...active.challenge_participants].sort((a, b) => b.score - a.score)
         .map((person, index) => <div className={person.user_id === session?.user.id ? 'is-current' : ''} key={person.user_id}>
           <b className="place">#{index + 1}</b><span className="friend-avatar">{person.user_id === session?.user.id ? 'Я' : 'Д'}</span>
           <span className="friend-name"><b>{person.user_id === session?.user.id ? 'Ты' : friendName(friends, person.user_id)}</b>
-            <i><em style={{ width: `${Math.min(100, person.score / 10)}%` }} /></i></span><strong>{person.score} XP</strong>
+            <i><em style={{ width: `${Math.min(100, person.score / 10)}%` }} /></i></span>
+          <strong>{person.score} {challengeUnit(active.type)}</strong>
         </div>)}</div> : <div className="competition-empty">Здесь появится рейтинг участников.</div>}
       {invitations.map((competition) => <CompetitionInvitation key={competition.id} competition={competition}
         inviter={friendName(friends, competition.creator_id)}

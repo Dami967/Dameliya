@@ -7,7 +7,6 @@ import { Icon } from './Icon';
 import { SocialAvatar } from './SocialAvatar';
 import { VoiceRecorder } from './VoiceRecorder';
 import { VoiceMessage } from './VoiceMessage';
-import { CallOverlay } from './CallOverlay';
 
 export function ChatModal({ user, currentUserId, friends, onClose }: {
   user: SocialUser; currentUserId: string; friends: SocialUser[]; onClose: () => void;
@@ -16,7 +15,6 @@ export function ChatModal({ user, currentUserId, friends, onClose }: {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [forwarding, setForwarding] = useState<DirectMessage | null>(null);
-  const [calling, setCalling] = useState(false);
   const refresh = useCallback(() => {
     void loadDirectMessages(currentUserId, user.id).then(({ data, error: loadError }) => {
       setMessages(data ?? []);
@@ -61,7 +59,8 @@ export function ChatModal({ user, currentUserId, friends, onClose }: {
   return <div className="modal-backdrop" onMouseDown={onClose}><section className="social-modal chat-modal"
     onMouseDown={(event) => event.stopPropagation()}>
     <header><SocialAvatar user={user} /><div><b>{user.name}</b><small>{user.online ? 'онлайн' : 'не в сети'}</small></div>
-      <nav><button onClick={() => setCalling(true)} aria-label="Позвонить"><Icon name="phone" size={17} /></button>
+      <nav><button onClick={() => window.dispatchEvent(new CustomEvent('goalquest-start-call', { detail: user }))}
+        aria-label="Позвонить"><Icon name="phone" size={17} /></button>
         <button onClick={onClose} aria-label="Закрыть">×</button></nav></header>
     <div className="chat-messages">{messages.map((message) => {
       const mine = message.sender_id === currentUserId;
@@ -88,6 +87,5 @@ export function ChatModal({ user, currentUserId, friends, onClose }: {
           <SocialAvatar user={friend} size="small" /><span><b>{friend.name}</b><small>@{friend.username}</small></span><i>→</i>
         </button>)}
     </div>}
-    {calling && <CallOverlay user={user} onClose={() => setCalling(false)} />}
   </section></div>;
 }

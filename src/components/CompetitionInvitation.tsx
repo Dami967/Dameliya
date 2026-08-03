@@ -1,5 +1,6 @@
 import { challengeLabels } from '../lib/collaborationData';
 import type { Competition } from '../lib/competitions';
+import { challengeRule } from '../lib/challengeRules';
 
 export function CompetitionInvitation({ competition, inviter, onAccept, onDecline }: {
   competition: Competition; inviter: string; onAccept: () => void; onDecline: () => void;
@@ -12,16 +13,8 @@ export function CompetitionInvitation({ competition, inviter, onAccept, onDeclin
     <span className="eyebrow">ТЕБЯ ПРИГЛАСИЛИ</span>
     <h3>{inviter} зовёт в «{competition.title}»</h3>
     <div><span>⏱ <b>{days} дней</b></span><span>🎯 <b>{challengeLabels[type] ?? 'Задания квеста'}</b></span></div>
-    <p>{taskExplanation(competition.type)}</p>
+    <p>{challengeRule(competition.type)}</p>
     <footer><button className="accept-invite" onClick={onAccept}>Принять</button>
       <button className="decline-invite" onClick={onDecline}>Отклонить</button></footer>
   </article>;
-}
-
-function taskExplanation(type: string) {
-  if (type === 'xp') return 'Выполняйте свои задания квеста. Побеждает участник, который заработает больше XP.';
-  if (type === 'tasks') return 'Засчитываются завершённые задания из личных квестов.';
-  if (type === 'streak') return 'Каждый день выполняйте хотя бы одно задание и сохраняйте непрерывную серию.';
-  if (type === 'goal') return 'Продвигайтесь по этапам своей выбранной цели до окончания челленджа.';
-  return 'Выполняйте задания квеста и набирайте очки в общем рейтинге.';
 }

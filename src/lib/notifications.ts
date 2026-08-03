@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 export type AppNotification = {
   id: string;
   actor_id: string | null;
-  kind: 'follow' | 'message';
+  kind: 'follow' | 'message' | 'competition';
   title: string;
   body: string;
   link: string;
@@ -37,8 +37,8 @@ export function markAllNotificationsRead(userId: string) {
     .eq('user_id', userId).is('read_at', null);
 }
 
-export function subscribeToNotifications(userId: string, refresh: () => void) {
+export function subscribeToNotifications(userId: string, receive: (item: AppNotification) => void) {
   return supabase.channel(`notifications:${userId}`).on('postgres_changes', {
-    event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}`,
-  }, () => refresh()).subscribe();
+    event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}`,
+  }, (event) => receive(event.new as AppNotification)).subscribe();
 }

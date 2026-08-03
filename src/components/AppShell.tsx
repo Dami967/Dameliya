@@ -6,6 +6,7 @@ import { useSession } from '../lib/useSession';
 import { currentUserName, useCurrentProfile } from '../lib/useCurrentProfile';
 import { ReminderManager } from './ReminderManager';
 import { NotificationBell } from './NotificationBell';
+import { GlobalCallManager } from './GlobalCallManager';
 
 type AppShellProps = { children: React.ReactNode };
 
@@ -55,6 +56,7 @@ export function AppShell({ children }: AppShellProps) {
         ))}
       </nav>
       <FloatingMentor />
+      {session && <GlobalCallManager userId={session.user.id} />}
       {session && <ReminderManager userId={session.user.id} />}
     </div>
   );

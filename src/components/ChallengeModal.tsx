@@ -4,6 +4,7 @@ import { challengeLabels } from '../lib/collaborationData';
 import { competitionInviteUrl, createCompetitionInvite } from '../lib/competitions';
 import type { SocialUser } from '../lib/socialData';
 import { SocialAvatar } from './SocialAvatar';
+import { challengeRule, randomChallengeType } from '../lib/challengeRules';
 
 export function ChallengeModal({ friends, onClose, onCreate, mysteryPrize = false }: {
   friends: SocialUser[]; onClose: () => void;
@@ -13,6 +14,7 @@ export function ChallengeModal({ friends, onClose, onCreate, mysteryPrize = fals
   const [shareUrl, setShareUrl] = useState('');
   const [qrImage, setQrImage] = useState('');
   const [message, setMessage] = useState('');
+  const [challengeType] = useState(randomChallengeType);
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
   const nextWeek = new Date(Date.now() + 8 * 86400000).toISOString().slice(0, 10);
   return <div className="modal-backdrop" onMouseDown={onClose}><form className="social-modal creation-modal challenge-form" onMouseDown={(event) => event.stopPropagation()} onSubmit={async (event) => {
@@ -23,9 +25,9 @@ export function ChallengeModal({ friends, onClose, onCreate, mysteryPrize = fals
     const days = Number(form.get('duration')) || 7;
     const endsAt = mysteryPrize ? new Date(Date.now() + (days + 1) * 86400000).toISOString().slice(0, 10)
       : form.get('endsAt')?.toString() ?? '';
-    const draft = { title: form.get('title')?.toString() || challengeLabels[form.get('type') as ChallengeDraft['type']],
+    const draft = { title: form.get('title')?.toString() || challengeLabels[challengeType],
       participantIds: inviteMode === 'share' ? [] : selected,
-      type: form.get('type') as ChallengeDraft['type'],
+      type: challengeType,
       startsAt: form.get('startsAt')?.toString() ?? tomorrow, endsAt,
       reward: 'Случайный приз' } satisfies ChallengeDraft;
     setMessage('Создаём челлендж…');
@@ -48,7 +50,8 @@ export function ChallengeModal({ friends, onClose, onCreate, mysteryPrize = fals
       return old.length < 5 ? [...old, friend.id] : old;
     })}><SocialAvatar user={friend} size="small" /><b>{friend.name}</b><i>✓</i></button>)}
       {!friends.length && <p className="friend-picker-empty">Взаимных друзей пока нет. Они появятся здесь, когда вы подпишетесь друг на друга.</p>}</div></div>
-    <label><span>Тип челленджа</span><select name="type">{Object.entries(challengeLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+    <section className="random-challenge-rule"><span>🎯 СЛУЧАЙНАЯ ЦЕЛЬ ЧЕЛЛЕНДЖА</span>
+      <h3>{challengeLabels[challengeType]}</h3><p>{challengeRule(challengeType)}</p></section>
     <label><span>Название</span><input name="title" maxLength={80} placeholder="Например, Рывок недели" /></label>
     {mysteryPrize ? <label><span>Сколько дней соревноваться?</span><select name="duration" defaultValue="7">
       <option value="3">3 дня · обычный приз</option><option value="7">7 дней · необычный приз</option>
