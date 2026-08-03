@@ -3,6 +3,7 @@ import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { SupabaseSetupMessage } from './SupabaseSetupMessage';
 import { appLanguages, detectLanguage, rememberLanguage } from '../lib/languages';
 import { PasswordRecovery } from './PasswordRecovery';
+import { publicAppUrl } from '../lib/appUrl';
 
 type AuthProps = {
   initialMode?: 'signin' | 'signup';
@@ -18,6 +19,7 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
   const [language, setLanguage] = useState(detectLanguage);
   const [isRecovering, setIsRecovering] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [accountExists, setAccountExists] = useState(false);
 
   if (!isSupabaseConfigured) return <SupabaseSetupMessage />;
 
@@ -34,21 +36,38 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
     }
     setBusy(true);
     setMessage('');
+    setAccountExists(false);
     const result = mode === 'signup'
       ? await supabase.auth.signUp({
           email: cleanEmail,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { language } },
+          options: { emailRedirectTo: publicAppUrl('/auth/callback'), data: { language } },
         })
       : await supabase.auth.signInWithPassword({ email: cleanEmail, password });
     setBusy(false);
-    if (result.error) return setMessage(translateError(result.error.message));
+    if (result.error) {
+      if (mode === 'signup' && isExistingAccountError(result.error.message)) {
+        showExistingAccount();
+        return;
+      }
+      return setMessage(translateError(result.error.message));
+    }
+    if (mode === 'signup' && result.data.user && result.data.user.identities?.length === 0) {
+      showExistingAccount();
+      return;
+    }
     rememberLanguage(language);
     if (mode === 'signup' && !result.data.session) {
       setMessage('Письмо отправлено. Нажми «Подтвердить email», а затем вернись в GoalQuest ✨');
       return;
     }
     onSuccess(mode === 'signup');
+  }
+
+  function showExistingAccount() {
+    setMode('signin');
+    setAccountExists(true);
+    setMessage('Этот email уже сохранён в GoalQuest. Войди или восстанови пароль.');
   }
 
   async function signInWithGoogle() {
@@ -58,7 +77,7 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: publicAppUrl('/auth/callback'),
         queryParams: { prompt: 'select_account' },
       },
     });
@@ -111,6 +130,10 @@ export function Auth({ initialMode = 'signin', onSuccess }: AuthProps) {
         <button className="auth-submit" disabled={busy}>{busy ? 'Подождите…' : mode === 'signin' ? 'Войти' : 'Зарегистрироваться'}</button>
       </form>
       {message && <p className="auth-message" role="status">{message}</p>}
+      {accountExists && <div className="existing-account-actions">
+        <button type="button" onClick={() => setIsRecovering(true)}>Восстановить пароль</button>
+        <button type="button" onClick={() => { setAccountExists(false); setMessage(''); }}>Ввести пароль и войти</button>
+      </div>}
       <button className="auth-switch" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
         {mode === 'signin' ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти'}
       </button>
@@ -128,6 +151,12 @@ function translateError(message: string) {
     return 'Не удалось использовать этот email. Проверь адрес и убери лишнюю точку перед @.';
   }
   return message;
+}
+
+function isExistingAccountError(message: string) {
+  const normalized = message.toLowerCase();
+  return normalized.includes('already registered') || normalized.includes('already exists')
+    || normalized.includes('user already');
 }
 
 function isValidEmail(email: string) {

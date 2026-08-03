@@ -21,7 +21,7 @@ export async function translateUiBatch(sources: string[], language: string) {
     'Return only a valid JSON array of translated strings in exactly the same order and length.',
     'Keep GoalQuest, Q, usernames, emoji, numbers, XP, URLs and formatting unchanged.',
     'If a string is already in the target language, return it unchanged.',
-  ].join(' '));
+  ].join(' '), [], false, true);
   if (result.error || !result.text) return {};
   try {
     const translated = parseAiJson<unknown>(result.text);

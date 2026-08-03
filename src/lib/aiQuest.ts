@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { QuestResource, QuestStep, QuestTaskDetails } from './questData';
-import { askAi, parseAiJson, validateYoutubeVideo } from './ai';
+import { askAi, parseAiJson, searchYoutubeVideo, validateYoutubeVideo } from './ai';
 import { loadProfile } from './userProfile';
 import { loadQuestLearning } from './questLearning';
 
@@ -49,6 +49,7 @@ export async function createAiQuest(userId: string, goal: string, request: strin
 Если предлагаешь посмотреть урок, статью или пройти тест, обязательно добавь рабочую публичную https-ссылку в resources.
 Для видео выбирай существующий ролик известного образовательного канала, доступный без входа. Не выдумывай video ID, адреса и не указывай платные материалы.`,
     'Ты создаёшь персональные карты GoalQuest для подростков. Отвечай только валидным JSON на русском языке.',
+    [], false, true,
   );
   if (error) return { data: null, error };
   try {
@@ -89,14 +90,33 @@ export async function createAiQuest(userId: string, goal: string, request: strin
 export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, stepId: number) {
   const step = plan.steps.find((item) => item.id === stepId);
   if (!step) return { data: null, error: null };
-  const { context: learning } = await loadQuestLearning(userId, plan.goal);
-  if (step.state === 'done' || (!learning && step.details && Array.isArray(step.details.resources))) {
+  if (step.details) {
     const normalized = normalizeQuestStep(step);
-    const details = await verifyDetailsResources(normalized.details!, `${plan.goal}: ${step.title}`);
-    const updatedStep = { ...normalized, details };
+    const details = normalized.details!;
+    if (!requestsVideo(details)) {
+      return { data: normalized, error: null };
+    }
+    const savedVideo = details.resources.find((item) => item.type === 'video');
+    const belongsToStep = savedVideo?.description.includes(`Задание: ${step.title}`) ?? false;
+    if (savedVideo && belongsToStep && await validateYoutubeVideo(savedVideo.url)) {
+      return { data: normalized, error: null };
+    }
+    const usableResources = details.resources.filter((item) => item.type !== 'video');
+    const video = await findVerifiedVideo(
+      `${step.title}. ${details.objective}. Цель пользователя: ${plan.goal}`,
+      savedVideo?.url ?? 'нет сохранённого видео',
+    );
+    if (!video) {
+      const cleanedStep = { ...normalized, details: { ...details, resources: usableResources } };
+      if (savedVideo) await saveUpdatedStep(userId, plan, cleanedStep);
+      return { data: cleanedStep, error: null };
+    }
+    const taggedVideo = { ...video, description: `${video.description} Задание: ${step.title}` };
+    const updatedStep = { ...normalized, details: { ...details, resources: [...usableResources, taggedVideo].slice(0, 3) } };
     await saveUpdatedStep(userId, plan, updatedStep);
     return { data: updatedStep, error: null };
   }
+  const { context: learning } = await loadQuestLearning(userId, plan.goal);
   const { data: profile } = await loadProfile(userId);
   const context = profile ? `Интересы: ${profile.interests.join(', ')}. Сильные стороны: ${profile.strengths}.
 Трудности: ${profile.challenges}. Доступно времени в день: ${profile.daily_minutes} минут.` : '';
@@ -109,6 +129,7 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
 В checklist должно быть ровно 3 выполнимых пункта. Если нужен урок или тест, обязательно добавь рабочую публичную https-ссылку.
 Для видео выбирай существующий ролик известного образовательного канала, доступный без входа; не выдумывай video ID.`,
     'Ты создаёшь персональное задание GoalQuest для подростка. Отвечай безопасно, конкретно и только валидным JSON на русском.',
+    [], false, true,
   );
   if (result.error) return { data: { ...step, details: fallbackDetails(step) }, error: result.error };
   try {
@@ -120,6 +141,11 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
   } catch {
     return { data: { ...step, details: fallbackDetails(step) }, error: new Error('Не удалось адаптировать задание.') };
   }
+}
+
+function requestsVideo(details: QuestTaskDetails) {
+  const text = `${details.objective} ${details.checklist.map((item) => `${item.title} ${item.hint}`).join(' ')}`;
+  return /видео|video|youtube|прослушай/i.test(text);
 }
 
 async function saveUpdatedStep(userId: string, plan: AiQuestPlan, step: QuestStep) {
@@ -202,23 +228,7 @@ async function verifyDetailsResources(details: QuestTaskDetails, topic: string) 
 }
 
 async function findVerifiedVideo(topic: string, unavailableUrl: string) {
-  let excluded = unavailableUrl;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const result = await askAi(
-      `Тема: ${topic}. Подбери существующий бесплатный YouTube-видеоурок, разрешённый для встраивания.
-Не используй эти ссылки: ${excluded}. Верни только JSON: {"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"польза"}.`,
-      'Ты подбираешь реальные образовательные видео. Не выдумывай video ID. Отвечай только JSON.',
-    );
-    try {
-      const candidate = parseAiJson<QuestResource>(result.text ?? '');
-      if (youtubeResource(candidate) && await validateYoutubeVideo(candidate.url)) return candidate;
-      excluded += `, ${candidate.url}`;
-    } catch { /* пробуем следующий вариант */ }
-  }
-  return null;
-}
-
-function youtubeResource(resource: QuestResource) {
-  return resource.type === 'video' && isSafeResourceUrl(resource.url)
-    && (resource.url.includes('youtube.com/') || resource.url.includes('youtu.be/'));
+  const query = `${topic} образовательный видеоурок`;
+  const video = await searchYoutubeVideo(query);
+  return video?.url === unavailableUrl ? null : video;
 }

@@ -2,8 +2,10 @@ import { supabase } from './supabase';
 import type { AiAttachment } from './aiAttachments';
 
 type AiResponse = { text?: unknown; error?: unknown };
+export type YoutubeVideoResult = { type: 'video'; title: string; url: string; description: string };
 
-export async function askAi(prompt: string, system: string, attachments: AiAttachment[] = [], useMomentum = false) {
+export async function askAi(prompt: string, system: string, attachments: AiAttachment[] = [], useMomentum = false,
+  jsonResponse = false) {
   if (useMomentum) {
     const energy = await supabase.rpc('use_ai_momentum');
     if (energy.error) return { text: null, error: new Error('Не удалось проверить Momentum.') };
@@ -11,7 +13,7 @@ export async function askAi(prompt: string, system: string, attachments: AiAttac
     window.dispatchEvent(new CustomEvent('momentum-changed', { detail: energy.data }));
   }
   const { data, error } = await supabase.functions.invoke<AiResponse>('ai', {
-    body: { prompt: prompt.trim(), system: system.trim(), attachments },
+    body: { prompt: prompt.trim(), system: system.trim(), attachments, json: jsonResponse },
   });
   if (error) return { text: null, error: new Error(readFunctionError(error.message)) };
   if (typeof data?.error === 'string') return { text: null, error: new Error(data.error) };
@@ -23,7 +25,14 @@ export async function askAi(prompt: string, system: string, attachments: AiAttac
 
 export function parseAiJson<T>(text: string): T {
   const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-  return JSON.parse(cleaned) as T;
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch {
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start < 0 || end <= start) throw new Error('AI response does not contain JSON');
+    return JSON.parse(cleaned.slice(start, end + 1)) as T;
+  }
 }
 
 export async function validateYoutubeVideo(url: string) {
@@ -33,6 +42,13 @@ export async function validateYoutubeVideo(url: string) {
     body: { action: 'validate_youtube', videoId },
   });
   return !error && data?.valid === true;
+}
+
+export async function searchYoutubeVideo(query: string) {
+  const { data, error } = await supabase.functions.invoke<{ video?: YoutubeVideoResult | null }>('ai', {
+    body: { action: 'search_youtube', query },
+  });
+  return error ? null : data?.video ?? null;
 }
 
 function youtubeId(value: string) {
