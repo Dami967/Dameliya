@@ -4,6 +4,7 @@ import { FloatingMentor } from './FloatingMentor';
 import { MomentumCard } from './MomentumCard';
 import { useSession } from '../lib/useSession';
 import { currentUserName, useCurrentProfile } from '../lib/useCurrentProfile';
+import { ReminderManager } from './ReminderManager';
 
 type AppShellProps = { children: React.ReactNode };
 
@@ -52,6 +53,7 @@ export function AppShell({ children }: AppShellProps) {
         ))}
       </nav>
       <FloatingMentor />
+      {session && <ReminderManager userId={session.user.id} />}
     </div>
   );
 }

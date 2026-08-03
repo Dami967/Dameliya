@@ -34,6 +34,7 @@ export type UserSettings = {
   reminders: boolean;
   push_notifications: boolean;
   email_notifications: boolean;
+  reminder_time: string;
 };
 
 export async function loadProfile(userId: string) {
