@@ -8,9 +8,16 @@ import { asReward, createGeneratedReward, saveGeneratedChestReward } from '../li
 export function QuestMap({ steps = questSteps, title = 'Долина больших идей', planId }: {
   steps?: QuestStep[]; title?: string; planId?: string;
 }) {
-  const doneCount = steps.filter((step) => step.state === 'done').length;
+  const levelSize = 10;
+  const totalDone = steps.filter((step) => step.state === 'done').length;
+  const levelCount = Math.max(1, Math.ceil(steps.length / levelSize));
+  const unlockedLevel = Math.min(levelCount - 1, Math.floor(totalDone / levelSize));
+  const [selectedLevel, setSelectedLevel] = useState(unlockedLevel);
+  const levelSteps = steps.slice(selectedLevel * levelSize, (selectedLevel + 1) * levelSize);
+  const doneCount = levelSteps.filter((step) => step.state === 'done').length;
   const [openedChests, setOpenedChests] = useState<Record<number, string>>({});
-  const chapters = Array.from({ length: Math.ceil(steps.length / 3) }, (_, index) => chapterInfo(index));
+  const chapters = Array.from({ length: Math.ceil(levelSteps.length / 3) }, (_, index) => chapterInfo(index));
+  useEffect(() => { setSelectedLevel(unlockedLevel); }, [unlockedLevel]);
   useEffect(() => {
     if (!planId) return;
     void loadQuestChestOpenings(planId).then(({ data }) => setOpenedChests(Object.fromEntries(
@@ -20,14 +27,17 @@ export function QuestMap({ steps = questSteps, title = 'Долина больш�
   return (
     <section className="quest-card">
       <div className="section-heading">
-        <div><span className="eyebrow">КАРТА ПРИКЛЮЧЕНИЯ</span><h2>{title}</h2></div>
-        <span className="progress-pill"><Icon name="star" size={13} /> {doneCount} / {steps.length}</span>
+        <div><span className="eyebrow">КАРТА ПРИКЛЮЧЕНИЯ · УРОВЕНЬ {selectedLevel + 1}</span><h2>{title}</h2></div>
+        <span className="progress-pill"><Icon name="star" size={13} /> {doneCount} / {levelSteps.length}</span>
       </div>
+      <nav className="quest-level-tabs" aria-label="Уровни карты">{Array.from({ length: levelCount }, (_, index) =>
+        <button key={index} disabled={index > unlockedLevel} className={selectedLevel === index ? 'is-active' : ''}
+          onClick={() => setSelectedLevel(index)}>{index > unlockedLevel ? '🔒' : index < unlockedLevel ? '✓' : '✦'} Уровень {index + 1}</button>)}</nav>
       <div className="quest-map">
         <div className="quest-scenery quest-scenery--one">✦</div>
         <div className="quest-scenery quest-scenery--two">☁</div>
         {chapters.map((chapter, chapterIndex) => {
-          const chapterSteps = steps.slice(chapterIndex * 3, chapterIndex * 3 + 3);
+          const chapterSteps = levelSteps.slice(chapterIndex * 3, chapterIndex * 3 + 3);
           if (!chapterSteps.length) return null;
           return <section className={`quest-chapter quest-chapter--${chapterIndex + 1}`} key={chapter.title}>
             <header><span>{chapterIndex + 1}</span><div><b>{chapter.title}</b><small>{chapter.subtitle}</small></div></header>
@@ -48,8 +58,8 @@ export function QuestMap({ steps = questSteps, title = 'Долина больш�
             </div>
             {chapter.reward && chapterSteps.length === 3 && <RewardStop title={chapter.reward}
               unlocked={chapterSteps.every((step) => step.state === 'done')} planId={planId}
-              chapterIndex={chapterIndex} prize={openedChests[chapterIndex]}
-              onOpened={(prize) => setOpenedChests((current) => ({ ...current, [chapterIndex]: prize }))} />}
+              chapterIndex={selectedLevel * 100 + chapterIndex} prize={openedChests[selectedLevel * 100 + chapterIndex]}
+              onOpened={(prize) => setOpenedChests((current) => ({ ...current, [selectedLevel * 100 + chapterIndex]: prize }))} />}
           </section>;
         })}
       </div>

@@ -3,6 +3,7 @@ export type SocialUser = {
   name: string;
   username: string;
   avatar: string;
+  avatarUrl?: string | null;
   level: number;
   xp: number;
   streak: number;

@@ -33,6 +33,7 @@
 .quest-map { position: relative; max-width: 610px; min-height: 430px; margin: 8px auto 0; padding: 20px 0 25px; }
 .quest-line { position: absolute; inset: 35px auto 55px 50%; width: 105px; border-left: 8px dotted #e5dcf7; border-radius: 50%; transform: translateX(-50%) rotate(-3deg); }
 .quest-scenery { position: absolute; color: #d9c9fb; font-size: 30px; }.quest-scenery--one { top: 95px; left: 8%; }.quest-scenery--two { right: 7%; bottom: 90px; color: #d8effd; font-size: 44px; }
+.quest-level-tabs{display:flex;gap:7px;margin:14px 0 5px;overflow:auto}.quest-level-tabs button{min-width:105px;padding:9px 12px;border:1px solid #e1def0;border-radius:11px;color:#74798c;background:#faf9ff;font-size:8px;font-weight:800}.quest-level-tabs button.is-active{color:#fff;border-color:#6c67df;background:linear-gradient(135deg,#5877e4,#8054d8)}.quest-level-tabs button:disabled{opacity:.55}
 .level { position: relative; display: flex; align-items: center; gap: 14px; width: 76%; min-height: 82px; z-index: 3; }
 .level--0, .level--2, .level--4 { margin-left: 3%; }.level--1, .level--3 { margin-left: 28%; }
 .level-node { display: grid; place-items: center; width: 58px; height: 58px; flex: 0 0 auto; border: 5px solid #fff; border-radius: 20px; transform: rotate(-3deg); box-shadow: 0 8px 0 #d8d3e8, 0 14px 24px #5a4f8230; }

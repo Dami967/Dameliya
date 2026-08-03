@@ -4,7 +4,7 @@ import { SocialAvatar } from './SocialAvatar';
 import type { SocialUser } from '../lib/socialData';
 import { supabase } from '../lib/supabase';
 import { useSession } from '../lib/useSession';
-import { loadRealPeople } from '../lib/friends';
+import { loadRealPeople, subscribeToPublicProfiles } from '../lib/friends';
 
 export function PeopleSearch({ onOpen, onFriendsChanged }: {
   onOpen: (user: SocialUser) => void; onFriendsChanged: () => void;
@@ -16,13 +16,16 @@ export function PeopleSearch({ onOpen, onFriendsChanged }: {
   const [people, setPeople] = useState<SocialUser[]>([]);
   useEffect(() => {
     if (!session) return;
-    void Promise.all([
+    const refresh = () => void Promise.all([
       supabase.from('follows').select('following_id').eq('follower_id', session.user.id),
       loadRealPeople(session.user.id),
     ]).then(([follows, users]) => {
       setFollowing((follows.data ?? []).map((row) => row.following_id));
       setPeople(users.data ?? []);
     });
+    refresh();
+    const channel = subscribeToPublicProfiles(session.user.id, refresh);
+    return () => { void channel.unsubscribe(); };
   }, [session]);
   const filtered = useMemo(() => people.filter((person) =>
     `${person.name} ${person.username} ${person.id}`.toLowerCase().includes(query.toLowerCase())), [people, query]);

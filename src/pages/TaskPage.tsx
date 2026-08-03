@@ -118,7 +118,7 @@ export function TaskPage() {
       setRewardStats({ xp: activeStep.state === 'done' ? 0 : activeStep.xp,
         streak: progress.streak, level: profileResult.data?.level ?? 1 });
       setCelebrating(true); setCompleting(false);
-      void adaptFutureQuest(session.user.id, plan, activeStep.id);
+      if (activeStep.state !== 'done') void adaptFutureQuest(session.user.id, plan, activeStep.id);
     }
   }
 

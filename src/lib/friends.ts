@@ -20,7 +20,7 @@ function toSocialUser(profile: SocialProfileRow, pinned = false): SocialUser {
     id: profile.user_id,
     name: !placeholder && profile.display_name ? profile.display_name : profile.username || 'Пользователь GoalQuest',
     username: profile.username || profile.user_id.slice(0, 8),
-    avatar: profile.display_name.slice(0, 2).toUpperCase() || 'GQ',
+    avatar: profile.display_name.slice(0, 2).toUpperCase() || 'GQ', avatarUrl: profile.avatar_url,
     level: profile.level, xp: profile.xp, streak: profile.streak,
     online: Date.now() - new Date(profile.last_seen_at).getTime() < 5 * 60 * 1000,
     interests: profile.interests, goal: profile.main_goal || 'Главная цель скрыта', pinned,
@@ -54,5 +54,12 @@ export function subscribeToFriendships(userId: string, refresh: () => void) {
       const row = event.new as { follower_id?: string; following_id?: string };
       const oldRow = event.old as { follower_id?: string; following_id?: string };
       if ([row.follower_id, row.following_id, oldRow.follower_id, oldRow.following_id].includes(userId)) refresh();
-    }).subscribe();
+    }).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profile_public_updates' },
+      () => refresh()).subscribe();
+}
+
+export function subscribeToPublicProfiles(userId: string, refresh: () => void) {
+  return supabase.channel(`public-profiles:${userId}`).on('postgres_changes', {
+    event: 'UPDATE', schema: 'public', table: 'profile_public_updates',
+  }, () => refresh()).subscribe();
 }

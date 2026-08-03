@@ -38,8 +38,11 @@ export function ProfileEditPage() {
         <p>Изменения сохраняются автоматически.</p></div><Link href="/profile" className="secondary-button">Готово</Link></header>
       <div className="edit-layout">
         <section className="settings-card avatar-editor">
-          <div className="profile-avatar">{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : profile.display_name[0] || 'G'}</div>
+          <div className="profile-avatar">{profile.avatar_url ? <img src={profile.avatar_url} alt="" />
+            : <img src="/goalquest-eagle.png" alt="Орлёнок Кью" />}</div>
           <label className="secondary-button">Изменить фото<input type="file" accept="image/*" hidden onChange={(e) => changeAvatar(e.target.files?.[0])} /></label>
+          {profile.avatar_url && <button className="restore-eagle-button" onClick={() => void save({ avatar_url: null })}>
+            Вернуть орлёнка</button>}
           <small>{status}</small>
         </section>
         <section className="settings-card edit-fields">
