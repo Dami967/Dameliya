@@ -10,6 +10,7 @@ import { equipRewardForCategory, loadUserRewards } from '../lib/userRewards';
 import { useSession } from '../lib/useSession';
 import { NewRewardToast } from '../components/NewRewardToast';
 import { UserBalance } from '../components/UserBalance';
+import { ChestPreview } from '../components/ChestPreview';
 
 type Section = 'collection' | 'expeditions' | 'competitions';
 
@@ -24,6 +25,8 @@ export function RewardsPage() {
   const [equipped, setEquipped] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [showNewReward, setShowNewReward] = useState(true);
+  const [showChestPreview, setShowChestPreview] = useState(() =>
+    new URLSearchParams(window.location.search).get('preview') === 'chest');
 
   useEffect(() => {
     if (!session) return;
@@ -83,6 +86,7 @@ export function RewardsPage() {
         saving={saving} onEquip={equipReward} onClose={() => setSelected(null)} />}
       {showNewReward && rewards.find((reward) => reward.isNew) && <NewRewardToast
         reward={rewards.find((reward) => reward.isNew)!} onClose={() => setShowNewReward(false)} />}
+      {showChestPreview && <ChestPreview onClose={() => setShowChestPreview(false)} />}
     </AppShell>
   );
 }
