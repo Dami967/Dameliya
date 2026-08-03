@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SocialUser } from '../lib/socialData';
 import { callerName, sendCallSignal, subscribeToCallSignals, type CallSignal } from '../lib/callSignaling';
 import { playNotificationSound } from '../lib/notificationSound';
+import { sendDirectMessage } from '../lib/directMessages';
 
 type CallState = { callId: string; peerId: string; name: string; avatarUrl?: string | null;
   direction: 'incoming' | 'outgoing'; offer?: RTCSessionDescriptionInit; status: string };
@@ -14,11 +15,15 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
   const iceQueue = useRef<RTCIceCandidateInit[]>([]);
   const callRef = useRef<CallState | null>(null);
+  const acceptedAt = useRef<number | null>(null);
+  const logged = useRef(false);
+  const answerTimer = useRef<number | null>(null);
   useEffect(() => { callRef.current = call; }, [call]);
 
   const close = useCallback(() => {
     peer.current?.close(); peer.current = null;
     local.current?.getTracks().forEach((track) => track.stop()); local.current = null;
+    if (answerTimer.current) window.clearTimeout(answerTimer.current);
     iceQueue.current = []; callRef.current = null; setCall(null);
   }, []);
 
@@ -34,12 +39,16 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     if (!current || current.callId !== signal.call_id) return;
     if (signal.signal_type === 'answer' && peer.current) {
       await peer.current.setRemoteDescription(signal.payload as unknown as RTCSessionDescriptionInit);
+      acceptedAt.current = Date.now();
+      if (answerTimer.current) window.clearTimeout(answerTimer.current);
       await flushIce(peer.current); setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
     } else if (signal.signal_type === 'ice') {
       const candidate = signal.payload as RTCIceCandidateInit;
       if (peer.current?.remoteDescription) await peer.current.addIceCandidate(candidate).catch(() => undefined);
       else iceQueue.current.push(candidate);
-    } else if (signal.signal_type === 'hangup' || signal.signal_type === 'reject') close();
+    } else if (signal.signal_type === 'hangup' || signal.signal_type === 'reject') {
+      await saveCallHistory(current); close();
+    }
   }, [close]);
 
   useEffect(() => {
@@ -58,7 +67,10 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     connection.ontrack = (event) => { if (remoteAudio.current) remoteAudio.current.srcObject = event.streams[0]; };
     connection.onconnectionstatechange = () => {
       if (connection.connectionState === 'connected') setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
-      if (['failed', 'closed'].includes(connection.connectionState)) close();
+      if (connection.connectionState === 'failed') {
+        const current = callRef.current;
+        if (current) void saveCallHistory(current).finally(close); else close();
+      }
     };
     return connection;
   }
@@ -68,12 +80,17 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     const callId = crypto.randomUUID();
     const next: CallState = { callId, peerId: user.id, name: user.name,
       direction: 'outgoing', status: 'Звоним…' };
+    acceptedAt.current = null; logged.current = false;
     callRef.current = next; setCall(next);
     try {
       const connection = await createPeer(callId, user.id);
       const offer = await connection.createOffer(); await connection.setLocalDescription(offer);
       await sendCallSignal(callId, user.id, 'offer', offer as unknown as Record<string, unknown>);
-    } catch { setCall((old) => old ? { ...old, status: 'Не удалось получить доступ к микрофону' } : old); }
+      answerTimer.current = window.setTimeout(() => void timeoutCall(callId), 45_000);
+    } catch {
+      logged.current = true;
+      setCall((old) => old ? { ...old, status: 'Не удалось начать звонок или получить доступ к микрофону' } : old);
+    }
   }
 
   async function answer() {
@@ -87,8 +104,25 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     } catch { setCall((old) => old ? { ...old, status: 'Разреши доступ к микрофону' } : old); }
   }
   async function end(reject = false) {
-    if (call) await sendCallSignal(call.callId, call.peerId, reject ? 'reject' : 'hangup');
+    if (call) {
+      await sendCallSignal(call.callId, call.peerId, reject ? 'reject' : 'hangup');
+      await saveCallHistory(call);
+    }
     close();
+  }
+  async function timeoutCall(callId: string) {
+    const current = callRef.current;
+    if (!current || current.callId !== callId || acceptedAt.current) return;
+    await sendCallSignal(current.callId, current.peerId, 'hangup');
+    await saveCallHistory(current); close();
+  }
+  async function saveCallHistory(current: CallState) {
+    if (current.direction !== 'outgoing' || logged.current) return;
+    logged.current = true;
+    const content = acceptedAt.current
+      ? `📞 Аудиозвонок · ${formatDuration(Date.now() - acceptedAt.current)}`
+      : '📵 Пропущенный аудиозвонок';
+    await sendDirectMessage(current.peerId, 'call', content);
   }
   async function flushIce(connection: RTCPeerConnection) {
     const queued = iceQueue.current.splice(0);
@@ -103,4 +137,10 @@ export function GlobalCallManager({ userId }: { userId: string }) {
       <button className="answer-call" onClick={() => void answer()}>☎</button>}
       <button className="hang-up" onClick={() => void end(call.direction === 'incoming')}>☎</button></div>
   </div>;
+}
+
+function formatDuration(milliseconds: number) {
+  const seconds = Math.max(1, Math.round(milliseconds / 1000));
+  const minutes = Math.floor(seconds / 60);
+  return minutes ? `${minutes} мин ${seconds % 60} сек` : `${seconds} сек`;
 }

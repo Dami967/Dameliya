@@ -4,7 +4,7 @@ export type DirectMessage = {
   id: string;
   sender_id: string;
   recipient_id: string;
-  kind: 'text' | 'support' | 'gift' | 'audio';
+  kind: 'text' | 'support' | 'gift' | 'audio' | 'call';
   content: string;
   created_at: string;
 };

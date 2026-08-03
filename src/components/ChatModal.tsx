@@ -64,11 +64,13 @@ export function ChatModal({ user, currentUserId, friends, onClose }: {
         <button onClick={onClose} aria-label="Закрыть">×</button></nav></header>
     <div className="chat-messages">{messages.map((message) => {
       const mine = message.sender_id === currentUserId;
-      return <div className={`message-with-actions ${mine ? 'is-mine' : ''}`} key={message.id}>
-        {message.kind === 'audio' ? <VoiceMessage url={message.content} />
+      return <div className={`message-with-actions ${mine ? 'is-mine' : ''} ${message.kind === 'call' ? 'is-call' : ''}`} key={message.id}>
+        {message.kind === 'call' ? <p className="call-history">{message.content}</p>
+          : message.kind === 'audio' ? <VoiceMessage url={message.content} />
           : <p className={mine ? 'mine' : 'theirs'}>{message.content}</p>}
-        <div><button onClick={() => setForwarding(message)} title="Переслать">↗</button>
+        {message.kind !== 'call' && <div><button onClick={() => setForwarding(message)} title="Переслать">↗</button>
           {mine && <button onClick={() => void remove(message)} title="Удалить">⌫</button>}</div>
+        }
       </div>;
     })}{!messages.length && <p className="chat-empty">Начни настоящий разговор с {user.name}.</p>}</div>
     {error && <p className="form-error">{error}</p>}
