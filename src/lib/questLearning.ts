@@ -8,11 +8,13 @@ export type QuestLearning = {
 };
 
 export async function loadQuestLearning(userId: string, goal: string) {
-  const [result, actions] = await Promise.all([
+  const [result, actions, external] = await Promise.all([
     supabase.from('quest_task_records').select('*').eq('user_id', userId)
       .eq('goal', goal).eq('status', 'done').order('step_id').returns<TaskRecord[]>(),
     supabase.from('momentum_actions').select('kind,content,ai_analysis,created_at')
       .eq('user_id', userId).not('content', 'is', null).order('created_at', { ascending: false }).limit(20),
+    supabase.from('external_quest_progress').select('content,ai_summary,created_at')
+      .eq('user_id', userId).eq('goal', goal).order('created_at', { ascending: false }).limit(20),
   ]);
   const learning: QuestLearning[] = (result.data ?? []).map((record) => ({
     step: record.step_id,
@@ -29,7 +31,8 @@ export async function loadQuestLearning(userId: string, goal: string) {
   }));
   return {
     learning,
-    context: JSON.stringify({ completedTasks: learning, quizzesAndReports: momentumLearning }).slice(0, 18_000),
-    error: result.error ?? actions.error,
+    context: JSON.stringify({ completedTasks: learning, quizzesAndReports: momentumLearning,
+      progressOutsideApp: external.data ?? [] }).slice(0, 18_000),
+    error: result.error ?? actions.error ?? external.error,
   };
 }

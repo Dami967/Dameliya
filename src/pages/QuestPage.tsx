@@ -8,6 +8,7 @@ import { deleteAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { ensureQuestInsights } from '../lib/questInsights';
 import { activeQuestId, rememberActiveQuest } from '../lib/activeQuest';
+import { ExternalProgressModal } from '../components/ExternalProgressModal';
 
 export function QuestPage() {
   const { session } = useSession();
@@ -15,6 +16,7 @@ export function QuestPage() {
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showExternalProgress, setShowExternalProgress] = useState(false);
   const requestedId = new URLSearchParams(window.location.search).get('plan');
 
   useEffect(() => {
@@ -103,11 +105,16 @@ export function QuestPage() {
             : <p>{done.length ? 'Кью анализирует разговор и заметки завершённого этапа…'
               : `После этапа «${steps[0]?.title}» Кью сохранит здесь твою главную мысль.`}</p>}
         </section>
+        <button className="external-progress-button" onClick={() => setShowExternalProgress(true)}>
+          <Icon name="sparkles" size={17} /> Я продвинулся самостоятельно</button>
         <Link href="/mentor?choose=1" className="secondary-button"><Icon name="sparkles" size={18} /> Добавить или изменить цель</Link>
         <button className="delete-quest-button" disabled={deleting} onClick={() => void removePlan()}>
           {deleting ? 'Удаляем…' : 'Удалить эту цель'}</button>
       </aside>
     </div> : <section className="empty-state"><Icon name="map" size={40} /><h2>Личных карт пока нет</h2>
       <p>Расскажи Кью о цели, и он создаст первую экспедицию.</p><Link href="/mentor" className="primary-button">Создать цель</Link></section>}
+    {showExternalProgress && session && plan && <ExternalProgressModal userId={session.user.id} plan={plan}
+      onClose={() => setShowExternalProgress(false)} onAdapted={(updated) => setPlans((current) =>
+        current.map((item) => item.id === updated.id ? updated : item))} />}
   </AppShell>;
 }
