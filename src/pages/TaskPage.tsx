@@ -39,27 +39,33 @@ export function TaskPage() {
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [learningContext, setLearningContext] = useState('');
   const [resourcesLoading, setResourcesLoading] = useState(false);
+  const [recordLoaded, setRecordLoaded] = useState(false);
   const stepId = Number(params?.id) || 0;
   const planId = new URLSearchParams(window.location.search).get('plan');
 
   useEffect(() => {
     if (!session) return;
+    setRecordLoaded(false);
+    setRecord(null);
     const request = planId ? loadAiQuestById(session.user.id, planId) : loadAiQuest(session.user.id);
     void request.then(async ({ data: currentPlan }) => {
       const selectedId = stepId || currentPlan?.steps.find((item) => item.state === 'active')?.id || 1;
       if (!currentPlan) {
         setStep(questSteps.find((item) => item.id === selectedId) ?? questSteps[0]);
+        setView('lesson');
+        setRecordLoaded(true);
         return;
       }
       const normalized = normalizeQuestStep(currentPlan.steps.find((item) => item.id === selectedId) ?? currentPlan.steps[0]);
       const immediate = normalized;
       setPlan({ ...currentPlan, steps: currentPlan.steps.map((item) => item.id === immediate.id ? immediate : item) });
       setStep(immediate);
+      setView(immediate.state === 'done' ? 'choice' : 'lesson');
       const saved = await loadTaskRecord(session.user.id, currentPlan.goal, immediate.id);
       setRecord(saved.data ?? null); setNotes(saved.data?.notes ?? ''); setChat(saved.data?.chat ?? []);
+      setRecordLoaded(true);
       const learning = await loadQuestLearning(session.user.id, currentPlan.goal);
       setLearningContext(learning.context);
-      setView(immediate.state === 'done' ? 'choice' : 'lesson');
       setResourcesLoading(true);
       const detailResult = await ensureQuestTaskDetails(session.user.id, currentPlan, selectedId);
       const selected = detailResult.data ?? immediate;
@@ -70,12 +76,12 @@ export function TaskPage() {
   }, [planId, session, stepId]);
 
   useEffect(() => {
-    if (!session || !plan || !step) return;
+    if (!session || !plan || !step || !recordLoaded) return;
     const timer = window.setTimeout(() => {
       void saveTaskRecord(session.user.id, plan.goal, step.id, { notes, chat });
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [chat, notes, plan, session, step]);
+  }, [chat, notes, plan, recordLoaded, session, step]);
 
   if (!step) return <main className="center-loader">Кью адаптирует задание под твою цель…</main>;
   if (view === 'choice') return <CompletedTaskChoice step={step} record={record}
