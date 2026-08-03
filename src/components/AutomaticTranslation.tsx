@@ -21,6 +21,7 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
     let timer: number | undefined;
     let running = false;
     let rerun = false;
+    let languageVersion = 0;
 
     async function translatePage() {
       if (running) { rerun = true; return; }
@@ -39,7 +40,9 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
       if (!batch.length) return;
       running = true;
       const requestedLanguage = language;
+      const requestedVersion = languageVersion;
       const translations = await translateUiBatch(batch, requestedLanguage);
+      if (requestedVersion !== languageVersion) return;
       if (Object.keys(translations).length) saveUiTranslations(requestedLanguage, translations);
       running = false;
       if (language === requestedLanguage) schedule();
@@ -55,6 +58,9 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
     observer.observe(document.body, { childList: true, subtree: true });
     const onLanguage = (event: Event) => {
       language = (event as CustomEvent<string>).detail || detectLanguage();
+      languageVersion += 1;
+      running = false;
+      rerun = false;
       schedule();
     };
     window.addEventListener('goalquest-language-changed', onLanguage);
