@@ -10,6 +10,7 @@ const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { url
 
 export function GlobalCallManager({ userId }: { userId: string }) {
   const [call, setCall] = useState<CallState | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(90);
   const peer = useRef<RTCPeerConnection | null>(null);
   const local = useRef<MediaStream | null>(null);
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
@@ -18,6 +19,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   const acceptedAt = useRef<number | null>(null);
   const logged = useRef(false);
   const answerTimer = useRef<number | null>(null);
+  const countdownTimer = useRef<number | null>(null);
   const ringTimer = useRef<number | null>(null);
   useEffect(() => { callRef.current = call; }, [call]);
 
@@ -25,6 +27,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     peer.current?.close(); peer.current = null;
     local.current?.getTracks().forEach((track) => track.stop()); local.current = null;
     if (answerTimer.current) window.clearTimeout(answerTimer.current);
+    if (countdownTimer.current) window.clearInterval(countdownTimer.current);
     stopRinging();
     iceQueue.current = []; callRef.current = null; setCall(null);
   }, []);
@@ -36,13 +39,14 @@ export function GlobalCallManager({ userId }: { userId: string }) {
       const next: CallState = { callId: signal.call_id, peerId: signal.sender_id,
         direction: 'incoming', offer: signal.payload as unknown as RTCSessionDescriptionInit,
         name: person.name, avatarUrl: person.avatarUrl, status: 'Входящий звонок · ответь в течение 1:30' };
-      callRef.current = next; setCall(next); startRinging(); return;
+      callRef.current = next; setCall(next); startRinging(); startAnswerCountdown(next.callId); return;
     }
     if (!current || current.callId !== signal.call_id) return;
     if (signal.signal_type === 'answer' && peer.current) {
       await peer.current.setRemoteDescription(signal.payload as unknown as RTCSessionDescriptionInit);
       acceptedAt.current = Date.now();
       if (answerTimer.current) window.clearTimeout(answerTimer.current);
+      if (countdownTimer.current) window.clearInterval(countdownTimer.current);
       stopRinging();
       await flushIce(peer.current); setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
     } else if (signal.signal_type === 'ice') {
@@ -90,7 +94,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
       const offer = await connection.createOffer(); await connection.setLocalDescription(offer);
       await sendCallSignal(callId, user.id, 'offer', offer as unknown as Record<string, unknown>);
       startRinging();
-      answerTimer.current = window.setTimeout(() => void timeoutCall(callId), 90_000);
+      startAnswerCountdown(callId);
     } catch {
       logged.current = true;
       setCall((old) => old ? { ...old, status: 'Не удалось начать звонок или получить доступ к микрофону' } : old);
@@ -119,6 +123,16 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     playNotificationSound('call');
     ringTimer.current = window.setInterval(() => playNotificationSound('call'), 2_600);
   }
+  function startAnswerCountdown(callId: string) {
+    const deadline = Date.now() + 90_000;
+    setRemainingSeconds(90);
+    if (countdownTimer.current) window.clearInterval(countdownTimer.current);
+    countdownTimer.current = window.setInterval(() => {
+      setRemainingSeconds(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    }, 250);
+    if (answerTimer.current) window.clearTimeout(answerTimer.current);
+    answerTimer.current = window.setTimeout(() => void timeoutCall(callId), 90_000);
+  }
   function stopRinging() {
     if (ringTimer.current) window.clearInterval(ringTimer.current);
     ringTimer.current = null;
@@ -143,9 +157,12 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   }
 
   if (!call) return null;
+  const waiting = call.status.includes('Входящий') || call.status.includes('Звоним');
   return <div className="call-overlay global-call"><audio ref={remoteAudio} autoPlay />
     <div className="call-person"><span className="call-avatar">{call.avatarUrl ? <img src={call.avatarUrl} alt="" /> : call.name[0]}</span>
-      <h2>{call.name}</h2><p>{call.status}</p></div>
+      <h2>{call.name}</h2><p>{waiting
+        ? `${call.direction === 'incoming' ? 'Входящий звонок' : 'Звоним…'} · ${formatCountdown(remainingSeconds)}`
+        : call.status}</p></div>
     <div className="call-controls">{call.direction === 'incoming' && call.status.includes('Входящий') &&
       <button className="answer-call" onClick={() => void answer()}>☎</button>}
       <button className="hang-up" onClick={() => void end(call.direction === 'incoming')}>☎</button></div>
@@ -156,4 +173,8 @@ function formatDuration(milliseconds: number) {
   const seconds = Math.max(1, Math.round(milliseconds / 1000));
   const minutes = Math.floor(seconds / 60);
   return minutes ? `${minutes} мин ${seconds % 60} сек` : `${seconds} сек`;
+}
+
+function formatCountdown(seconds: number) {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
