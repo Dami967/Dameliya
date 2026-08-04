@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AiComposer } from '../components/AiComposer';
 import { AppShell } from '../components/AppShell';
@@ -24,6 +24,13 @@ export function MentorPage() {
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([{ role: 'q', text: mentorGreeting(detectLanguage()) }]);
+  useLayoutEffect(() => {
+    const scrollToStart = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    scrollToStart();
+    const frame = window.requestAnimationFrame(scrollToStart);
+    const timer = window.setTimeout(scrollToStart, 180);
+    return () => { window.cancelAnimationFrame(frame); window.clearTimeout(timer); };
+  }, []);
   useEffect(() => {
     if (!session) return;
     const params = new URLSearchParams(window.location.search);
