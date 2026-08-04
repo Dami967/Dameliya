@@ -34,6 +34,7 @@ button { cursor: pointer; }
   display: flex; flex-direction: column; z-index: 10;
 }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 10px; font-size: 20px; font-weight: 800; }
+html[data-ui-translating] body::after{content:attr(data-ui-translating);position:fixed;z-index:200;inset:0;display:grid;place-items:center;color:#6555c8;background:#f8f7ff;font-size:16px;font-weight:800}
 .brand__mark {
   display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px;
   color: #fff; background: linear-gradient(145deg, #26baf1, var(--purple));

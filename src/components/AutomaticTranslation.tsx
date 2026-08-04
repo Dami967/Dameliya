@@ -22,11 +22,21 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
     let rerun = false;
     let languageVersion = 0;
 
+    function showSwitching() {
+      document.documentElement.dataset.uiTranslating = language === 'kk' ? 'Тіл ауыстырылуда…'
+        : language === 'ru' ? 'Переключаем язык…' : 'Changing language…';
+    }
+
+    function finishSwitching() {
+      delete document.documentElement.dataset.uiTranslating;
+    }
+
     async function translatePage() {
       if (running) { rerun = true; return; }
       const targets = collectTargets();
       if (language === 'ru') {
         targets.forEach((target) => target.apply(target.source));
+        finishSwitching();
         return;
       }
       const missing = new Set<string>();
@@ -36,14 +46,15 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
         else missing.add(target.source);
       });
       const batch = takeBatch([...missing]);
-      if (!batch.length) return;
+      if (!batch.length) { finishSwitching(); return; }
       running = true;
       const requestedLanguage = language;
       const requestedVersion = languageVersion;
       const translations = await translateUiBatch(batch, requestedLanguage);
       if (requestedVersion !== languageVersion) return;
-      if (Object.keys(translations).length) saveUiTranslations(requestedLanguage, translations);
       running = false;
+      if (!Object.keys(translations).length) { finishSwitching(); return; }
+      saveUiTranslations(requestedLanguage, translations);
       if (language === requestedLanguage) schedule();
       if (rerun) { rerun = false; schedule(); }
     }
@@ -66,14 +77,17 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
       languageVersion += 1;
       running = false;
       rerun = false;
+      showSwitching();
       schedule();
     };
     window.addEventListener('goalquest-language-changed', onLanguage);
+    if (language !== 'ru') showSwitching();
     schedule();
     return () => {
       observer.disconnect();
       window.removeEventListener('goalquest-language-changed', onLanguage);
       window.clearTimeout(timer);
+      finishSwitching();
     };
   }, []);
 

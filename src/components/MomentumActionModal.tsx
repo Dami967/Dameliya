@@ -41,6 +41,8 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
     const plan = plans.find((item) => item.id === selectedPlanId);
     if (!plan || busy) return;
     setBusy(true); setFeedback(''); setQuiz([]); setAnswer(''); setCheckedAnswer(null); setQuestionIndex(0);
+    const cachedQuiz = readQuizCache(plan.id, language);
+    if (cachedQuiz) { setQuiz(cachedQuiz); setBusy(false); return; }
     const context = await personalContext(userId, plan);
     const result = await askAi(`${context}\nСоздай ровно 5 разных полезных вопросов по знаниям, которые нужны для этой цели.
 Не спрашивай личные данные или формулировку цели. В каждом вопросе ровно один верный ответ.
@@ -53,6 +55,7 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
       const questions = (value.questions ?? []).map(normalizeQuiz).filter((item): item is Quiz => Boolean(item));
       if (questions.length !== 5) throw new Error();
       setQuiz(questions);
+      saveQuizCache(plan.id, language, questions);
     } catch { setFeedback(result.error?.message ?? 'Не удалось создать вопрос. Попробуй ещё раз.'); }
     setBusy(false);
   }
@@ -177,6 +180,20 @@ function quizButtonLabel(checked: number | null, correct?: number) {
 
 function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
+}
+
+function readQuizCache(planId: string, language: string) {
+  try {
+    const cached = JSON.parse(localStorage.getItem(`goalquest-quiz-${planId}-${language}`) ?? 'null') as unknown;
+    if (!Array.isArray(cached)) return null;
+    const questions = cached.map((item) => normalizeQuiz(item as Partial<Quiz>))
+      .filter((item): item is Quiz => Boolean(item));
+    return questions.length === 5 ? questions : null;
+  } catch { return null; }
+}
+
+function saveQuizCache(planId: string, language: string, quiz: Quiz[]) {
+  localStorage.setItem(`goalquest-quiz-${planId}-${language}`, JSON.stringify(quiz));
 }
 
 async function personalContext(userId: string, selectedPlan?: AiQuestPlan) {

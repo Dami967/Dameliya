@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { AppShell } from '../components/AppShell';
 import { SettingsRow, SettingsSection, Toggle } from '../components/SettingsUi';
@@ -18,16 +18,18 @@ export function SettingsPage() {
   const [accountAction, setAccountAction] = useState<AccountAction | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
   const [accountError, setAccountError] = useState('');
+  const settingsRevision = useRef(0);
   const [, navigate] = useLocation();
 
   useEffect(() => {
     if (session) {
       let activeRequest = true;
+      const requestRevision = settingsRevision.current;
       setSettings(null);
       const cached = cachedSettings(session.user.id);
       setSettings(cached);
       void loadSettings(session.user.id).then(({ data }) => {
-      if (!activeRequest) return;
+      if (!activeRequest || requestRevision !== settingsRevision.current) return;
       setSettings(data);
       if (data) {
         cacheSettings(data);
@@ -42,6 +44,7 @@ export function SettingsPage() {
   async function update(changes: Partial<UserSettings>) {
     if (!session || !settings) return;
     const next = { ...settings, ...changes };
+    if (changes.language) settingsRevision.current += 1;
     setSettings(next);
     cacheSettings(next);
     if (changes.theme) applyTheme(changes.theme);
