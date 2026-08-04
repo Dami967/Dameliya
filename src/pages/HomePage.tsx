@@ -9,6 +9,7 @@ import { UserBalance } from '../components/UserBalance';
 import { currentUserName, currentUsername, useCurrentProfile } from '../lib/useCurrentProfile';
 import { loadHomeProgress, type HomeProgress } from '../lib/homeProgress';
 import { activeQuestId, rememberActiveQuest } from '../lib/activeQuest';
+import { NotificationBell } from '../components/NotificationBell';
 
 const emptyProgress: HomeProgress = {
   streak: 0, weekCounts: Array(7).fill(0), activeWeekdays: Array(7).fill(false),
@@ -62,6 +63,7 @@ export function HomePage() {
           <span className="home-username">{username}</span> <span>👋</span></h1></div>
         <div className="top-stats">
           <UserBalance />
+          {session && <NotificationBell userId={session.user.id} />}
           <div className="avatar">{profile?.avatar_url
             ? <img src={profile.avatar_url} alt="" /> : userName[0]?.toUpperCase() || 'G'}</div>
         </div>

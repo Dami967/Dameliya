@@ -47,7 +47,7 @@ export function AppShell({ children }: AppShellProps) {
           <Icon name="arrow" size={16} />
         </Link>
       </aside>
-      {session && <div className="global-notifications"><NotificationBell userId={session.user.id} /></div>}
+      {session && location !== '/home' && <div className="global-notifications"><NotificationBell userId={session.user.id} /></div>}
       <main className="main-content">{children}</main>
       <nav className="bottom-nav">
         {navigation.map((item) => (
