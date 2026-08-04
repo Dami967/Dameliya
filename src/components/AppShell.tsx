@@ -41,7 +41,6 @@ export function AppShell({ children }: AppShellProps) {
               <Icon name={item.icon} size={21} /><span>{item.label}</span>
             </Link>
           ))}
-          <FloatingMentor />
         </nav>
         <MomentumCard />
         <Link href="/profile" className={`sidebar-user ${location === '/profile' ? 'is-active' : ''}`}>

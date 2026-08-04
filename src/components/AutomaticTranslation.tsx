@@ -45,6 +45,7 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
         if (translated) target.apply(translated);
         else missing.add(target.source);
       });
+      if (missing.size) showSwitching();
       const batch = takeBatch([...missing]);
       if (!batch.length) { finishSwitching(); return; }
       running = true;
@@ -61,7 +62,7 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
 
     function schedule() {
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => void translatePage(), 80);
+      timer = window.setTimeout(() => void translatePage(), 0);
     }
 
     const observer = new MutationObserver(schedule);

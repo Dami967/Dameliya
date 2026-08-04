@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { detectLanguage, languageName } from '../lib/languages';
 import { askAi } from '../lib/ai';
 import type { AiAttachment } from '../lib/aiAttachments';
@@ -17,6 +17,8 @@ export function FloatingMentor() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [busy, setBusy] = useState(false);
+  const [position, setPosition] = useState(readMentorPosition);
+  const drag = useRef<{ startX: number; startY: number; x: number; y: number; moved: boolean } | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -37,6 +39,12 @@ export function FloatingMentor() {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = previousOverflow; };
   }, [isOpen]);
+  useEffect(() => {
+    if (position) localStorage.setItem('goalquest_q_position', JSON.stringify(position));
+    const keepOnScreen = () => setPosition((current) => current ? clampPosition(current.x, current.y) : null);
+    window.addEventListener('resize', keepOnScreen);
+    return () => window.removeEventListener('resize', keepOnScreen);
+  }, [position]);
 
   async function ask(text: string, attachments: AiAttachment[] = []) {
     if (!text.trim() || busy) return;
@@ -61,8 +69,30 @@ Understand attached images, documents and voice messages when present.`, attachm
     setBusy(false);
   }
 
+  function startDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    const rect = event.currentTarget.parentElement?.getBoundingClientRect();
+    drag.current = { startX: event.clientX, startY: event.clientY,
+      x: rect?.left ?? 0, y: rect?.top ?? 0, moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function moveDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    if (!drag.current) return;
+    const x = event.clientX - drag.current.startX;
+    const y = event.clientY - drag.current.startY;
+    if (Math.abs(x) + Math.abs(y) > 5) drag.current.moved = true;
+    if (drag.current.moved) setPosition(clampPosition(drag.current.x + x, drag.current.y + y));
+  }
+
+  function stopDrag() {
+    const moved = drag.current?.moved;
+    drag.current = null;
+    if (!moved) setIsOpen((value) => !value);
+  }
+
   return (
-    <div className={`floating-mentor ${isOpen ? 'is-open' : ''}`}>
+    <div className={`floating-mentor ${isOpen ? 'is-open' : ''}`}
+      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}>
       {isOpen && <section className="mentor-popover">
         <header><img src="/goalquest-eagle-quest.png" alt="" /><div><b>Q · AI Mentor</b>
           <small><i /> {languageName(language)}</small></div>
@@ -86,11 +116,26 @@ Understand attached images, documents and voice messages when present.`, attachm
         </button>
       </section>}
       {!isOpen && <span className="mentor-hint">AI Mentor</span>}
-      <button className="mentor-fab" onClick={() => setIsOpen((value) => !value)} aria-label="Открыть AI Mentor">
+      <button className="mentor-fab" onPointerDown={startDrag} onPointerMove={moveDrag}
+        onPointerUp={stopDrag} onPointerCancel={() => { drag.current = null; }}
+        aria-label="Открыть или переместить AI Mentor">
         <span className="mentor-fab__letter">Q</span>
       </button>
     </div>
   );
+}
+
+function clampPosition(x: number, y: number) {
+  return { x: Math.max(8, Math.min(window.innerWidth - 76, x)),
+    y: Math.max(8, Math.min(window.innerHeight - 76, y)) };
+}
+
+function readMentorPosition() {
+  try {
+    const value = JSON.parse(localStorage.getItem('goalquest_q_position') || 'null') as { x?: unknown; y?: unknown } | null;
+    return value && typeof value.x === 'number' && typeof value.y === 'number'
+      ? clampPosition(value.x, value.y) : null;
+  } catch { return null; }
 }
 
 function welcome(language: string) {
