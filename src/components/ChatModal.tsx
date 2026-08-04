@@ -12,17 +12,21 @@ export function ChatModal({ user, currentUserId, friends, onClose }: {
   user: SocialUser; currentUserId: string; friends: SocialUser[]; onClose: () => void;
 }) {
   const [messages, setMessages] = useState<DirectMessage[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [forwarding, setForwarding] = useState<DirectMessage | null>(null);
   const refresh = useCallback(() => {
     void loadDirectMessages(currentUserId, user.id).then(({ data, error: loadError }) => {
       setMessages(data ?? []);
-      if (loadError) setError('Не удалось загрузить переписку.');
+      setError(loadError ? 'Не удалось загрузить переписку.' : '');
+      setMessagesLoading(false);
     });
   }, [currentUserId, user.id]);
 
   useEffect(() => {
+    setMessages([]);
+    setMessagesLoading(true);
     refresh();
     const channel = subscribeToMessages(currentUserId, user.id, refresh);
     return () => { void channel.unsubscribe(); };
@@ -32,7 +36,8 @@ export function ChatModal({ user, currentUserId, friends, onClose }: {
     if (!content.trim()) return;
     const result = await sendDirectMessage(user.id, kind, content.trim());
     if (result.error) return setError('Сообщение не отправлено. Убедись, что вы взаимные друзья.');
-    setMessages((old) => [...old, result.data]); setError('');
+    setMessages((old) => old.some((item) => item.id === result.data.id) ? old : [...old, result.data]);
+    setError('');
   }
 
   async function addVoice(blob: Blob) {
@@ -70,7 +75,8 @@ export function ChatModal({ user, currentUserId, friends, onClose }: {
           {mine && <button onClick={() => void remove(message)} title="Удалить">⌫</button>}</div>
         }
       </div>;
-    })}{!messages.length && <p className="chat-empty">Начни настоящий разговор с {user.name}.</p>}</div>
+    })}{messagesLoading && <p className="chat-empty">Загружаем сообщения…</p>}
+      {!messagesLoading && !messages.length && <p className="chat-empty">Начни настоящий разговор с {user.name}.</p>}</div>
     {error && <p className="form-error">{error}</p>}
     <div className="quick-support"><button onClick={() => void send('support', 'Ты справишься! 💪')}>💪 Поддержать</button>
       <button onClick={() => void send('gift', 'Лови подарок! 🎁')}><Icon name="gift" size={15} /> Подарок</button></div>

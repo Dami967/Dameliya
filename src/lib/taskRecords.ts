@@ -20,28 +20,13 @@ export function saveTaskRecord(userId: string, goal: string, stepId: number,
   }, { onConflict: 'user_id,goal,step_id' }).select('*').single<TaskRecord>();
 }
 
-export async function completeQuestTask(userId: string, plan: AiQuestPlan, stepId: number,
+export async function completeQuestTask(plan: AiQuestPlan, stepId: number,
   notes: string, chat: TaskChatMessage[]) {
-  const current = plan.steps.find((step) => step.id === stepId);
-  const steps = plan.steps.map((step) => {
-    if (step.id === stepId) return { ...step, state: 'done' as const, subtitle: 'Выполнено' };
-    if (current?.state === 'active' && step.id === stepId + 1) {
-      return { ...step, state: 'active' as const, subtitle: 'Текущее задание' };
-    }
-    return step;
-  });
-  const [record, quest] = await Promise.all([
-    saveTaskRecord(userId, plan.goal, stepId, {
-      notes, chat, status: 'done', completed_at: new Date().toISOString(),
-    }),
-    supabase.from('ai_quest_plans').update({ steps }).eq('user_id', userId).eq('id', plan.id),
-  ]);
-  if (!record.error && current?.state !== 'done') {
-    await Promise.all([
-      supabase.rpc('add_challenge_score', { points: current?.xp ?? 50 }),
-      supabase.rpc('award_task_progress', { points: current?.xp ?? 50 }),
-    ]);
+  const result = await supabase.rpc('complete_quest_task', {
+    target_plan: plan.id, target_step: stepId, task_notes: notes, task_chat: chat,
+  }).single<{ newly_completed: boolean; awarded_xp: number }>();
+  if (!result.error && result.data?.newly_completed) {
     window.dispatchEvent(new Event('profile-stats-changed'));
   }
-  return { error: record.error ?? quest.error };
+  return result;
 }

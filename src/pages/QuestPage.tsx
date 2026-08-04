@@ -14,7 +14,7 @@ import { cachedQuestPlans, cacheQuestPlans } from '../lib/questCache';
 export function QuestPage() {
   const { session } = useSession();
   const [, navigate] = useLocation();
-  const [plans, setPlans] = useState<AiQuestPlan[]>(() => cachedQuestPlans());
+  const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -23,9 +23,14 @@ export function QuestPage() {
 
   useEffect(() => {
     if (!session) return;
+    let activeRequest = true;
+    setPlans([]);
+    setSelectedPlanId(null);
+    setPlansLoading(true);
     const cached = cachedQuestPlans(session.user.id);
     if (cached.length) setPlans(cached);
     void loadAiQuests(session.user.id).then(({ data }) => {
+      if (!activeRequest) return;
       const loaded = data ?? [];
       setPlans(loaded);
       const preferred = requestedId ?? activeQuestId();
@@ -34,6 +39,7 @@ export function QuestPage() {
       if (selected) rememberActiveQuest(selected);
       setPlansLoading(false);
     });
+    return () => { activeRequest = false; };
   }, [session]);
 
   const selectedIndex = Math.max(0, plans.findIndex((plan) => plan.id === selectedPlanId));

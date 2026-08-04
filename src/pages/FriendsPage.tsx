@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { AppShell } from '../components/AppShell';
 import { ActivityFeed } from '../components/ActivityFeed';
@@ -21,25 +21,31 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
 export function FriendsPage() {
   const { session } = useSession();
   const [tab, setTab] = useState<Tab>('friends');
-  const [friends, setFriends] = useState<SocialUser[]>(() => cachedMutualFriends());
+  const [friends, setFriends] = useState<SocialUser[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(true);
   const [profile, setProfile] = useState<SocialUser | null>(null);
   const [chat, setChat] = useState<SocialUser | null>(null);
   const [inviteModal, setInviteModal] = useState(false);
+  const activeUser = useRef<string | null>(null);
   const [, navigate] = useLocation();
   const refreshFriends = useCallback(async () => {
     if (!session) return;
+    const userId = session.user.id;
     const cached = cachedMutualFriends(session.user.id);
     if (cached.length) setFriends(cached);
-    const mutual = await loadMutualFriends(session.user.id);
+    const mutual = await loadMutualFriends(userId);
+    if (activeUser.current !== userId) return;
     setFriends(mutual);
     setFriendsLoading(false);
   }, [session]);
   useEffect(() => {
     if (!session) return;
+    activeUser.current = session.user.id;
+    setFriends([]);
+    setFriendsLoading(true);
     void refreshFriends();
     const channel = subscribeToFriendships(session.user.id, () => void refreshFriends());
-    return () => { void channel.unsubscribe(); };
+    return () => { activeUser.current = null; void channel.unsubscribe(); };
   }, [session, refreshFriends]);
   useEffect(() => {
     const requestedId = new URLSearchParams(window.location.search).get('chat');

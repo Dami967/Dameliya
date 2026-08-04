@@ -13,7 +13,7 @@ import { cachedSettings, cacheSettings } from '../lib/settingsCache';
 
 export function SettingsPage() {
   const { session } = useSession();
-  const [settings, setSettings] = useState<UserSettings | null>(() => cachedSettings());
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [message, setMessage] = useState('');
   const [accountAction, setAccountAction] = useState<AccountAction | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
@@ -22,9 +22,12 @@ export function SettingsPage() {
 
   useEffect(() => {
     if (session) {
+      let activeRequest = true;
+      setSettings(null);
       const cached = cachedSettings(session.user.id);
       setSettings(cached);
       void loadSettings(session.user.id).then(({ data }) => {
+      if (!activeRequest) return;
       setSettings(data);
       if (data) {
         cacheSettings(data);
@@ -32,6 +35,7 @@ export function SettingsPage() {
         rememberLanguage(data.language);
       }
     });
+      return () => { activeRequest = false; };
     }
   }, [session]);
 

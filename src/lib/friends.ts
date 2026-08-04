@@ -42,15 +42,18 @@ function cacheMutualFriends(userId: string, friends: SocialUser[]) {
 }
 
 export async function loadMutualFriends(userId: string): Promise<SocialUser[]> {
-  const [{ data: outgoing }, { data: incoming }] = await Promise.all([
+  const cached = cachedMutualFriends(userId);
+  const [{ data: outgoing, error: outgoingError }, { data: incoming, error: incomingError }] = await Promise.all([
     supabase.from('follows').select('following_id,is_pinned').eq('follower_id', userId),
     supabase.from('follows').select('follower_id').eq('following_id', userId),
   ]);
+  if (outgoingError || incomingError) return cached;
   const incomingIds = new Set((incoming ?? []).map((row) => row.follower_id));
   const mutual = (outgoing ?? []).filter((row) => incomingIds.has(row.following_id));
   if (!mutual.length) { cacheMutualFriends(userId, []); return []; }
-  const { data } = await supabase.from('social_profiles').select('*')
+  const { data, error } = await supabase.from('social_profiles').select('*')
     .in('user_id', mutual.map((row) => row.following_id));
+  if (error) return cached;
   const pinned = new Set(mutual.filter((row) => row.is_pinned).map((row) => row.following_id));
   const friends = ((data ?? []) as SocialProfileRow[]).map((profile) =>
     toSocialUser(profile, pinned.has(profile.user_id)));

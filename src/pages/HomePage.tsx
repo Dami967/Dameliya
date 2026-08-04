@@ -10,6 +10,7 @@ import { currentUserName, currentUsername, useCurrentProfile } from '../lib/useC
 import { loadHomeProgress, type HomeProgress } from '../lib/homeProgress';
 import { activeQuestId, rememberActiveQuest } from '../lib/activeQuest';
 import { NotificationBell } from '../components/NotificationBell';
+import { cachedQuestPlans } from '../lib/questCache';
 
 const emptyProgress: HomeProgress = {
   streak: 0, weekCounts: Array(7).fill(0), activeWeekdays: Array(7).fill(false),
@@ -20,23 +21,32 @@ export function HomePage() {
   const { session, loading: sessionLoading } = useSession();
   const profile = useCurrentProfile(session?.user.id);
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
   const [planIndex, setPlanIndex] = useState(0);
   const [progress, setProgress] = useState<HomeProgress>(emptyProgress);
   useEffect(() => {
     if (!session) return;
+    let activeRequest = true;
+    setPlans([]);
+    const cached = cachedQuestPlans(session.user.id);
+    if (cached.length) setPlans(cached);
     const refresh = () => void loadHomeProgress(session.user.id).then(setProgress);
+    setPlansLoading(true);
     void loadAiQuests(session.user.id).then(({ data }) => {
+      if (!activeRequest) return;
       const loaded = data ?? [];
       setPlans(loaded);
       const activeId = activeQuestId();
       const index = loaded.findIndex((plan) => plan.id === activeId);
       setPlanIndex(index >= 0 ? index : 0);
+      setPlansLoading(false);
     });
     refresh();
     const interval = window.setInterval(refresh, 5 * 60 * 1000);
     window.addEventListener('profile-stats-changed', refresh);
     window.addEventListener('focus', refresh);
     return () => {
+      activeRequest = false;
       window.clearInterval(interval);
       window.removeEventListener('profile-stats-changed', refresh);
       window.removeEventListener('focus', refresh);
@@ -75,8 +85,9 @@ export function HomePage() {
         </div>
         <div className="hero-card__copy">
           <span className="eyebrow">ГЛАВНЫЙ КВЕСТ</span>
-          <h2>{plan?.goal || 'Преврати мечту в приключение!'}</h2>
-          <p>{active ? `Следующий шаг: ${active.title}` : 'Расскажи Кью о цели, и он создаст персональный маршрут.'}</p>
+          <h2>{plan?.goal || (plansLoading ? 'Загружаем твою карту…' : 'Преврати мечту в приключение!')}</h2>
+          <p>{active ? `Следующий шаг: ${active.title}` : plansLoading
+            ? 'Подготавливаем твоё последнее приключение.' : 'Расскажи Кью о цели, и он создаст персональный маршрут.'}</p>
           <div className="hero-progress"><span style={{ width: `${total ? done / total * 100 : 0}%` }} /></div>
           <small>{done} из {total || 10} этапов пройдено</small>
         </div>
@@ -86,7 +97,7 @@ export function HomePage() {
               aria-label="Предыдущий квест">←</button><span>{planIndex + 1} / {plans.length}</span>
             <button onClick={() => selectPlan((planIndex + 1) % plans.length)} aria-label="Следующий квест">→</button>
           </div>}
-          <Link href={taskUrl} className="primary-button">{active ? 'Продолжить' : 'Создать цель'} <Icon name="arrow" size={18} /></Link>
+          {!plansLoading && <Link href={taskUrl} className="primary-button">{active ? 'Продолжить' : 'Создать цель'} <Icon name="arrow" size={18} /></Link>}
         </div>
       </section>
 
@@ -99,11 +110,11 @@ export function HomePage() {
       <aside className="dashboard-side dashboard-side--home">
           <section className="daily-card">
             <div className="daily-card__icon"><Icon name="sparkles" size={25} /></div>
-            <div><span className="eyebrow">ЗАДАНИЕ ДНЯ</span><h3>{active?.title || 'Выбери новую цель'}</h3>
+            <div><span className="eyebrow">ЗАДАНИЕ ДНЯ</span><h3>{active?.title || (plansLoading ? 'Загружаем задание…' : 'Выбери новую цель')}</h3>
               <p>{active?.details?.objective || active?.subtitle || 'Кью подготовит задание именно под твою цель и доступное время.'}</p></div>
             <div className="daily-meta"><span><Icon name="clock" size={17} />{active?.details?.duration_minutes ?? 25} мин</span>
               <span><Icon name="zap" size={17} />+{active?.xp ?? 50} XP</span></div>
-            <Link href={taskUrl} className="dark-button">{active ? 'Начать задание' : 'Создать цель'}</Link>
+            {!plansLoading && <Link href={taskUrl} className="dark-button">{active ? 'Начать задание' : 'Создать цель'}</Link>}
           </section>
           <section className="streak-card">
             <div className="streak-head"><span className="flame-circle"><Icon name="flame" /></span>

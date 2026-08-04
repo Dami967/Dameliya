@@ -107,7 +107,7 @@ export function TaskPage() {
       if (!validation.passed) {
         setCompleting(false); return;
       }
-      const completion = await completeQuestTask(session.user.id, plan, activeStep.id, notes, chat);
+      const completion = await completeQuestTask(plan, activeStep.id, notes, chat);
       if (completion.error) {
         setValidationResult({ passed: false, feedback: 'Не удалось сохранить результат. Попробуй ещё раз.',
           expected_answer: details.expected_answer, comparisons: [] }); setCompleting(false); return;

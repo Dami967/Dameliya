@@ -1,4 +1,4 @@
-.onboarding { min-height: 100vh; display: grid; grid-template-columns: .9fr 1.1fr; background: #fff; }
+.onboarding { min-height: 100dvh; display: grid; grid-template-columns: .9fr 1.1fr; background: #fff; }
 .onboarding__visual { position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 42px 9%; color: #fff; background: radial-gradient(circle at 70% 38%, #8876ed, transparent 27%), linear-gradient(145deg, #384cc9, #654ad3); }
 .onboarding__visual::before, .onboarding__visual::after { content: ""; position: absolute; border: 1px solid #ffffff18; border-radius: 50%; }
 .onboarding__visual::before { width: 380px; height: 380px; left: -220px; top: 23%; }.onboarding__visual::after { width: 470px; height: 470px; right: -330px; bottom: -170px; }
@@ -24,8 +24,8 @@
 .profile-setup-avatar img { width: 100%; height: 100%; object-fit: cover; }.profile-setup-avatar small { color: var(--muted); font-size: 8px; }
 .profile-setup-fields { margin-top: 18px; }
 
-@media (max-width: 720px) {
+@media (max-width: 920px) {
   .onboarding { display: block; background: linear-gradient(#4356cd 0 220px, #fff 220px); }
   .onboarding__visual { min-height: 220px; padding: 24px; background: transparent; }.onboarding__visual h1 { font-size: 29px; }.onboarding__visual h1 br:nth-child(2), .onboarding-orbit { display: none; }
-  .onboarding__form { width: auto; margin: -12px 15px 0; padding: 25px 20px; border-radius: 20px 20px 0 0; background: #fff; }
+  .onboarding__form { width: auto; margin: -12px 15px 0; padding: 25px 20px calc(48px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; background: #fff; }
 }

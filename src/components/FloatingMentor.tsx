@@ -29,6 +29,13 @@ export function FloatingMentor() {
     });
   }, [session]);
   useEffect(() => {
+    const changed = (event: Event) => {
+      setLanguage((event as CustomEvent<string>).detail || detectLanguage());
+    };
+    window.addEventListener('goalquest-language-changed', changed);
+    return () => window.removeEventListener('goalquest-language-changed', changed);
+  }, []);
+  useEffect(() => {
     if (position) localStorage.setItem('goalquest_q_position', JSON.stringify(position));
   }, [position]);
   useEffect(() => {

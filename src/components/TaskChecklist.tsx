@@ -1,11 +1,7 @@
 import type { QuestStep, QuestTaskDetails } from '../lib/questData';
 
 export function LinkedTaskText({ text }: { text: string }) {
-  const parts = text.split(/(https:\/\/[^\s<>"']+)/gi);
-  return <>{parts.map((part, index) => part.startsWith('https://')
-    ? <a className="task-inline-link" href={part.replace(/[),.;!?]+$/g, '')}
-      target="_blank" rel="noreferrer" key={`${part}-${index}`}>{part}</a>
-    : part)}</>;
+  return <>{text}</>;
 }
 
 export function defaultTaskDetails(step: QuestStep): QuestTaskDetails {

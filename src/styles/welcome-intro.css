@@ -19,3 +19,7 @@
   .intro-visual__glow { width: 210px; height: 210px; }.intro-visual__icon { top: 20px; left: 20px; width: 52px; height: 52px; }
   .intro-content { padding: 38px 28px 30px; }.intro-content > p { min-height: 92px; }.intro-content h2 { font-size: 30px; }
 }
+@media (max-width: 920px) {
+  .intro-backdrop { align-items: start; overflow-y: auto; padding: calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom)); }
+  .intro-dialog { max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height: 0; overflow-y: auto; }
+}

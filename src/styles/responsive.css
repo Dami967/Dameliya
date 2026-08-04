@@ -7,7 +7,7 @@
   }
   .bottom-nav a { display: grid; flex:1; min-width: 0; min-height: 46px; place-content: center; justify-items: center; gap: 3px; border-radius: 10px; color: #9297a8; font-size: 8px; font-weight: 700; }
   .bottom-nav a.is-active { color: var(--blue); background: #eef2ff; }
-  .main-content { padding: 25px 22px 45px; }
+  .main-content { padding: 25px 22px calc(76px + env(safe-area-inset-bottom)); }
   .dashboard-grid, .quest-page-grid { grid-template-columns: 1fr; }
   .dashboard-side { grid-template-columns: 1fr 1fr; }
   .mentor-mini { grid-column: 1 / -1; }

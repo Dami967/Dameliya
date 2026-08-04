@@ -54,7 +54,13 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
     }
 
     const observer = new MutationObserver(schedule);
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: [...translatedAttributes],
+    });
     const onLanguage = (event: Event) => {
       language = (event as CustomEvent<string>).detail || detectLanguage();
       languageVersion += 1;
@@ -90,7 +96,7 @@ function collectTargets() {
       }
       if (isInterfaceText(original.source)) targets.push({ source: original.source, apply: (value) => {
         const next = preserveSpace(original.source, value);
-        text.nodeValue = next;
+        if (text.nodeValue !== next) text.nodeValue = next;
         original.lastApplied = next;
       } });
     }
@@ -109,7 +115,7 @@ function collectTargets() {
       }
       originalAttributes.set(element, attributes);
       if (isInterfaceText(original.source)) targets.push({ source: original.source, apply: (value) => {
-        element.setAttribute(attribute, value);
+        if (element.getAttribute(attribute) !== value) element.setAttribute(attribute, value);
         original.lastApplied = value;
       } });
     });

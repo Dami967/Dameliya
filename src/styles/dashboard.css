@@ -79,3 +79,4 @@
 .achievement--orange span { color: #ed7c44; background: #ffede4; }.achievement--blue span { color: var(--blue); background: #e9edff; }.achievement--purple span { color: var(--purple); background: #f0e9ff; }
 .achievement.is-locked { color: #9da2b1; }.achievement.is-locked span { color: #a5a9b5; background: #eceef3; filter: grayscale(1); }
 .info-row { display: flex; gap: 13px; padding: 13px 0; border-bottom: 1px solid var(--line); color: var(--blue); }.info-row span { display: grid; gap: 3px; }.info-row small { color: var(--muted); font-size: 8px; }.info-row b { color: var(--ink); font-size: 10px; }
+@media(max-width:920px){.notification-panel{display:flex;max-height:calc(100dvh - 76px - env(safe-area-inset-bottom));flex-direction:column}.notification-panel header button{width:44px;height:44px;flex:0 0 auto}.notification-list{max-height:none;min-height:0;flex:1;overflow-y:auto}}
