@@ -18,6 +18,7 @@ export function FloatingMentor() {
   const [answer, setAnswer] = useState('');
   const [busy, setBusy] = useState(false);
   const [position, setPosition] = useState<{ x: number; y: number } | null>(() => {
+    if (window.innerWidth <= 920) return null;
     try { return JSON.parse(localStorage.getItem('goalquest_q_position') || 'null'); } catch { return null; }
   });
   const drag = useRef<{ startX: number; startY: number; x: number; y: number; moved: boolean } | null>(null);
