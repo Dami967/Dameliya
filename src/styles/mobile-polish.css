@@ -32,7 +32,7 @@
   .topbar{margin-bottom:18px}
   .topbar .top-stats{gap:3px}
   .topbar .rewards-balance{gap:3px;margin:0}
-  .topbar .rewards-balance span{padding:7px 6px;border-radius:10px;font-size:8px;white-space:nowrap}
+  .topbar .rewards-balance span,.topbar .momentum-balance-button{padding:7px 6px;border-radius:10px;font-size:8px;white-space:nowrap}
   .topbar .rewards-balance svg{width:14px;height:14px}
   .topbar .notification-bell__button{width:34px;height:34px;border-radius:10px}
 

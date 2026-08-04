@@ -4,11 +4,13 @@ import { loadProfile } from '../lib/userProfile';
 import { useSession } from '../lib/useSession';
 import { useCurrentProfile } from '../lib/useCurrentProfile';
 import { Icon } from './Icon';
+import { MomentumOverviewModal } from './MomentumOverviewModal';
 
 export function UserBalance() {
   const { session } = useSession();
   const profile = useCurrentProfile(session?.user.id);
   const [, tick] = useState(0);
+  const [showMomentum, setShowMomentum] = useState(false);
 
   useEffect(() => {
     if (!session) return;
@@ -30,7 +32,9 @@ export function UserBalance() {
     ? Math.min(100, profile.momentum + Math.floor((Date.now() - updatedAt) / 600000)) : null;
 
   return <div className="rewards-balance">
-    <span title="Momentum — энергия для общения с AI"><Icon name="zap" size={17} /> <b>{currentMomentum ?? '—'}</b></span>
+    <button type="button" className="momentum-balance-button" title="Открыть Momentum"
+      onClick={() => setShowMomentum(true)}><Icon name="zap" size={17} /> <b>{currentMomentum ?? '—'}</b></button>
     <span title="XP — опыт за выполненные задания">⭐ <b>{profile ? `${profile.xp.toLocaleString('ru-RU')} XP` : '— XP'}</b></span>
+    {showMomentum && <MomentumOverviewModal onClose={() => setShowMomentum(false)} />}
   </div>;
 }

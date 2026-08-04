@@ -1,5 +1,5 @@
 .rewards-page-head { margin-bottom: 20px; }
-.rewards-balance { display: flex; gap: 8px; }.rewards-balance span { padding: 9px 11px; border: 1px solid var(--line); border-radius: 11px; background: #fff; font-size: 10px; }
+.rewards-balance { display: flex; gap: 8px; }.rewards-balance span,.momentum-balance-button { padding: 9px 11px; border: 1px solid var(--line); border-radius: 11px; color:inherit; background: #fff; font:inherit;font-size: 10px; }.momentum-balance-button{display:flex;align-items:center;gap:4px;cursor:pointer}
 .rewards-tabs { display: inline-flex; gap: 5px; padding: 5px; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
 .rewards-tabs button { border: 0; border-radius: 10px; padding: 9px 15px; color: var(--muted); background: transparent; font-size: 10px; font-weight: 800; }
 .rewards-tabs button.is-active { color: #fff; background: linear-gradient(120deg, var(--blue), var(--purple)); box-shadow: 0 6px 15px #5a55df30; }
