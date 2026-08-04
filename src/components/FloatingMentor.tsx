@@ -89,7 +89,9 @@ Understand attached images, documents and voice messages when present.`, attachm
       {isOpen && <section className="mentor-popover">
         <header><img src="/goalquest-eagle-quest.png" alt="" /><div><b>Q · AI Mentor</b>
           <small><i /> {languageName(language)}</small></div>
-          <button onClick={() => setIsOpen(false)} aria-label="Закрыть">×</button></header>
+          <button className="mentor-header-close" onClick={() => setIsOpen(false)} aria-label="Выйти из Q">
+            <span>Выйти</span> ×
+          </button></header>
         <div className="mentor-popover__chat">
           <p>{welcome(language)}</p>
           {question && <p className="mentor-popover__answer">{question}</p>}
