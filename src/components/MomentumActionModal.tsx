@@ -7,7 +7,7 @@ import { detectLanguage, languageName } from '../lib/languages';
 import { loadInterviewContext } from '../lib/interviewContext';
 import { loadActiveQuest } from '../lib/activeQuest';
 
-type Quiz = { question: string; options: string[]; correct_index: number };
+type Quiz = { question: string; options: string[]; correct_index: number; explanation: string };
 
 export function MomentumActionModal({ mode, userId, onClose, onReward }: {
   mode: 'quiz' | 'report'; userId: string; onClose: () => void; onReward: (value: number) => void;
@@ -15,6 +15,7 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
   const [quiz, setQuiz] = useState<Quiz[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState('');
+  const [checkedAnswer, setCheckedAnswer] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
   const [busy, setBusy] = useState(false);
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
@@ -38,11 +39,12 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
   async function createQuiz() {
     const plan = plans.find((item) => item.id === selectedPlanId);
     if (!plan || busy) return;
-    setBusy(true); setFeedback(''); setQuiz([]); setAnswer(''); setQuestionIndex(0);
+    setBusy(true); setFeedback(''); setQuiz([]); setAnswer(''); setCheckedAnswer(null); setQuestionIndex(0);
     const context = await personalContext(userId, plan);
     const result = await askAi(`${context}\nСоздай ровно 5 разных полезных вопросов по знаниям, которые нужны для этой цели.
 Не спрашивай личные данные или формулировку цели. В каждом вопросе ровно один верный ответ.
-Верни только JSON: {"questions":[{"question":"вопрос","options":["вариант 1","вариант 2","вариант 3"],"correct_index":0}]}.`,
+Для каждого вопроса добавь короткое понятное объяснение верного ответа.
+Верни только JSON: {"questions":[{"question":"вопрос","options":["вариант 1","вариант 2","вариант 3"],"correct_index":0,"explanation":"объяснение"}]}.`,
     `Ты создаёшь персональную викторину из 5 вопросов на языке ${languageName(language)}. Только валидный JSON без markdown.`,
     [], false, true);
     try {
@@ -58,13 +60,20 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
     if (!answer || busy) return;
     setBusy(true);
     const currentQuiz = quiz[questionIndex];
-    if (mode === 'quiz' && currentQuiz && Number(answer) !== currentQuiz.correct_index) {
-      setFeedback('Пока не совсем так. Посмотри на цель ещё раз и попробуй другой вариант.');
+    if (mode === 'quiz' && currentQuiz && checkedAnswer === null) {
+      const selected = Number(answer);
+      setCheckedAnswer(selected);
+      setFeedback(selected === currentQuiz.correct_index
+        ? `Верно! ${currentQuiz.explanation}` : `Неверно. ${currentQuiz.explanation}`);
+      setBusy(false); return;
+    }
+    if (mode === 'quiz' && currentQuiz && checkedAnswer !== currentQuiz.correct_index) {
+      setAnswer(''); setCheckedAnswer(null); setFeedback('Выбери другой вариант.');
       setBusy(false); return;
     }
     if (mode === 'quiz' && questionIndex < 4) {
-      setQuestionIndex((index) => index + 1); setAnswer('');
-      setFeedback(`Верно! Следующий вопрос: ${questionIndex + 2} из 5.`); setBusy(false); return;
+      setQuestionIndex((index) => index + 1); setAnswer(''); setCheckedAnswer(null);
+      setFeedback(''); setBusy(false); return;
     }
     if (mode === 'report' && countWords(answer) < 50) {
       setFeedback(`Нужно не менее 50 слов. Сейчас: ${countWords(answer)}.`);
@@ -73,10 +82,21 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
     let analysis = '';
     if (mode === 'report') {
       const context = await personalContext(userId);
-      const review = await askAi(`${context}\nОтчёт пользователя: ${answer}\nКоротко назови один успех и один подходящий следующий шаг.`,
-        `Ты добрый наставник. Анализируй отчёт относительно личной цели. Ответь на языке ${languageName(language)} в 2 предложениях.`);
+      const review = await askAi(`${context}\nОтчёт пользователя: ${answer}\nПроверь, что это связный осмысленный отчёт из настоящих слов о выполненной работе, а не случайные буквы, повторения или бессмысленный текст. Если отчёт настоящий, коротко назови один успех и следующий шаг.
+Верни только JSON: {"valid":true,"feedback":"твой ответ"}.`,
+        `Ты добрый, но внимательный наставник. Проверяй смысл отчёта относительно цели. Отвечай на языке ${languageName(language)}. Только валидный JSON без markdown.`);
       if (review.error) { setFeedback(review.error.message); setBusy(false); return; }
-      analysis = review.text ?? 'Отчёт принят.';
+      try {
+        const verdict = parseAiJson<{ valid?: boolean; feedback?: string }>(review.text ?? '');
+        analysis = String(verdict.feedback || '');
+        if (!verdict.valid || !analysis) {
+          setFeedback(analysis || 'Напиши настоящий связный отчёт о том, что ты сделал для цели.');
+          setBusy(false); return;
+        }
+      } catch {
+        setFeedback('Не получилось проверить отчёт. Попробуй написать его понятнее и отправить снова.');
+        setBusy(false); return;
+      }
       setFeedback(analysis);
     }
     const result = await supabase.rpc('restore_momentum', { action_kind: mode });
@@ -115,7 +135,8 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
     {mode === 'quiz' && quiz.length > 0 && <><div className="momentum-question-progress"><span>Вопрос {questionIndex + 1} из 5</span>
       <i><b style={{ width: `${(questionIndex + 1) * 20}%` }} /></i></div>
       <div className="momentum-options">{quiz[questionIndex].options.map((option, index) =>
-      <button className={answer === String(index) ? 'is-selected' : ''} key={option}
+      <button className={optionClass(answer, checkedAnswer, quiz[questionIndex].correct_index, index)} key={option}
+        disabled={checkedAnswer !== null}
         onClick={() => { setAnswer(String(index)); setFeedback(''); }}>{option}</button>)}</div></>}
     {mode === 'report' && <div className="momentum-report"><div className="momentum-report__tips">
       <span>✓ Что сделал</span><span>★ Что получилось</span><span>→ Что дальше</span></div>
@@ -127,7 +148,8 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
     {mode === 'quiz' && !quiz.length ? <button className="social-primary" disabled={!selectedPlanId || busy}
       onClick={() => void createQuiz()}>{busy ? 'Кью создаёт викторину…' : feedback ? 'Попробовать снова' : 'Создать викторину'}</button>
       : <button className="social-primary" disabled={!answer || busy} onClick={() => void submit()}>
-        {busy ? 'Кью анализирует…' : mode === 'quiz' ? 'Проверить ответ' : 'Отправить отчёт'}</button>}
+        {busy ? 'Кью анализирует…' : mode === 'quiz'
+          ? quizButtonLabel(checkedAnswer, quiz[questionIndex]?.correct_index) : 'Отправить отчёт'}</button>}
   </section></div>;
 }
 
@@ -136,7 +158,19 @@ function normalizeQuiz(value: Partial<Quiz>): Quiz | null {
   const correctIndex = Number(value.correct_index);
   if (!value.question || options.length !== 3 || !Number.isInteger(correctIndex)
     || correctIndex < 0 || correctIndex > 2) return null;
-  return { question: String(value.question), options, correct_index: correctIndex };
+  return { question: String(value.question), options, correct_index: correctIndex,
+    explanation: String(value.explanation || `Правильный ответ: ${options[correctIndex]}.`) };
+}
+
+function optionClass(answer: string, checked: number | null, correct: number, index: number) {
+  if (answer !== String(index)) return '';
+  if (checked === null) return 'is-selected';
+  return checked === correct ? 'is-correct' : 'is-wrong';
+}
+
+function quizButtonLabel(checked: number | null, correct?: number) {
+  if (checked === null) return 'Проверить ответ';
+  return checked === correct ? 'Следующий вопрос' : 'Попробовать ещё раз';
 }
 
 function countWords(value: string) {
