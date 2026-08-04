@@ -13,10 +13,10 @@
   .mentor-mini { grid-column: 1 / -1; }
   .task-layout { grid-template-columns: minmax(400px, 1.3fr) minmax(270px, .7fr); }
   .quest-goal-picker { max-width:none; gap:8px; margin-top:18px; }
-  .quest-goal-picker > span { font-size:13px; }
-  .quest-goal-picker select { min-height:56px; padding-inline:14px 42px; font-size:16px; }
-  .quest-goal-picker small { font-size:12px; line-height:1.5; }
-  .new-quest-link { display:flex; align-items:center; justify-content:center; width:100%; min-height:58px; margin-top:16px; border:1px solid #d9def4; border-radius:15px; color:var(--blue); background:#f0f3ff; box-shadow:0 7px 18px #425ed014; font-size:17px; }
+  .quest-goal-picker > span { font-size:16px; line-height:1.4; }
+  .quest-goal-picker select { min-height:56px; padding-inline:14px 42px; font-size:18px; }
+  .quest-goal-picker small { font-size:14px; line-height:1.55; }
+  .new-quest-link { display:flex; align-items:center; justify-content:center; width:100%; min-height:58px; margin-top:16px; border:1px solid #d9def4; border-radius:15px; color:var(--blue); background:#f0f3ff; box-shadow:0 7px 18px #425ed014; font-size:20px; line-height:1.2; }
 }
 
 @media (max-width: 680px) {
