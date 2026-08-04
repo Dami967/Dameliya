@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Icon } from './Icon';
 import { FloatingMentor } from './FloatingMentor';
@@ -22,16 +21,9 @@ const navigation = [
 
 export function AppShell({ children }: AppShellProps) {
   const [location] = useLocation();
-  const [compactNavigation, setCompactNavigation] = useState(() => window.matchMedia('(max-width: 920px)').matches);
   const { session } = useSession();
   const profile = useCurrentProfile(session?.user.id);
   const displayName = currentUserName(session?.user, profile);
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 920px)');
-    const update = () => setCompactNavigation(media.matches);
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, []);
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -40,13 +32,12 @@ export function AppShell({ children }: AppShellProps) {
           <span>GoalQuest</span>
         </Link>
         <nav className="nav-list">
-          {navigation.map((item) => <div className="nav-item-cell" key={item.href}>
-            <Link href={item.href}
+          {navigation.map((item) => (
+            <Link key={item.href} href={item.href}
               className={`nav-item ${location === item.href || location.startsWith(`${item.href}/`) ? 'is-active' : ''}`}>
               <Icon name={item.icon} size={21} /><span>{item.label}</span>
             </Link>
-            {item.href === '/friends' && session && !compactNavigation && <NotificationBell userId={session.user.id} />}
-          </div>)}
+          ))}
         </nav>
         <MomentumCard />
         <Link href="/profile" className={`sidebar-user ${location === '/profile' ? 'is-active' : ''}`}>
@@ -56,14 +47,14 @@ export function AppShell({ children }: AppShellProps) {
           <Icon name="arrow" size={16} />
         </Link>
       </aside>
+      {session && <div className="global-notifications"><NotificationBell userId={session.user.id} /></div>}
       <main className="main-content">{children}</main>
       <nav className="bottom-nav">
-        {navigation.map((item) => <div className="nav-item-cell" key={item.href}>
-          <Link href={item.href} className={location === item.href || location.startsWith(`${item.href}/`) ? 'is-active' : ''}>
+        {navigation.map((item) => (
+          <Link key={item.href} href={item.href} className={location === item.href || location.startsWith(`${item.href}/`) ? 'is-active' : ''}>
             <Icon name={item.icon} size={21} /><span>{item.label}</span>
           </Link>
-          {item.href === '/friends' && session && compactNavigation && <NotificationBell userId={session.user.id} />}
-        </div>)}
+        ))}
       </nav>
       <FloatingMentor />
       {session && <GlobalCallManager userId={session.user.id} />}
