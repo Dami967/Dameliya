@@ -7,7 +7,7 @@ import { PeopleSearch } from '../components/PeopleSearch';
 import { UserProfileModal } from '../components/SocialModals';
 import { ChatModal } from '../components/ChatModal';
 import type { SocialUser } from '../lib/socialData';
-import { loadMutualFriends, subscribeToFriendships } from '../lib/friends';
+import { cachedMutualFriends, loadMutualFriends, subscribeToFriendships } from '../lib/friends';
 import { useSession } from '../lib/useSession';
 import { FriendInviteModal } from '../components/FriendInviteModal';
 
@@ -21,15 +21,19 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
 export function FriendsPage() {
   const { session } = useSession();
   const [tab, setTab] = useState<Tab>('friends');
-  const [friends, setFriends] = useState<SocialUser[]>([]);
+  const [friends, setFriends] = useState<SocialUser[]>(() => cachedMutualFriends());
+  const [friendsLoading, setFriendsLoading] = useState(true);
   const [profile, setProfile] = useState<SocialUser | null>(null);
   const [chat, setChat] = useState<SocialUser | null>(null);
   const [inviteModal, setInviteModal] = useState(false);
   const [, navigate] = useLocation();
   const refreshFriends = useCallback(async () => {
     if (!session) return;
+    const cached = cachedMutualFriends(session.user.id);
+    if (cached.length) setFriends(cached);
     const mutual = await loadMutualFriends(session.user.id);
     setFriends(mutual);
+    setFriendsLoading(false);
   }, [session]);
   useEffect(() => {
     if (!session) return;
@@ -48,7 +52,9 @@ export function FriendsPage() {
         {tabs.map((item) => <button key={item.id} className={tab === item.id ? 'is-active' : ''} onClick={() => setTab(item.id)}><span>{item.icon}</span>{item.label}</button>)}
       </nav>
       <div className="friends-panel" key={tab}>
-        {tab === 'friends' && <FriendsList friends={friends} onOpen={setProfile} onChat={openChat}
+        {tab === 'friends' && friendsLoading && !friends.length
+          ? <div className="center-loader">Загружаем друзей…</div>
+          : tab === 'friends' && <FriendsList friends={friends} onOpen={setProfile} onChat={openChat}
           onChallenge={() => navigate('/rewards?section=competitions&new=1')}
           onPin={(id) => setFriends((old) => old.map((friend) => ({ ...friend, pinned: friend.id === id ? !friend.pinned : false })))} />}
         {tab === 'activity' && <ActivityFeed friends={friends} />}

@@ -27,6 +27,20 @@ function toSocialUser(profile: SocialProfileRow, pinned = false): SocialUser {
   };
 }
 
+export function cachedMutualFriends(userId?: string) {
+  try {
+    const value = localStorage.getItem(userId ? `goalquest-friends-${userId}` : 'goalquest-current-friends');
+    const parsed = value ? JSON.parse(value) as { userId: string; friends: SocialUser[] } : null;
+    return parsed && (!userId || parsed.userId === userId) ? parsed.friends : [];
+  } catch { return []; }
+}
+
+function cacheMutualFriends(userId: string, friends: SocialUser[]) {
+  const value = JSON.stringify({ userId, friends });
+  localStorage.setItem(`goalquest-friends-${userId}`, value);
+  localStorage.setItem('goalquest-current-friends', value);
+}
+
 export async function loadMutualFriends(userId: string): Promise<SocialUser[]> {
   const [{ data: outgoing }, { data: incoming }] = await Promise.all([
     supabase.from('follows').select('following_id,is_pinned').eq('follower_id', userId),
@@ -34,12 +48,14 @@ export async function loadMutualFriends(userId: string): Promise<SocialUser[]> {
   ]);
   const incomingIds = new Set((incoming ?? []).map((row) => row.follower_id));
   const mutual = (outgoing ?? []).filter((row) => incomingIds.has(row.following_id));
-  if (!mutual.length) return [];
+  if (!mutual.length) { cacheMutualFriends(userId, []); return []; }
   const { data } = await supabase.from('social_profiles').select('*')
     .in('user_id', mutual.map((row) => row.following_id));
   const pinned = new Set(mutual.filter((row) => row.is_pinned).map((row) => row.following_id));
-  return ((data ?? []) as SocialProfileRow[]).map((profile) =>
+  const friends = ((data ?? []) as SocialProfileRow[]).map((profile) =>
     toSocialUser(profile, pinned.has(profile.user_id)));
+  cacheMutualFriends(userId, friends);
+  return friends;
 }
 
 export async function loadRealPeople(userId: string) {

@@ -4,10 +4,10 @@ import { callerName, loadCallIceCandidates, sendCallSignal, subscribeToCallSigna
   type CallSignal } from '../lib/callSignaling';
 import { playNotificationSound } from '../lib/notificationSound';
 import { recordCallMessage } from '../lib/directMessages';
+import { callRtcConfig } from '../lib/turnServers';
 
 type CallState = { callId: string; peerId: string; name: string; avatarUrl?: string | null;
   direction: 'incoming' | 'outgoing'; offer?: RTCSessionDescriptionInit; status: string };
-const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
 
 export function GlobalCallManager({ userId }: { userId: string }) {
   const [call, setCall] = useState<CallState | null>(null);
@@ -74,7 +74,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
 
   async function createPeer(callId: string, peerId: string) {
     local.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const connection = new RTCPeerConnection(rtcConfig); peer.current = connection;
+    const connection = new RTCPeerConnection(await callRtcConfig()); peer.current = connection;
     local.current.getTracks().forEach((track) => connection.addTrack(track, local.current!));
     connection.onicecandidate = (event) => event.candidate && void sendCallSignal(callId, peerId, 'ice',
       event.candidate.toJSON() as unknown as Record<string, unknown>);
