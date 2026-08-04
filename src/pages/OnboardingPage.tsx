@@ -7,6 +7,7 @@ import { appLanguages, detectLanguage, rememberLanguage } from '../lib/languages
 import { interviewCopy } from '../lib/onboardingLocale';
 import { ProfileSetupStep } from '../components/ProfileSetupStep';
 import { createAiQuest } from '../lib/aiQuest';
+import { CountrySelect } from '../components/CountrySelect';
 
 type Answers = Record<string, string>;
 const steps = [
@@ -103,12 +104,15 @@ export function OnboardingPage() {
         <span className="step-count">{copy.step} {step + 1} / {steps.length}</span>
         <h2>{copy.titles[step + 1]}</h2><p>{copy.texts[step + 1]}</p>
         <div className="interview-fields">
-          {steps[step].map((key, index) => (
-            <label key={key}>{copy.labels[fieldOffsets[step] + index]}<input name={key}
+          {steps[step].map((key, index) => key === 'country'
+            ? <CountrySelect key={key} language={language} value={answers.country ?? ''}
+              label={copy.labels[fieldOffsets[step] + index]}
+              onChange={(country) => setAnswers({ ...answers, country })} />
+            : <label key={key}>{copy.labels[fieldOffsets[step] + index]}<input name={key}
               placeholder={copy.placeholders[fieldOffsets[step] + index]} value={answers[key] ?? ''}
               type={key === 'age' || key === 'daily_minutes' ? 'number' : 'text'}
               onChange={(event) => setAnswers({ ...answers, [key]: event.target.value })} /></label>
-          ))}
+          )}
         </div>
         {message && <p className="form-error">{message}</p>}
         <div className="onboarding-actions">
