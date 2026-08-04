@@ -1,6 +1,6 @@
 .mobile-quest-header{display:none}
 
-@media(max-width:680px){
+@media(max-width:820px){
   .quest-page-content{width:92vw;max-width:430px;margin:0 auto;overflow:visible}
   .quest-desktop-header,.quest-page-content>.quest-goal-tabs{display:none}
   .mobile-quest-header{display:block;margin:0 0 18px;padding:4px 0 0}
