@@ -10,6 +10,7 @@ import { ensureQuestInsights } from '../lib/questInsights';
 import { activeQuestId, rememberActiveQuest } from '../lib/activeQuest';
 import { ExternalProgressModal } from '../components/ExternalProgressModal';
 import { cachedQuestPlans, cacheQuestPlans } from '../lib/questCache';
+import { MobileQuestHeader } from '../components/MobileQuestHeader';
 
 export function QuestPage() {
   const { session } = useSession();
@@ -89,8 +90,9 @@ export function QuestPage() {
     setDeleting(false);
   }
 
-  return <AppShell>
-    <header className="page-header quest-page-head">
+  return <AppShell><div className="quest-page-content">
+    <MobileQuestHeader plans={plans} selectedId={selectedPlanId} loading={plansLoading} onChange={chooseById} />
+    <header className="page-header quest-page-head quest-desktop-header">
       <button className="quest-switch" disabled={plans.length < 2} onClick={() => choose(selectedIndex - 1)}
         aria-label="Предыдущая карта">←</button>
       <div><span className="eyebrow">МОЙ КВЕСТ · {selectedIndex + 1} ИЗ {plans.length || 1}</span>
@@ -129,5 +131,5 @@ export function QuestPage() {
     {showExternalProgress && session && plan && <ExternalProgressModal userId={session.user.id} plan={plan}
       onClose={() => setShowExternalProgress(false)} onAdapted={(updated) => setPlans((current) =>
         current.map((item) => item.id === updated.id ? updated : item))} />}
-  </AppShell>;
+  </div></AppShell>;
 }
