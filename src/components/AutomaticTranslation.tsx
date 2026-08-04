@@ -21,14 +21,20 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
     let running = false;
     let rerun = false;
     let languageVersion = 0;
+    let switchingGuard: number | undefined;
 
     function showSwitching() {
-      document.documentElement.dataset.uiTranslating = language === 'kk' ? 'Тіл ауыстырылуда…'
+      document.documentElement.dataset.uiTranslating = 'true';
+      document.body.dataset.uiTranslatingLabel = language === 'kk' ? 'Тіл ауыстырылуда…'
         : language === 'ru' ? 'Переключаем язык…' : 'Changing language…';
+      window.clearTimeout(switchingGuard);
+      switchingGuard = window.setTimeout(finishSwitching, 12_000);
     }
 
     function finishSwitching() {
       delete document.documentElement.dataset.uiTranslating;
+      delete document.body.dataset.uiTranslatingLabel;
+      window.clearTimeout(switchingGuard);
     }
 
     async function translatePage() {
@@ -91,6 +97,7 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
       observer.disconnect();
       window.removeEventListener('goalquest-language-changed', onLanguage);
       window.clearTimeout(timer);
+      window.clearTimeout(switchingGuard);
       finishSwitching();
     };
   }, []);

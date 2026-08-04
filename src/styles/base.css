@@ -34,7 +34,7 @@ button { cursor: pointer; }
   display: flex; flex-direction: column; z-index: 10;
 }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 10px; font-size: 20px; font-weight: 800; }
-html[data-ui-translating] body::after{content:attr(data-ui-translating);position:fixed;z-index:200;inset:0;display:grid;place-items:center;color:#6555c8;background:#f8f7ff;font-size:16px;font-weight:800}
+html[data-ui-translating] body::before{content:'';position:fixed;z-index:199;inset:0;background:linear-gradient(135deg,#f8f7ff,#eef3ff)}html[data-ui-translating] body::after{content:'◌  ' attr(data-ui-translating-label);position:fixed;z-index:200;left:50%;top:50%;padding:16px 22px;border:1px solid #e4e0f5;border-radius:16px;color:#6555c8;background:#fff;box-shadow:0 14px 40px #43378618;font-size:16px;font-weight:800;transform:translate(-50%,-50%);white-space:nowrap}
 .brand__mark {
   display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px;
   color: #fff; background: linear-gradient(145deg, #26baf1, var(--purple));

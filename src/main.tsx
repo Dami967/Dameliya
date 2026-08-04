@@ -11,8 +11,9 @@ void registerNotificationWorker();
 const initialLanguage = detectLanguage();
 document.documentElement.lang = initialLanguage;
 if (initialLanguage !== 'ru') {
-  document.documentElement.dataset.uiTranslating = initialLanguage === 'kk'
-    ? 'Тіл ауыстырылуда…' : 'Changing language…';
+  const translationLabel = initialLanguage === 'kk' ? 'Тіл ауыстырылуда…' : 'Changing language…';
+  document.documentElement.dataset.uiTranslating = 'true';
+  document.body.dataset.uiTranslatingLabel = translationLabel;
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
