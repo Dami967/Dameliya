@@ -3,7 +3,7 @@
   .sidebar { display: none; }
   .bottom-nav {
     position: fixed; inset: 0 0 auto; z-index: 30; display: flex; justify-content: space-around;
-    min-height: 66px; padding: max(8px, env(safe-area-inset-top)) 8px 8px; border-bottom: 1px solid var(--line); background: #ffffffef; box-shadow: 0 5px 18px #29265210; backdrop-filter: blur(14px);
+    min-height: 66px; padding: max(8px, env(safe-area-inset-top)) 62px 8px 8px; border-bottom: 1px solid var(--line); background: #ffffffef; box-shadow: 0 5px 18px #29265210; backdrop-filter: blur(14px);
   }
   .bottom-nav a { display: grid; flex:1; min-width: 0; min-height: 46px; place-content: center; justify-items: center; gap: 3px; border-radius: 10px; color: #9297a8; font-size: 8px; font-weight: 700; }
   .bottom-nav a.is-active { color: var(--blue); background: #eef2ff; }
