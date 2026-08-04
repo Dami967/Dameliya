@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Icon } from './Icon';
 import { loadNotifications, markAllNotificationsRead, markNotificationRead,
-  subscribeToNotifications, type AppNotification } from '../lib/notifications';
+  deleteAllNotifications, deleteNotification, subscribeToNotifications, type AppNotification } from '../lib/notifications';
 import { playNotificationSound, unlockNotificationSound } from '../lib/notificationSound';
 import { showBrowserNotification } from '../lib/browserNotifications';
 
@@ -28,6 +28,15 @@ export function NotificationBell({ userId }: { userId: string }) {
     setOpen(false); navigate(item.link); refresh();
   }
   async function readAll() { await markAllNotificationsRead(userId); refresh(); }
+  async function removeItem(id: string) {
+    const { error } = await deleteNotification(id);
+    if (!error) setItems((current) => current.filter((item) => item.id !== id));
+  }
+  async function clearAll() {
+    if (!window.confirm('Удалить все уведомления?')) return;
+    const { error } = await deleteAllNotifications(userId);
+    if (!error) setItems([]);
+  }
 
   return <div className="notification-bell">
     <button className="notification-bell__button" onClick={() => setOpen((value) => !value)} aria-label="Уведомления">
@@ -36,13 +45,18 @@ export function NotificationBell({ userId }: { userId: string }) {
     {open && <section className="notification-panel">
       <header><div><h2>Уведомления</h2><small>{unread ? `${unread} новых` : 'Новых пока нет'}</small></div>
         <button onClick={() => setOpen(false)} aria-label="Закрыть">×</button></header>
-      <div className="notification-list">{items.map((item) => <button className={!item.read_at ? 'is-unread' : ''}
-        key={item.id} onClick={() => void openItem(item)}>
+      <div className="notification-list">{items.map((item) => <article className={!item.read_at ? 'is-unread' : ''}
+        key={item.id}><button className="notification-item" onClick={() => void openItem(item)}>
         <span>{item.actor_avatar ? <img src={item.actor_avatar} alt="" />
           : item.kind === 'follow' ? '👤' : item.kind === 'competition' ? '🏆' : '💬'}</span>
         <div><b>{item.actor_name}</b><strong>{item.title}</strong><p>{item.body}</p><small>{relativeTime(item.created_at)}</small></div>
-      </button>)}{!items.length && <p className="notification-empty">Здесь появятся новые подписчики и сообщения.</p>}</div>
-      {unread > 0 && <button className="notification-read-all" onClick={() => void readAll()}>Отметить всё прочитанным</button>}
+      </button><button className="notification-delete" onClick={() => void removeItem(item.id)}
+        aria-label="Удалить уведомление" title="Удалить">×</button></article>)}
+        {!items.length && <p className="notification-empty">Здесь появятся новые подписчики и сообщения.</p>}</div>
+      {!!items.length && <footer className="notification-actions">
+        {unread > 0 && <button onClick={() => void readAll()}>Отметить всё прочитанным</button>}
+        <button className="notification-clear" onClick={() => void clearAll()}>Очистить всё</button>
+      </footer>}
     </section>}
   </div>;
 }

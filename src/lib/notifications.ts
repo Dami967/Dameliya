@@ -37,6 +37,14 @@ export function markAllNotificationsRead(userId: string) {
     .eq('user_id', userId).is('read_at', null);
 }
 
+export function deleteNotification(id: string) {
+  return supabase.from('notifications').delete().eq('id', id);
+}
+
+export function deleteAllNotifications(userId: string) {
+  return supabase.from('notifications').delete().eq('user_id', userId);
+}
+
 export function subscribeToNotifications(userId: string, receive: (item: AppNotification) => void) {
   return supabase.channel(`notifications:${userId}`).on('postgres_changes', {
     event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}`,
