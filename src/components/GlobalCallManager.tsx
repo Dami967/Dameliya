@@ -93,11 +93,10 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     connection.onconnectionstatechange = () => {
       if (connection.connectionState === 'connected') {
         if (!acceptedAt.current) acceptedAt.current = Date.now();
-        audioRelay.current?.stop(); audioRelay.current = null;
         if (relayTimer.current) window.clearTimeout(relayTimer.current);
         stopRinging();
-        setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
-        void playRemoteAudio();
+        if (audioRelay.current) setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
+        else void startAudioRelay(callId);
       }
       if (connection.connectionState === 'failed') {
         const current = callRef.current;
@@ -157,21 +156,22 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   }
   function scheduleAudioRelay(callId: string) {
     if (relayTimer.current) window.clearTimeout(relayTimer.current);
-    relayTimer.current = window.setTimeout(() => void startAudioRelay(callId), 4_000);
+    relayTimer.current = window.setTimeout(() => void startAudioRelay(callId), 500);
   }
   function prepareAudioContext() {
     audioContext.current ??= new AudioContext();
     void audioContext.current.resume();
   }
   async function startAudioRelay(callId: string) {
-    if (callRef.current?.callId !== callId || !local.current || peer.current?.connectionState === 'connected') return;
+    if (callRef.current?.callId !== callId || !local.current || audioRelay.current) return;
     try {
       const context = audioContext.current ?? new AudioContext(); audioContext.current = context;
       const relay = await startRealtimeAudioRelay(callId, local.current, context);
       if (callRef.current?.callId !== callId) { relay.stop(); return; }
       audioRelay.current = relay;
+      if (remoteAudio.current) remoteAudio.current.muted = true;
       if (!acceptedAt.current) acceptedAt.current = Date.now();
-      setCall((old) => old?.callId === callId ? { ...old, status: 'Разговор идёт · резервное соединение' } : old);
+      setCall((old) => old?.callId === callId ? { ...old, status: 'Разговор идёт' } : old);
     } catch {
       setCall((old) => old?.callId === callId ? { ...old, status: 'Не удалось подключить звук' } : old);
     }
@@ -208,7 +208,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     const audio = remoteAudio.current;
     if (!audio || !remoteStream.current) return;
     audio.srcObject = remoteStream.current;
-    audio.muted = false; audio.volume = 1;
+    audio.muted = Boolean(audioRelay.current); audio.volume = 1;
     await audio.play().catch(() => undefined);
   }
   async function flushIce(connection: RTCPeerConnection) {
