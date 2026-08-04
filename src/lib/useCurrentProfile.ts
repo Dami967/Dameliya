@@ -5,30 +5,38 @@ import { loadProfile, type UserProfile } from './userProfile';
 export function useCurrentProfile(userId?: string) {
   const [profile, setProfile] = useState<UserProfile | null | undefined>(() => cachedProfile(userId));
   useEffect(() => {
-    if (!userId) { setProfile(null); return; }
-    const cacheKey = `goalquest-profile-${userId}`;
+    if (!userId) return;
+    setProfile(cachedProfile(userId));
     const changed = (event: Event) => setProfile((current) => {
       if (!current) return current;
       const next = { ...current, ...(event as CustomEvent<Partial<UserProfile>>).detail };
-      localStorage.setItem(cacheKey, JSON.stringify(next));
+      storeCachedProfile(next);
       return next;
     });
     window.addEventListener('goalquest-profile-changed', changed);
     void loadProfile(userId).then(({ data }) => {
       setProfile(data);
-      if (data) localStorage.setItem(cacheKey, JSON.stringify(data));
+      if (data) storeCachedProfile(data);
     });
     return () => window.removeEventListener('goalquest-profile-changed', changed);
   }, [userId]);
-  return profile;
+  return userId && profile?.user_id !== userId ? undefined : profile;
 }
 
 function cachedProfile(userId?: string) {
-  if (!userId) return undefined;
   try {
-    const value = localStorage.getItem(`goalquest-profile-${userId}`);
-    return value ? JSON.parse(value) as UserProfile : undefined;
+    const value = userId
+      ? localStorage.getItem(`goalquest-profile-${userId}`)
+      : localStorage.getItem('goalquest-current-profile');
+    const profile = value ? JSON.parse(value) as UserProfile : undefined;
+    return !userId || profile?.user_id === userId ? profile : undefined;
   } catch { return undefined; }
+}
+
+function storeCachedProfile(profile: UserProfile) {
+  const value = JSON.stringify(profile);
+  localStorage.setItem(`goalquest-profile-${profile.user_id}`, value);
+  localStorage.setItem('goalquest-current-profile', value);
 }
 
 export function currentUserName(user?: User, profile?: UserProfile | null) {

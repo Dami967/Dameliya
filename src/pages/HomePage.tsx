@@ -16,7 +16,7 @@ const emptyProgress: HomeProgress = {
 };
 
 export function HomePage() {
-  const { session } = useSession();
+  const { session, loading: sessionLoading } = useSession();
   const profile = useCurrentProfile(session?.user.id);
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [planIndex, setPlanIndex] = useState(0);
@@ -51,8 +51,9 @@ export function HomePage() {
   const taskUrl = active ? `/task/${active.id}?plan=${plan?.id}` : '/mentor?new=1';
   const userName = currentUserName(session?.user, profile);
   const username = currentUsername(session?.user, profile);
-  const needsName = !profile?.display_name?.trim()
-    || ['Искатель целей', 'Пользователь', 'Goal Seeker'].includes(profile.display_name.trim());
+  const profileIsReady = !sessionLoading && profile !== undefined;
+  const needsName = profileIsReady && (!profile?.display_name?.trim()
+    || ['Искатель целей', 'Пользователь', 'Goal Seeker'].includes(profile.display_name.trim()));
   return (
     <AppShell>
       <header className="topbar">
