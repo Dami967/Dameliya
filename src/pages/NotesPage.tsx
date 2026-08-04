@@ -4,7 +4,7 @@ import { AppShell } from '../components/AppShell';
 import { NoteEditor } from '../components/NoteEditor';
 import { NotesSidebar } from '../components/NotesSidebar';
 import { deletePersonalNote, loadPersonalNote, loadPersonalNotes, updatePersonalNote,
-  type PersonalNote } from '../lib/personalNotes';
+  cachedPersonalNotes, cachePersonalNotes, type PersonalNote } from '../lib/personalNotes';
 import { deleteAllNoteAttachments } from '../lib/noteAttachments';
 import { useSession } from '../lib/useSession';
 
@@ -15,14 +15,23 @@ export function NotesPage() {
   const [notes, setNotes] = useState<PersonalNote[]>([]);
   const [active, setActive] = useState<PersonalNote | null>(null);
   const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     if (!session) return;
     const { data } = await loadPersonalNotes(session.user.id);
-    setNotes(data ?? []);
+    const loaded = data ?? [];
+    setNotes(loaded);
+    cachePersonalNotes(session.user.id, loaded);
+    setLoading(false);
   }, [session]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (!session) return;
+    const cached = cachedPersonalNotes(session.user.id);
+    if (cached) { setNotes(cached); setLoading(false); }
+    void refresh();
+  }, [refresh, session]);
   useEffect(() => {
     if (!session || !params?.id) return setActive(null);
     void loadPersonalNote(session.user.id, params.id).then(({ data }) => setActive(data ?? null));
@@ -44,7 +53,7 @@ export function NotesPage() {
   }
 
   return <AppShell><div className="notes-page">
-    <NotesSidebar notes={notes} activeId={active?.id} query={query} onQuery={setQuery} />
+    <NotesSidebar notes={notes} activeId={active?.id} query={query} onQuery={setQuery} loading={loading} />
     {active ? <NoteEditor key={active.id} note={active} onSave={save} onDelete={() => void remove()} />
       : <section className="notes-welcome"><span>📝</span><h2>Личные заметки</h2>
         <p>Выбери старую заметку слева или создай новую. Заметки из квестов хранятся отдельно.</p></section>}

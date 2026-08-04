@@ -41,6 +41,7 @@ export function AppShell({ children }: AppShellProps) {
               <Icon name={item.icon} size={21} /><span>{item.label}</span>
             </Link>
           ))}
+          <FloatingMentor />
         </nav>
         <MomentumCard />
         <Link href="/profile" className={`sidebar-user ${location === '/profile' ? 'is-active' : ''}`}>
@@ -59,7 +60,7 @@ export function AppShell({ children }: AppShellProps) {
           </Link>
         ))}
       </nav>
-      <FloatingMentor />
+      <div className="mobile-mentor"><FloatingMentor /></div>
       {session && <ReminderManager userId={session.user.id} />}
     </div>
   );

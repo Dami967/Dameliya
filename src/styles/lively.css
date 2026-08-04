@@ -29,3 +29,13 @@
 @media(max-width:680px){.floating-mentor .mentor-fab{width:68px;height:68px}.floating-mentor.is-open .mentor-popover{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0}.floating-mentor.is-open .mentor-popover header{padding:calc(13px + env(safe-area-inset-top)) 17px 13px}.floating-mentor.is-open .mentor-popover header img{width:52px;height:52px}.floating-mentor.is-open .mentor-popover header b{font-size:16px}.floating-mentor.is-open .mentor-popover__chat{min-height:0;max-height:none;padding:18px}.floating-mentor.is-open .mentor-popover__chat p{max-width:88%;padding:13px 15px;font-size:15px}.floating-mentor.is-open .mentor-suggestions{overflow-x:auto;padding-inline:15px}.floating-mentor.is-open .mentor-suggestions button{flex:0 0 auto}.floating-mentor.is-open .mentor-cost{padding:6px 17px 10px}.mentor-mobile-close{display:flex;align-items:center;justify-content:center;gap:7px;width:calc(100% - 30px);min-height:48px;margin:0 15px calc(14px + env(safe-area-inset-bottom));border:1px solid #dfe3ee;border-radius:14px;color:#56627a;background:#f5f6fa;font-size:14px;font-weight:800}.mentor-mobile-close span{font-size:22px;font-weight:400}}
 @media(max-width:920px){.floating-mentor.is-open .mentor-popover{max-height:calc(100dvh - 40px)}.mentor-header-close{min-width:44px;min-height:44px;flex:0 0 auto;justify-content:center;background:#ffffff20!important}.celebration-backdrop{align-items:start;overflow-y:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}.celebration-card{max-height:calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto}}
 @media(max-width:680px){.floating-mentor.is-open .mentor-popover{height:100dvh;max-height:100dvh}.mentor-header-close span{display:none}.mentor-header-close{border-color:#ffffff70!important;background:#ffffff24!important}.floating-mentor.is-open .mentor-suggestions{flex:0 0 auto}.floating-mentor.is-open .mentor-popover .ai-composer,.floating-mentor.is-open .mentor-cost,.mentor-mobile-close{flex:0 0 auto}}
+
+.mentor-fab__eagle{width:100%;height:100%;border-radius:inherit;object-fit:cover;object-position:50% 18%}
+.mobile-mentor{display:none}
+@media(min-width:921px){
+  .nav-list>.floating-mentor{position:relative;right:auto;bottom:auto;z-index:40;margin-top:0}
+  .nav-list>.floating-mentor .mentor-fab{width:47px;height:47px;border-radius:12px;animation:none;box-shadow:none}
+  .nav-list>.floating-mentor .mentor-fab__status{right:-5px;bottom:-5px;width:19px;height:19px;border-width:2px}
+  .nav-list>.floating-mentor .mentor-hint{right:auto;left:57px;top:9px}
+}
+@media(max-width:920px){.mobile-mentor{display:block}}

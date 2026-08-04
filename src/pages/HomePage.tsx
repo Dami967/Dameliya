@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { AppShell } from '../components/AppShell';
 import { Icon } from '../components/Icon';
@@ -20,10 +20,11 @@ const emptyProgress: HomeProgress = {
 export function HomePage() {
   const { session, loading: sessionLoading } = useSession();
   const profile = useCurrentProfile(session?.user.id);
-  const [plans, setPlans] = useState<AiQuestPlan[]>([]);
+  const [plans, setPlans] = useState<AiQuestPlan[]>(() => cachedQuestPlans(session?.user.id));
   const [plansLoading, setPlansLoading] = useState(true);
   const [planIndex, setPlanIndex] = useState(0);
   const [progress, setProgress] = useState<HomeProgress>(emptyProgress);
+  const heroTouch = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     if (!session) return;
     let activeRequest = true;
@@ -59,7 +60,8 @@ export function HomePage() {
   const active = plan?.steps.find((step) => step.state === 'active');
   const done = plan?.steps.filter((step) => step.state === 'done').length ?? 0;
   const total = plan?.steps.length ?? 0;
-  const taskUrl = active ? `/task/${active.id}?plan=${plan?.id}` : '/mentor?new=1';
+  const taskUrl = active ? `/task/${active.id}?plan=${plan?.id}`
+    : plan ? `/quest?plan=${plan.id}` : '/mentor?new=1';
   const userName = currentUserName(session?.user, profile);
   const username = currentUsername(session?.user, profile);
   const profileIsReady = !sessionLoading && profile !== undefined;
@@ -79,7 +81,21 @@ export function HomePage() {
         </div>
       </header>
 
-      <section className="hero-card">
+      <section className="hero-card"
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          heroTouch.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+        }}
+        onTouchEnd={(event) => {
+          const start = heroTouch.current;
+          const touch = event.changedTouches[0];
+          heroTouch.current = null;
+          if (!start || !touch || plans.length < 2) return;
+          const distanceX = touch.clientX - start.x;
+          const distanceY = touch.clientY - start.y;
+          if (Math.abs(distanceX) < 55 || Math.abs(distanceX) <= Math.abs(distanceY)) return;
+          selectPlan((planIndex + (distanceX < 0 ? 1 : -1) + plans.length) % plans.length);
+        }}>
         <div className="hero-card__mascot">
           <img src="/goalquest-eagle-quest.png" alt="Орлёнок GoalQuest" />
         </div>
@@ -97,7 +113,9 @@ export function HomePage() {
               aria-label="Предыдущий квест">←</button><span>{planIndex + 1} / {plans.length}</span>
             <button onClick={() => selectPlan((planIndex + 1) % plans.length)} aria-label="Следующий квест">→</button>
           </div>}
-          {!plansLoading && <Link href={taskUrl} className="primary-button">{active ? 'Продолжить' : 'Создать цель'} <Icon name="arrow" size={18} /></Link>}
+          {(plan || !plansLoading) && <Link href={taskUrl} className="primary-button">
+            {active || plan ? 'Продолжить' : 'Создать цель'} <Icon name="arrow" size={18} />
+          </Link>}
         </div>
       </section>
 

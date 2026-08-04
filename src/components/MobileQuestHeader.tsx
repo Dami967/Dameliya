@@ -12,6 +12,16 @@ export function MobileQuestHeader({ plans, selectedId, loading, onChange }: {
   const picker = useRef<HTMLDivElement>(null);
   const selected = plans.find((plan) => plan.id === selectedId) ?? plans[0];
   const selectedIndex = Math.max(0, plans.findIndex((plan) => plan.id === selected?.id));
+  const touchStart = useRef<number | null>(null);
+
+  function finishSwipe(clientX: number) {
+    if (touchStart.current === null || plans.length < 2) return;
+    const distance = clientX - touchStart.current;
+    touchStart.current = null;
+    if (Math.abs(distance) < 55) return;
+    const nextIndex = (selectedIndex + (distance < 0 ? 1 : -1) + plans.length) % plans.length;
+    onChange(plans[nextIndex].id);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -28,7 +38,9 @@ export function MobileQuestHeader({ plans, selectedId, loading, onChange }: {
   }, [open]);
 
   const title = selected?.goal || (loading ? 'Загружаем карту…' : 'Создай свою первую цель');
-  return <header className="mobile-quest-header">
+  return <header className="mobile-quest-header"
+    onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; }}
+    onTouchEnd={(event) => finishSwipe(event.changedTouches[0]?.clientX ?? 0)}>
     <div className="mobile-quest-header__meta"><span>МОЙ КВЕСТ</span>
       <b>{plans.length ? `${selectedIndex + 1} / ${plans.length}` : 'НОВАЯ КАРТА'}</b></div>
     <h1>{title}</h1>

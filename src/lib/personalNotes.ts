@@ -9,6 +9,17 @@ export type PersonalNote = {
   updated_at: string;
 };
 
+export function cachedPersonalNotes(userId: string) {
+  try {
+    const value = localStorage.getItem(`goalquest-notes-${userId}`);
+    return value ? JSON.parse(value) as PersonalNote[] : null;
+  } catch { return null; }
+}
+
+export function cachePersonalNotes(userId: string, notes: PersonalNote[]) {
+  localStorage.setItem(`goalquest-notes-${userId}`, JSON.stringify(notes));
+}
+
 export function loadPersonalNotes(userId: string) {
   return supabase.from('personal_notes').select('*').eq('user_id', userId)
     .order('updated_at', { ascending: false }).returns<PersonalNote[]>();

@@ -3,8 +3,8 @@ import type { PersonalNote } from '../lib/personalNotes';
 import { NewNoteButton } from './NewNoteButton';
 import { notePlainText } from './RichNoteContent';
 
-export function NotesSidebar({ notes, activeId, query, onQuery }: {
-  notes: PersonalNote[]; activeId?: string; query: string; onQuery: (value: string) => void;
+export function NotesSidebar({ notes, activeId, query, onQuery, loading = false }: {
+  notes: PersonalNote[]; activeId?: string; query: string; onQuery: (value: string) => void; loading?: boolean;
 }) {
   const shown = notes.filter((note) => `${note.title} ${notePlainText(note.content)}`.toLowerCase().includes(query.toLowerCase()));
   return <aside className="notes-sidebar">
@@ -17,7 +17,9 @@ export function NotesSidebar({ notes, activeId, query, onQuery }: {
         <p>{notePlainText(note.content) || 'Начни писать…'}</p>
         <small>{formatDate(note.updated_at)}</small>
       </Link>)}
-      {!shown.length && <div className="notes-empty-list">Здесь появятся твои заметки ✨</div>}
+      {!shown.length && <div className="notes-empty-list">
+        {loading ? 'Загружаем заметки…' : 'Здесь появятся твои заметки ✨'}
+      </div>}
     </div>
   </aside>;
 }

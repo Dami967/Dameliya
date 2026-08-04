@@ -6,7 +6,7 @@
   .mobile-quest-header{display:block;margin:0 0 18px;padding:4px 0 0}
   .mobile-quest-header__meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;color:#6879e4;font-size:12px;font-weight:900;letter-spacing:.08em}
   .mobile-quest-header__meta b{padding:7px 10px;border-radius:10px;color:#7260cb;background:#f0ecff;font-size:11px;letter-spacing:0}
-  .mobile-quest-header h1{display:-webkit-box;overflow:hidden;margin:0;color:var(--ink);font-size:clamp(30px,9vw,36px);line-height:1.08;letter-spacing:-.045em;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .mobile-quest-header h1{display:-webkit-box;overflow:hidden;margin:0;color:var(--ink);font-size:clamp(27px,8vw,34px);line-height:1.12;letter-spacing:-.04em;-webkit-box-orient:vertical;-webkit-line-clamp:3}
   .mobile-quest-header>p{display:-webkit-box;overflow:hidden;margin:10px 0 16px;color:var(--muted);font-size:clamp(14px,4vw,16px);line-height:1.45;-webkit-box-orient:vertical;-webkit-line-clamp:2}
   .mobile-quest-actions{display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:10px;align-items:stretch}
   .mobile-goal-picker{position:relative;min-width:0}
