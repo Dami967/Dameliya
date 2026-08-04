@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Icon } from './Icon';
 import { FloatingMentor } from './FloatingMentor';
@@ -23,6 +24,9 @@ export function AppShell({ children }: AppShellProps) {
   const { session } = useSession();
   const profile = useCurrentProfile(session?.user.id);
   const displayName = currentUserName(session?.user, profile);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [location]);
   return (
     <div className="app-shell">
       <aside className="sidebar">
