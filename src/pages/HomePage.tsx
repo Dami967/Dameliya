@@ -108,6 +108,11 @@ export function HomePage() {
           <small>{done} из {total || 10} этапов пройдено</small>
         </div>
         <div className="hero-quest-actions">
+          {plans.length > 1 && <div className="hero-quest-switcher">
+            <button onClick={() => selectPlan((planIndex - 1 + plans.length) % plans.length)}
+              aria-label="Предыдущий квест">←</button><span>{planIndex + 1} / {plans.length}</span>
+            <button onClick={() => selectPlan((planIndex + 1) % plans.length)} aria-label="Следующий квест">→</button>
+          </div>}
           {(plan || !plansLoading) && <Link href={taskUrl} className="primary-button">
             {active || plan ? 'Продолжить' : 'Создать цель'} <Icon name="arrow" size={18} />
           </Link>}
