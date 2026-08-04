@@ -41,6 +41,15 @@ export function FriendsPage() {
     const channel = subscribeToFriendships(session.user.id, () => void refreshFriends());
     return () => { void channel.unsubscribe(); };
   }, [session, refreshFriends]);
+  useEffect(() => {
+    const requestedId = new URLSearchParams(window.location.search).get('chat');
+    if (!requestedId || chat) return;
+    const requestedFriend = friends.find((friend) => friend.id === requestedId);
+    if (requestedFriend) {
+      setProfile(null); setChat(requestedFriend);
+      navigate('/friends', { replace: true });
+    }
+  }, [chat, friends, navigate]);
   const openChat = (user: SocialUser) => { setProfile(null); setChat(user); };
   return <AppShell>
     <div className="friends-page">

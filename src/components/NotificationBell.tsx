@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Icon } from './Icon';
 import { loadNotifications, markAllNotificationsRead, markNotificationRead,
@@ -10,14 +10,20 @@ export function NotificationBell({ userId }: { userId: string }) {
   const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
-  const refresh = useCallback(() => void loadNotifications(userId).then(({ data }) => setItems(data ?? [])), [userId]);
+  const requestVersion = useRef(0);
+  const refresh = useCallback(() => {
+    const version = ++requestVersion.current;
+    void loadNotifications(userId).then(({ data }) => {
+      if (version === requestVersion.current) setItems(data ?? []);
+    });
+  }, [userId]);
   useEffect(() => {
     const unlock = () => unlockNotificationSound();
     window.addEventListener('pointerdown', unlock, { once: true });
     refresh();
     const channel = subscribeToNotifications(userId, (item) => {
       playNotificationSound(); refresh();
-      void showBrowserNotification(item.title, item.body, item.link, item.id);
+      void showBrowserNotification(item.title, item.body, notificationLink(item), item.id);
     });
     return () => { void channel.unsubscribe(); window.removeEventListener('pointerdown', unlock); };
   }, [refresh, userId]);
@@ -25,15 +31,17 @@ export function NotificationBell({ userId }: { userId: string }) {
 
   async function openItem(item: AppNotification) {
     if (!item.read_at) await markNotificationRead(item.id);
-    setOpen(false); navigate(item.link); refresh();
+    setOpen(false); navigate(notificationLink(item)); refresh();
   }
   async function readAll() { await markAllNotificationsRead(userId); refresh(); }
   async function removeItem(id: string) {
+    requestVersion.current += 1;
     const { error } = await deleteNotification(id);
     if (!error) setItems((current) => current.filter((item) => item.id !== id));
   }
   async function clearAll() {
     if (!window.confirm('Удалить все уведомления?')) return;
+    requestVersion.current += 1;
     const { error } = await deleteAllNotifications(userId);
     if (!error) setItems([]);
   }
@@ -59,6 +67,11 @@ export function NotificationBell({ userId }: { userId: string }) {
       </footer>}
     </section>}
   </div>;
+}
+
+function notificationLink(item: AppNotification) {
+  return item.kind === 'message' && item.actor_id
+    ? `/friends?chat=${encodeURIComponent(item.actor_id)}` : item.link;
 }
 
 function relativeTime(value: string) {
