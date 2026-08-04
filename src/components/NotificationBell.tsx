@@ -4,6 +4,7 @@ import { Icon } from './Icon';
 import { loadNotifications, markAllNotificationsRead, markNotificationRead,
   subscribeToNotifications, type AppNotification } from '../lib/notifications';
 import { playNotificationSound, unlockNotificationSound } from '../lib/notificationSound';
+import { showBrowserNotification } from '../lib/browserNotifications';
 
 export function NotificationBell({ userId }: { userId: string }) {
   const [, navigate] = useLocation();
@@ -16,9 +17,7 @@ export function NotificationBell({ userId }: { userId: string }) {
     refresh();
     const channel = subscribeToNotifications(userId, (item) => {
       playNotificationSound(); refresh();
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(item.title, { body: item.body, tag: item.id });
-      }
+      void showBrowserNotification(item.title, item.body, item.link, item.id);
     });
     return () => { void channel.unsubscribe(); window.removeEventListener('pointerdown', unlock); };
   }, [refresh, userId]);

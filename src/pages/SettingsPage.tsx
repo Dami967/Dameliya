@@ -7,6 +7,8 @@ import { useSession } from '../lib/useSession';
 import { loadSettings, saveProfile, saveSettings, type UserSettings } from '../lib/userProfile';
 import { appLanguages, rememberLanguage } from '../lib/languages';
 import { AccountActionDialog, type AccountAction } from '../components/AccountActionDialog';
+import { requestNotificationPermission, showBrowserNotification } from '../lib/browserNotifications';
+import { playNotificationSound, unlockNotificationSound } from '../lib/notificationSound';
 
 export function SettingsPage() {
   const { session } = useSession();
@@ -43,13 +45,30 @@ export function SettingsPage() {
       setMessage('Этот браузер не поддерживает уведомления.');
       return;
     }
-    const permission = await Notification.requestPermission();
+    const permission = await requestNotificationPermission();
     if (permission !== 'granted') {
       setMessage('Разреши уведомления GoalQuest в настройках браузера.');
       return;
     }
     await update({ push_notifications: true, reminders: true });
-    new Notification('GoalQuest', { body: 'Напоминания включены 🔥' });
+    unlockNotificationSound(); playNotificationSound();
+    await showBrowserNotification('GoalQuest', 'Напоминания включены 🔥', '/settings', 'goalquest-enabled');
+  }
+  async function changeReminders(enabled: boolean) {
+    if (!enabled) return update({ reminders: false });
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      const permission = await requestNotificationPermission();
+      if (permission === 'granted') return update({ reminders: true, push_notifications: true });
+    }
+    await update({ reminders: true });
+  }
+  async function testReminder() {
+    const permission = await requestNotificationPermission();
+    if (permission !== 'granted') return setMessage('Разреши уведомления GoalQuest в настройках браузера.');
+    unlockNotificationSound(); playNotificationSound();
+    await showBrowserNotification('Проверка GoalQuest 🔥',
+      'Всё работает! В выбранное время Кью напомнит о текущем задании.', '/quest', 'goalquest-test');
+    setMessage('Тестовое уведомление отправлено ✓');
   }
   function openAccountAction(action: AccountAction) {
     setAccountError(''); setAccountAction(action);
@@ -113,12 +132,14 @@ export function SettingsPage() {
             </select>} />
         </SettingsSection>
         <SettingsSection icon="bell" title="Уведомления">
-          <SettingsRow title="Напоминания" trailing={<Toggle checked={settings.reminders} onChange={(reminders) => update({ reminders })} />} />
+          <SettingsRow title="Напоминания" trailing={<Toggle checked={settings.reminders}
+            onChange={(reminders) => void changeReminders(reminders)} />} />
           <SettingsRow title="Время напоминания" detail="По времени на этом устройстве" trailing={
             <input className="reminder-time" type="time" value={settings.reminder_time.slice(0, 5)}
               onChange={(event) => update({ reminder_time: event.target.value })} />} />
           <SettingsRow title="Push-уведомления" trailing={<Toggle checked={settings.push_notifications}
             onChange={(enabled) => void changePushNotifications(enabled)} />} />
+          <SettingsRow title="Проверить уведомление" detail="Отправить тест со звуком сейчас" onClick={() => void testReminder()} />
           <SettingsRow title="Email-уведомления" trailing={<Toggle checked={settings.email_notifications} onChange={(email_notifications) => update({ email_notifications })} />} />
         </SettingsSection>
         <SettingsSection icon="zap" title="AI-наставник">

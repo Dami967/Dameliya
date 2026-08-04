@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { loadActiveQuest } from '../lib/activeQuest';
 import { loadHomeProgress } from '../lib/homeProgress';
 import { loadSettings } from '../lib/userProfile';
+import { showBrowserNotification } from '../lib/browserNotifications';
+import { playNotificationSound } from '../lib/notificationSound';
 
 type ReminderManagerProps = { userId: string };
 
@@ -37,10 +39,9 @@ export function ReminderManager({ userId }: ReminderManagerProps) {
         : 'Создай первую цель и начни своё приключение.';
       window.localStorage.setItem(storageKey, 'shown');
       setMessage(body);
-      if (useNotification && 'Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification('GoalQuest напоминает 🔥', { body, tag: 'goalquest-daily' });
-        notification.onclick = () => { window.focus(); window.location.href = activeStep ? '/quest' : '/mentor'; };
-      }
+      playNotificationSound();
+      if (useNotification) await showBrowserNotification('GoalQuest напоминает 🔥', body,
+        activeStep ? '/quest' : '/mentor', 'goalquest-daily');
     }
 
     window.addEventListener('goalquest-settings-changed', scheduleReminder);
@@ -62,7 +63,8 @@ function millisecondsUntil(time: string) {
   const now = new Date();
   const target = new Date(now);
   target.setHours(hours || 0, minutes || 0, 0, 0);
-  return Math.max(500, target.getTime() - now.getTime());
+  if (target <= now) target.setDate(target.getDate() + 1);
+  return target.getTime() - now.getTime();
 }
 
 function millisecondsUntilTomorrow(time: string) {
