@@ -20,6 +20,12 @@ export function sendDirectMessage(friendId: string, kind: DirectMessage['kind'],
     .select('id,sender_id,recipient_id,kind,content,created_at').single<DirectMessage>();
 }
 
+export function recordCallMessage(friendId: string, callId: string, content: string) {
+  return supabase.rpc('record_call_history', {
+    target_user_id: friendId, target_call_id: callId, target_content: content,
+  });
+}
+
 export function deleteDirectMessage(messageId: string) {
   return supabase.from('direct_messages').delete().eq('id', messageId);
 }

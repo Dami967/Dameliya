@@ -10,6 +10,7 @@ import { useSession } from '../lib/useSession';
 import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
 import { loadInterviewContext } from '../lib/interviewContext';
 import { loadActiveQuest, rememberActiveQuest } from '../lib/activeQuest';
+import { detectLanguage, languageName } from '../lib/languages';
 
 type Message = { role: 'q' | 'user'; text: string };
 
@@ -22,7 +23,7 @@ export function MentorPage() {
   const [mode, setMode] = useState<'add' | 'edit' | null>(null);
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([{ role: 'q', text: 'Привет! Расскажи о своей цели — я помогу превратить её в приключение.' }]);
+  const [messages, setMessages] = useState<Message[]>([{ role: 'q', text: mentorGreeting(detectLanguage()) }]);
   useEffect(() => {
     if (!session) return;
     const params = new URLSearchParams(window.location.search);
@@ -46,9 +47,10 @@ export function MentorPage() {
     setMessages((old) => [...old, { role: 'user', text }]);
     setBusy(true);
     const interview = session ? await loadInterviewContext(session.user.id) : 'Данные интервью недоступны.';
+    const answerLanguage = languageName(detectLanguage());
     const answer = await askAi(`${interview}\nМоя цель: ${goal || 'ещё не выбрана'}. Вопрос: ${text}`,
       `Ты Кью, добрый AI-наставник GoalQuest. Изучи приложенные фото, файлы или голосовое сообщение.
-Отвечай практично и на русском. ${conciseMentorRules}`, attachments, true);
+Всегда отвечай на языке ${answerLanguage}, независимо от языка сохранённой цели. ${conciseMentorRules}`, attachments, true);
     setMessages((old) => [...old, { role: 'q', text: compactMentorReply(answer.text ?? answer.error.message) }]);
     setBusy(false);
   }
@@ -70,4 +72,10 @@ export function MentorPage() {
     <section className="mentor-chat-page"><div className="mentor-chat-log">{messages.map((message, index) => <p className={message.role} key={`${message.text}-${index}`}>{message.text}</p>)}{busy && <p className="q">Q думает…</p>}</div>
       <AiComposer busy={busy} name="message" placeholder="Спроси Q о своей цели…" onSend={(text, files) => void send(text, files)} /></section></div>
   </div></AppShell>;
+}
+
+function mentorGreeting(language: string) {
+  if (language === 'ru') return 'Привет! Расскажи о своей цели — я помогу превратить её в приключение.';
+  if (language === 'kk') return 'Сәлем! Мақсатың туралы айт — мен оны шытырманға айналдыруға көмектесемін.';
+  return 'Hi! Tell me about your goal, and I will help turn it into an adventure.';
 }

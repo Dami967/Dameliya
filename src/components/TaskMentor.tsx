@@ -5,6 +5,7 @@ import type { TaskChatMessage } from '../lib/taskRecords';
 import { AiComposer } from './AiComposer';
 import { Icon } from './Icon';
 import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
+import { detectLanguage, languageName } from '../lib/languages';
 
 export function TaskMentor({ task, notes, learningContext = '', initialMessages = [], readOnly = false, onMessages }: {
   task: string; notes: string; learningContext?: string; initialMessages?: TaskChatMessage[];
@@ -12,7 +13,7 @@ export function TaskMentor({ task, notes, learningContext = '', initialMessages 
   onMessages?: (messages: TaskChatMessage[]) => void;
 }) {
   const [messages, setMessages] = useState<TaskChatMessage[]>(initialMessages.length ? initialMessages : [
-    { role: 'q', text: 'Привет! Я помогу разобраться с заданием. Если застрянешь — напиши ✨' },
+    { role: 'q', text: taskGreeting(detectLanguage()) },
   ]);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -25,6 +26,7 @@ export function TaskMentor({ task, notes, learningContext = '', initialMessages 
       `${message.role === 'user' ? 'Пользователь' : 'Кью'}: ${message.text}`).join('\n');
     append({ role: 'user', text: question.trim() });
     setBusy(true);
+    const answerLanguage = languageName(detectLanguage());
     const result = await askAi(
       `Задание: ${task}
 Заметки пользователя: ${notes || 'пока пусто'}
@@ -35,7 +37,8 @@ ${conversation || 'разговора ещё не было'}
 Новый вопрос: ${question}`,
       `Ты Кью, AI-наставник GoalQuest. Изучи приложенные фото, файлы или голосовое, если они есть.
 Помоги выполнить только текущее задание этой карты, но не делай всю работу вместо пользователя.
-Не переключайся на другие цели пользователя, если он сам об этом не попросил. ${conciseMentorRules}`,
+Не переключайся на другие цели пользователя, если он сам об этом не попросил.
+Всегда отвечай на языке ${answerLanguage}. ${conciseMentorRules}`,
       attachments,
       true,
     );
@@ -65,4 +68,10 @@ ${conversation || 'разговора ещё не было'}
     <AiComposer busy={busy} name="chat" placeholder="Спроси наставника..." onSend={(text, files) => void ask(text, files)} /></>}
     <div className="ai-energy"><Icon name="sparkles" size={16} /><span>Ответ создаётся персонально для тебя</span></div>
   </aside>;
+}
+
+function taskGreeting(language: string) {
+  if (language === 'ru') return 'Привет! Я помогу разобраться с заданием. Если застрянешь — напиши ✨';
+  if (language === 'kk') return 'Сәлем! Тапсырманы түсінуге көмектесемін. Қиын болса, маған жаз ✨';
+  return 'Hi! I will help you understand this task. Message me if you get stuck ✨';
 }

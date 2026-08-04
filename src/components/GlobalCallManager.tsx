@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SocialUser } from '../lib/socialData';
 import { callerName, sendCallSignal, subscribeToCallSignals, type CallSignal } from '../lib/callSignaling';
 import { playNotificationSound } from '../lib/notificationSound';
-import { sendDirectMessage } from '../lib/directMessages';
+import { recordCallMessage } from '../lib/directMessages';
 
 type CallState = { callId: string; peerId: string; name: string; avatarUrl?: string | null;
   direction: 'incoming' | 'outgoing'; offer?: RTCSessionDescriptionInit; status: string };
@@ -14,6 +14,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   const peer = useRef<RTCPeerConnection | null>(null);
   const local = useRef<MediaStream | null>(null);
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
+  const remoteStream = useRef<MediaStream | null>(null);
   const iceQueue = useRef<RTCIceCandidateInit[]>([]);
   const callRef = useRef<CallState | null>(null);
   const acceptedAt = useRef<number | null>(null);
@@ -26,6 +27,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   const close = useCallback(() => {
     peer.current?.close(); peer.current = null;
     local.current?.getTracks().forEach((track) => track.stop()); local.current = null;
+    remoteStream.current = null;
     if (answerTimer.current) window.clearTimeout(answerTimer.current);
     if (countdownTimer.current) window.clearInterval(countdownTimer.current);
     stopRinging();
@@ -35,6 +37,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   const receive = useCallback(async (signal: CallSignal) => {
     const current = callRef.current;
     if (signal.signal_type === 'offer' && !current) {
+      acceptedAt.current = null; logged.current = false;
       const person = await callerName(signal.sender_id);
       const next: CallState = { callId: signal.call_id, peerId: signal.sender_id,
         direction: 'incoming', offer: signal.payload as unknown as RTCSessionDescriptionInit,
@@ -71,7 +74,10 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     local.current.getTracks().forEach((track) => connection.addTrack(track, local.current!));
     connection.onicecandidate = (event) => event.candidate && void sendCallSignal(callId, peerId, 'ice',
       event.candidate.toJSON() as unknown as Record<string, unknown>);
-    connection.ontrack = (event) => { if (remoteAudio.current) remoteAudio.current.srcObject = event.streams[0]; };
+    connection.ontrack = (event) => {
+      remoteStream.current = event.streams[0] ?? new MediaStream([event.track]);
+      void playRemoteAudio();
+    };
     connection.onconnectionstatechange = () => {
       if (connection.connectionState === 'connected') setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
       if (connection.connectionState === 'failed') {
@@ -105,6 +111,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     if (!call?.offer) return;
     try {
       const connection = await createPeer(call.callId, call.peerId);
+      acceptedAt.current = Date.now();
       await connection.setRemoteDescription(call.offer); await flushIce(connection);
       const answer = await connection.createAnswer(); await connection.setLocalDescription(answer);
       await sendCallSignal(call.callId, call.peerId, 'answer', answer as unknown as Record<string, unknown>);
@@ -144,12 +151,19 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     await saveCallHistory(current); close();
   }
   async function saveCallHistory(current: CallState) {
-    if (current.direction !== 'outgoing' || logged.current) return;
+    if (logged.current) return;
     logged.current = true;
     const content = acceptedAt.current
       ? `📞 Аудиозвонок · ${formatDuration(Date.now() - acceptedAt.current)}`
       : '📵 Пропущенный аудиозвонок';
-    await sendDirectMessage(current.peerId, 'call', content);
+    await recordCallMessage(current.peerId, current.callId, content);
+  }
+  async function playRemoteAudio() {
+    const audio = remoteAudio.current;
+    if (!audio || !remoteStream.current) return;
+    audio.srcObject = remoteStream.current;
+    audio.muted = false; audio.volume = 1;
+    await audio.play().catch(() => undefined);
   }
   async function flushIce(connection: RTCPeerConnection) {
     const queued = iceQueue.current.splice(0);
@@ -158,7 +172,10 @@ export function GlobalCallManager({ userId }: { userId: string }) {
 
   if (!call) return null;
   const waiting = call.status.includes('Входящий') || call.status.includes('Звоним');
-  return <div className="call-overlay global-call"><audio ref={remoteAudio} autoPlay />
+  return <div className="call-overlay global-call"><audio ref={(element) => {
+    remoteAudio.current = element;
+    if (element && remoteStream.current) void playRemoteAudio();
+  }} autoPlay playsInline />
     <div className="call-person"><span className="call-avatar">{call.avatarUrl ? <img src={call.avatarUrl} alt="" /> : call.name[0]}</span>
       <h2>{call.name}</h2><p>{waiting
         ? `${call.direction === 'incoming' ? 'Входящий звонок' : 'Звоним…'} · ${formatCountdown(remainingSeconds)}`
