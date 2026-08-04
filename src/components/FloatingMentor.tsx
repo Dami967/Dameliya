@@ -102,6 +102,9 @@ Understand attached images, documents and voice messages when present.`, attachm
         </div>
         <AiComposer busy={busy} name="mentor" placeholder="Ask Q…" onSend={(text, files) => void ask(text, files)} />
         <small className="mentor-cost"><Icon name="zap" size={13} /> AI answers in {languageName(language)}</small>
+        <button className="mentor-mobile-close" type="button" onClick={() => setIsOpen(false)}>
+          <span>×</span> Выйти из Q
+        </button>
       </section>}
       {!isOpen && <span className="mentor-hint">AI Mentor</span>}
       <button className="mentor-fab" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={stopDrag}

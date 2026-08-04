@@ -15,7 +15,7 @@
 }
 
 @media (max-width: 680px) {
-  .main-content { padding: 19px 15px calc(140px + env(safe-area-inset-bottom)); }
+  .main-content { padding: 19px 15px calc(180px + env(safe-area-inset-bottom)); }
   .topbar { margin-bottom: 18px; }.topbar p { display: none; }.topbar h1 { font-size: 20px; }
   .top-stats .stat-chip--xp { display: none; }.top-stats .avatar { display: none; }
   .hero-card { align-items: flex-start; min-height: 232px; padding: 18px; }.hero-card__mascot { width: 76px; height: 76px; border-radius: 22px; border-width: 3px; }
@@ -29,7 +29,7 @@
   .quest-page-head { grid-template-columns: 46px minmax(0, 1fr) 46px; gap: 8px; }.quest-page-head h1 { overflow-wrap: anywhere; }.quest-switch { width: 46px; height: 46px; }.quest-goal-picker select { min-height: 48px; font-size: 16px; }.new-quest-link { min-height: 40px; align-items: center; font-size: 11px; }
   .quest-goal-tabs{display:flex;gap:8px;margin:14px 0 6px;padding:3px 1px 8px;overflow-x:auto;scroll-snap-type:x proximity}.quest-goal-tabs button{display:flex;flex:0 0 auto;align-items:center;gap:7px;max-width:82vw;min-height:48px;padding:8px 13px;border:1px solid var(--line);border-radius:14px;color:var(--ink);background:#fff;font-size:12px;font-weight:800;white-space:nowrap;scroll-snap-align:start}.quest-goal-tabs button span{display:grid;flex:0 0 27px;width:27px;height:27px;place-items:center;border-radius:9px;color:var(--blue);background:#eef2ff}.quest-goal-tabs button.is-active{border-color:#8b63ed;color:#6446d9;background:#f4f0ff;box-shadow:0 5px 16px #7258d51c}.quest-goal-tabs button.is-active span{color:#fff;background:linear-gradient(135deg,var(--blue),var(--purple))}
   .task-topbar { grid-template-columns: 1fr 1.3fr; padding: 0 17px; }.task-topbar .stat-chip { display: none; }.task-topbar__progress { justify-items: end; }.task-topbar__progress div { width: 120px; }
-  .task-layout { display: flex; flex-direction: column; padding: 25px 15px calc(140px + env(safe-area-inset-bottom)); }.task-main h1 { font-size: 26px; }
+  .task-layout { display: flex; flex-direction: column; padding: 25px 15px calc(180px + env(safe-area-inset-bottom)); }.task-main h1 { font-size: 26px; }
   .ai-panel { position: static; order: -1; }.ai-chat { min-height: 150px; }.task-info { gap: 10px; flex-wrap: wrap; }
   .achievement-list { grid-template-columns: repeat(3, 1fr); }
 }
