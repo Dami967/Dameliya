@@ -60,6 +60,7 @@ button { cursor: pointer; }
 .sidebar-user div:nth-child(2) { flex: 1; display: grid; }
 .sidebar-user b { font-size: 12px; }.sidebar-user small { color: var(--muted); font-size: 9px; margin-top: 2px; }
 .avatar { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%; background: #ece8ff; color: #7455ce; font-weight: 800; }
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
 .main-content { max-width: 1260px; margin: auto; padding: 34px 44px 60px; }
 .bottom-nav { display: none; }
 .eyebrow { color: #8d94aa; font-size: 9px; font-weight: 800; letter-spacing: .14em; }

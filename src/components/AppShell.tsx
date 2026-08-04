@@ -41,7 +41,8 @@ export function AppShell({ children }: AppShellProps) {
         </nav>
         <MomentumCard />
         <Link href="/profile" className={`sidebar-user ${location === '/profile' ? 'is-active' : ''}`}>
-          <div className="avatar" data-no-auto-translate>{displayName[0]?.toUpperCase() || 'G'}</div>
+          <div className="avatar" data-no-auto-translate>{profile?.avatar_url
+            ? <img src={profile.avatar_url} alt="" /> : displayName[0]?.toUpperCase() || 'G'}</div>
           <div><b data-no-auto-translate>{profile?.username ? `@${profile.username}` : displayName}</b><small>Уровень {profile?.level ?? 1}</small></div>
           <Icon name="arrow" size={16} />
         </Link>

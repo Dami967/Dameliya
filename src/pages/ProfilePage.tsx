@@ -86,8 +86,8 @@ export function ProfilePage() {
 
 function Avatar({ profile, equipped }: { profile: UserProfile; equipped: Reward[] }) {
   return <div className="profile-avatar profile-avatar--eagle">
-    {equipped.length ? <DressedEagle equipped={equipped} size="profile" /> : profile.avatar_url
-      ? <img src={profile.avatar_url} alt="" />
+    {profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : equipped.length
+      ? <DressedEagle equipped={equipped} size="profile" />
       : <img src="/goalquest-eagle.png" alt="Орлёнок Кью" />}
     <span>{profile.level}</span>
   </div>;

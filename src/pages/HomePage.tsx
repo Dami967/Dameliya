@@ -58,7 +58,8 @@ export function HomePage() {
           <span className="home-username">{username}</span> <span>👋</span></h1></div>
         <div className="top-stats">
           <UserBalance />
-          <div className="avatar">{userName[0]?.toUpperCase() || 'G'}</div>
+          <div className="avatar">{profile?.avatar_url
+            ? <img src={profile.avatar_url} alt="" /> : userName[0]?.toUpperCase() || 'G'}</div>
         </div>
       </header>
 

@@ -18,12 +18,14 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   const acceptedAt = useRef<number | null>(null);
   const logged = useRef(false);
   const answerTimer = useRef<number | null>(null);
+  const ringTimer = useRef<number | null>(null);
   useEffect(() => { callRef.current = call; }, [call]);
 
   const close = useCallback(() => {
     peer.current?.close(); peer.current = null;
     local.current?.getTracks().forEach((track) => track.stop()); local.current = null;
     if (answerTimer.current) window.clearTimeout(answerTimer.current);
+    stopRinging();
     iceQueue.current = []; callRef.current = null; setCall(null);
   }, []);
 
@@ -33,14 +35,15 @@ export function GlobalCallManager({ userId }: { userId: string }) {
       const person = await callerName(signal.sender_id);
       const next: CallState = { callId: signal.call_id, peerId: signal.sender_id,
         direction: 'incoming', offer: signal.payload as unknown as RTCSessionDescriptionInit,
-        name: person.name, avatarUrl: person.avatarUrl, status: 'Входящий аудиозвонок' };
-      callRef.current = next; setCall(next); playNotificationSound('call'); return;
+        name: person.name, avatarUrl: person.avatarUrl, status: 'Входящий звонок · ответь в течение 1:30' };
+      callRef.current = next; setCall(next); startRinging(); return;
     }
     if (!current || current.callId !== signal.call_id) return;
     if (signal.signal_type === 'answer' && peer.current) {
       await peer.current.setRemoteDescription(signal.payload as unknown as RTCSessionDescriptionInit);
       acceptedAt.current = Date.now();
       if (answerTimer.current) window.clearTimeout(answerTimer.current);
+      stopRinging();
       await flushIce(peer.current); setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
     } else if (signal.signal_type === 'ice') {
       const candidate = signal.payload as RTCIceCandidateInit;
@@ -79,14 +82,15 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     if (callRef.current) return;
     const callId = crypto.randomUUID();
     const next: CallState = { callId, peerId: user.id, name: user.name,
-      direction: 'outgoing', status: 'Звоним…' };
+      direction: 'outgoing', status: 'Звоним… ожидание до 1:30' };
     acceptedAt.current = null; logged.current = false;
     callRef.current = next; setCall(next);
     try {
       const connection = await createPeer(callId, user.id);
       const offer = await connection.createOffer(); await connection.setLocalDescription(offer);
       await sendCallSignal(callId, user.id, 'offer', offer as unknown as Record<string, unknown>);
-      answerTimer.current = window.setTimeout(() => void timeoutCall(callId), 45_000);
+      startRinging();
+      answerTimer.current = window.setTimeout(() => void timeoutCall(callId), 90_000);
     } catch {
       logged.current = true;
       setCall((old) => old ? { ...old, status: 'Не удалось начать звонок или получить доступ к микрофону' } : old);
@@ -109,6 +113,15 @@ export function GlobalCallManager({ userId }: { userId: string }) {
       await saveCallHistory(call);
     }
     close();
+  }
+  function startRinging() {
+    stopRinging();
+    playNotificationSound('call');
+    ringTimer.current = window.setInterval(() => playNotificationSound('call'), 2_600);
+  }
+  function stopRinging() {
+    if (ringTimer.current) window.clearInterval(ringTimer.current);
+    ringTimer.current = null;
   }
   async function timeoutCall(callId: string) {
     const current = callRef.current;
