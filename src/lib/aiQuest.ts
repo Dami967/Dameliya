@@ -3,6 +3,7 @@ import type { QuestResource, QuestStep, QuestTaskDetails } from './questData';
 import { askAi, parseAiJson, searchYoutubeVideo, validateYoutubeVideo } from './ai';
 import { loadProfile } from './userProfile';
 import { loadQuestLearning } from './questLearning';
+import { cacheQuestPlans } from './questCache';
 
 export type AiQuestPlan = {
   id: string;
@@ -28,8 +29,10 @@ export async function loadAiQuestById(userId: string, planId: string) {
 }
 
 export async function loadAiQuests(userId: string) {
-  return supabase.from('ai_quest_plans').select('*').eq('user_id', userId)
+  const result = await supabase.from('ai_quest_plans').select('*').eq('user_id', userId)
     .order('created_at', { ascending: true }).returns<AiQuestPlan[]>();
+  if (!result.error && result.data) cacheQuestPlans(userId, result.data);
+  return result;
 }
 
 export function deleteAiQuest(planId: string) {
