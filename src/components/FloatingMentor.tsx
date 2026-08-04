@@ -120,8 +120,7 @@ Understand attached images, documents and voice messages when present.`, attachm
       <button className="mentor-fab" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={stopDrag}
         onPointerCancel={() => { drag.current = null; }}
         aria-label="Открыть или перетащить AI Mentor">
-        <img className="mentor-fab__eagle" src="/goalquest-eagle-quest.png" alt="" />
-        <span className="mentor-fab__status"><Icon name={isOpen ? 'plus' : 'message'} size={16} /></span>
+        <span className="mentor-fab__letter">Q</span>
       </button>
     </div>
   );

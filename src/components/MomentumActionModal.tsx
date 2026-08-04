@@ -18,6 +18,7 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
   const [checkedAnswer, setCheckedAnswer] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
   const [busy, setBusy] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [language, setLanguage] = useState(detectLanguage);
@@ -105,6 +106,7 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
       setBusy(false); return;
     }
     onReward(result.data);
+    setCompleted(true);
     const selectedPlan = plans.find((item) => item.id === selectedPlanId);
     const learningText = mode === 'quiz' && quiz.length
       ? `Цель: ${selectedPlan?.goal || 'не указана'}\n${quiz.map((item, index) =>
@@ -147,8 +149,8 @@ export function MomentumActionModal({ mode, userId, onClose, onReward }: {
     {feedback && <p className="momentum-feedback">{feedback}</p>}
     {mode === 'quiz' && !quiz.length ? <button className="social-primary" disabled={!selectedPlanId || busy}
       onClick={() => void createQuiz()}>{busy ? 'Кью создаёт викторину…' : feedback ? 'Попробовать снова' : 'Создать викторину'}</button>
-      : <button className="social-primary" disabled={!answer || busy} onClick={() => void submit()}>
-        {busy ? 'Кью анализирует…' : mode === 'quiz'
+      : <button className="social-primary" disabled={!answer || busy || completed} onClick={() => void submit()}>
+        {completed ? 'Награда получена ✓' : busy ? 'Кью анализирует…' : mode === 'quiz'
           ? quizButtonLabel(checkedAnswer, quiz[questionIndex]?.correct_index) : 'Отправить отчёт'}</button>}
   </section></div>;
 }
