@@ -42,11 +42,13 @@ export async function loadProfile(userId: string) {
 }
 
 export async function saveProfile(userId: string, changes: Partial<UserProfile>) {
-  return supabase.from('profiles').upsert({
+  const result = await supabase.from('profiles').upsert({
     ...changes,
     user_id: userId,
     updated_at: new Date().toISOString(),
   });
+  if (!result.error) window.dispatchEvent(new CustomEvent('goalquest-profile-changed', { detail: changes }));
+  return result;
 }
 
 export async function loadSettings(userId: string) {

@@ -41,6 +41,9 @@ export function HomePage() {
       window.removeEventListener('focus', refresh);
     };
   }, [session]);
+  if (session && profile === undefined) {
+    return <AppShell><main className="center-loader">Загружаем твой профиль…</main></AppShell>;
+  }
   const plan = plans[planIndex] ?? null;
   const active = plan?.steps.find((step) => step.state === 'active');
   const done = plan?.steps.filter((step) => step.state === 'done').length ?? 0;
