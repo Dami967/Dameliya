@@ -11,8 +11,7 @@ const translatedAttributes = ['placeholder', 'title', 'aria-label'] as const;
 const excluded = [
   'script', 'style', 'textarea', 'option', '[contenteditable="true"]', '[data-no-auto-translate]',
   '.note-content', '.notes-list', '.chat-messages', '.mentor-chat-log', '.ai-chat',
-  '.profile-copy', '.quest-insight-list', '.level-copy', '.today-task div',
-  '.daily-card h3', '.daily-card p',
+  '.profile-copy',
 ].join(',');
 
 export function AutomaticTranslation({ children }: { children: ReactNode }) {

@@ -88,7 +88,7 @@ export function QuestPage() {
       <button className="quest-switch" disabled={plans.length < 2} onClick={() => choose(selectedIndex - 1)}
         aria-label="Предыдущая карта">←</button>
       <div><span className="eyebrow">МОЙ КВЕСТ · {selectedIndex + 1} ИЗ {plans.length || 1}</span>
-        <h1 data-no-auto-translate={plan ? '' : undefined}>{plan?.goal || (plansLoading ? 'Загружаем карту…' : 'Создай свою первую цель')}</h1>
+        <h1>{plan?.goal || (plansLoading ? 'Загружаем карту…' : 'Создай свою первую цель')}</h1>
         <p>Большая цель становится простой, когда виден следующий шаг.</p>
         <QuestGoalPicker plans={plans} selectedId={selectedPlanId} onChange={chooseById} />
         <Link href="/mentor?new=1" className="new-quest-link">＋ Новая цель</Link></div>

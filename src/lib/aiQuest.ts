@@ -1,9 +1,10 @@
 import { supabase } from './supabase';
 import type { QuestResource, QuestStep, QuestTaskDetails } from './questData';
 import { askAi, parseAiJson, searchYoutubeVideo, validateYoutubeVideo } from './ai';
-import { loadProfile } from './userProfile';
+import { loadProfile, loadSettings } from './userProfile';
 import { loadQuestLearning } from './questLearning';
 import { cacheQuestPlans } from './questCache';
+import { languageName } from './languages';
 
 export type AiQuestPlan = {
   id: string;
@@ -41,7 +42,8 @@ export function deleteAiQuest(planId: string) {
 
 export async function createAiQuest(userId: string, goal: string, request: string, planId?: string) {
   const previous = planId ? await loadAiQuestById(userId, planId) : null;
-  const { data: profile } = await loadProfile(userId);
+  const [{ data: profile }, { data: settings }] = await Promise.all([loadProfile(userId), loadSettings(userId)]);
+  const outputLanguage = languageName(settings?.language ?? 'ru');
   const profileContext = profile ? `Возраст: ${profile.age || 'не указан'}. Интересы: ${profile.interests.join(', ') || 'не указаны'}.
 Сильные стороны: ${profile.strengths || 'не указаны'}. Трудности: ${profile.challenges || 'не указаны'}.
 Доступно времени в день: ${profile.daily_minutes} минут.` : '';
@@ -51,7 +53,7 @@ export async function createAiQuest(userId: string, goal: string, request: strin
 Ровно 10 конкретных, безопасных и выполнимых этапов. В каждом этапе ровно 3 пункта checklist и 0–2 полезных ресурса.
 Если предлагаешь посмотреть урок, статью или пройти тест, обязательно добавь рабочую публичную https-ссылку в resources.
 Для видео выбирай существующий ролик известного образовательного канала, доступный без входа. Не выдумывай video ID, адреса и не указывай платные материалы.`,
-    'Ты создаёшь персональные карты GoalQuest для подростков. Отвечай только валидным JSON на русском языке.',
+    `Ты создаёшь персональные карты GoalQuest для подростков. Весь пользовательский текст пиши на языке ${outputLanguage}. Отвечай только валидным JSON.`,
     [], false, true,
   );
   if (error) return { data: null, error };
@@ -120,7 +122,8 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
     return { data: updatedStep, error: null };
   }
   const { context: learning } = await loadQuestLearning(userId, plan.goal);
-  const { data: profile } = await loadProfile(userId);
+  const [{ data: profile }, { data: settings }] = await Promise.all([loadProfile(userId), loadSettings(userId)]);
+  const outputLanguage = languageName(settings?.language ?? 'ru');
   const context = profile ? `Интересы: ${profile.interests.join(', ')}. Сильные стороны: ${profile.strengths}.
 Трудности: ${profile.challenges}. Доступно времени в день: ${profile.daily_minutes} минут.` : '';
   const result = await askAi(
@@ -131,7 +134,7 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
 Верни ТОЛЬКО JSON без markdown: {"objective":"подробное персональное задание","expected_answer":"эталон готового правильного результата для проверки","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем нужен"}]}.
 В checklist должно быть ровно 3 выполнимых пункта. Если нужен урок или тест, обязательно добавь рабочую публичную https-ссылку.
 Для видео выбирай существующий ролик известного образовательного канала, доступный без входа; не выдумывай video ID.`,
-    'Ты создаёшь персональное задание GoalQuest для подростка. Отвечай безопасно, конкретно и только валидным JSON на русском.',
+    `Ты создаёшь персональное задание GoalQuest для подростка. Пиши на языке ${outputLanguage}. Отвечай безопасно, конкретно и только валидным JSON.`,
     [], false, true,
   );
   if (result.error) return { data: { ...step, details: fallbackDetails(step) }, error: result.error };
