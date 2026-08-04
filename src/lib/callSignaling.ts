@@ -19,6 +19,12 @@ export function subscribeToCallSignals(userId: string, receive: (signal: CallSig
   }, (event) => receive(event.new as CallSignal)).subscribe();
 }
 
+export async function loadCallIceCandidates(callId: string, senderId: string) {
+  const { data } = await supabase.from('call_signals').select('payload').eq('call_id', callId)
+    .eq('sender_id', senderId).eq('signal_type', 'ice').order('created_at', { ascending: true });
+  return (data ?? []).map((row) => row.payload as RTCIceCandidateInit);
+}
+
 export async function callerName(userId: string) {
   const { data } = await supabase.from('social_profiles').select('display_name,username,avatar_url')
     .eq('user_id', userId).maybeSingle();

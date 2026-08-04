@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SocialUser } from '../lib/socialData';
-import { callerName, sendCallSignal, subscribeToCallSignals, type CallSignal } from '../lib/callSignaling';
+import { callerName, loadCallIceCandidates, sendCallSignal, subscribeToCallSignals,
+  type CallSignal } from '../lib/callSignaling';
 import { playNotificationSound } from '../lib/notificationSound';
 import { recordCallMessage } from '../lib/directMessages';
 
@@ -38,20 +39,23 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     const current = callRef.current;
     if (signal.signal_type === 'offer' && !current) {
       acceptedAt.current = null; logged.current = false;
-      const person = await callerName(signal.sender_id);
       const next: CallState = { callId: signal.call_id, peerId: signal.sender_id,
         direction: 'incoming', offer: signal.payload as unknown as RTCSessionDescriptionInit,
-        name: person.name, avatarUrl: person.avatarUrl, status: 'Входящий звонок · ответь в течение 1:30' };
-      callRef.current = next; setCall(next); startRinging(); startAnswerCountdown(next.callId); return;
+        name: 'Друг', status: 'Входящий звонок · ответь в течение 1:30' };
+      callRef.current = next; setCall(next); startRinging(); startAnswerCountdown(next.callId);
+      const person = await callerName(signal.sender_id);
+      if (callRef.current?.callId === signal.call_id) setCall((old) => old
+        ? { ...old, name: person.name, avatarUrl: person.avatarUrl } : old);
+      return;
     }
     if (!current || current.callId !== signal.call_id) return;
     if (signal.signal_type === 'answer' && peer.current) {
       await peer.current.setRemoteDescription(signal.payload as unknown as RTCSessionDescriptionInit);
-      acceptedAt.current = Date.now();
       if (answerTimer.current) window.clearTimeout(answerTimer.current);
       if (countdownTimer.current) window.clearInterval(countdownTimer.current);
       stopRinging();
-      await flushIce(peer.current); setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
+      await recoverIce(signal.call_id, signal.sender_id);
+      await flushIce(peer.current); setCall((old) => old ? { ...old, status: 'Соединяем…' } : old);
     } else if (signal.signal_type === 'ice') {
       const candidate = signal.payload as RTCIceCandidateInit;
       if (peer.current?.remoteDescription) await peer.current.addIceCandidate(candidate).catch(() => undefined);
@@ -79,7 +83,12 @@ export function GlobalCallManager({ userId }: { userId: string }) {
       void playRemoteAudio();
     };
     connection.onconnectionstatechange = () => {
-      if (connection.connectionState === 'connected') setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
+      if (connection.connectionState === 'connected') {
+        if (!acceptedAt.current) acceptedAt.current = Date.now();
+        stopRinging();
+        setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
+        void playRemoteAudio();
+      }
       if (connection.connectionState === 'failed') {
         const current = callRef.current;
         if (current) void saveCallHistory(current).finally(close); else close();
@@ -110,9 +119,12 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   async function answer() {
     if (!call?.offer) return;
     try {
+      if (answerTimer.current) window.clearTimeout(answerTimer.current);
+      if (countdownTimer.current) window.clearInterval(countdownTimer.current);
+      stopRinging();
       const connection = await createPeer(call.callId, call.peerId);
-      acceptedAt.current = Date.now();
       await connection.setRemoteDescription(call.offer); await flushIce(connection);
+      await recoverIce(call.callId, call.peerId); await flushIce(connection);
       const answer = await connection.createAnswer(); await connection.setLocalDescription(answer);
       await sendCallSignal(call.callId, call.peerId, 'answer', answer as unknown as Record<string, unknown>);
       setCall((old) => old ? { ...old, status: 'Соединяем…' } : old);
@@ -168,6 +180,10 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   async function flushIce(connection: RTCPeerConnection) {
     const queued = iceQueue.current.splice(0);
     await Promise.all(queued.map((candidate) => connection.addIceCandidate(candidate).catch(() => undefined)));
+  }
+  async function recoverIce(callId: string, senderId: string) {
+    const candidates = await loadCallIceCandidates(callId, senderId);
+    iceQueue.current.push(...candidates);
   }
 
   if (!call) return null;
