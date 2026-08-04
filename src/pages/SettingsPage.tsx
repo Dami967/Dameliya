@@ -9,10 +9,11 @@ import { appLanguages, rememberLanguage } from '../lib/languages';
 import { AccountActionDialog, type AccountAction } from '../components/AccountActionDialog';
 import { requestNotificationPermission, showBrowserNotification } from '../lib/browserNotifications';
 import { playNotificationSound, unlockNotificationSound } from '../lib/notificationSound';
+import { cachedSettings, cacheSettings } from '../lib/settingsCache';
 
 export function SettingsPage() {
   const { session } = useSession();
-  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(() => cachedSettings());
   const [message, setMessage] = useState('');
   const [accountAction, setAccountAction] = useState<AccountAction | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
@@ -20,19 +21,25 @@ export function SettingsPage() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    if (session) void loadSettings(session.user.id).then(({ data }) => {
+    if (session) {
+      const cached = cachedSettings(session.user.id);
+      setSettings(cached);
+      void loadSettings(session.user.id).then(({ data }) => {
       setSettings(data);
       if (data) {
+        cacheSettings(data);
         applyTheme(data.theme);
         rememberLanguage(data.language);
       }
     });
+    }
   }, [session]);
 
   async function update(changes: Partial<UserSettings>) {
     if (!session || !settings) return;
     const next = { ...settings, ...changes };
     setSettings(next);
+    cacheSettings(next);
     if (changes.theme) applyTheme(changes.theme);
     if (changes.language) rememberLanguage(changes.language);
     const { error } = await saveSettings(session.user.id, changes);

@@ -5,6 +5,7 @@ import { callerName, loadCallIceCandidates, sendCallSignal, subscribeToCallSigna
 import { playNotificationSound } from '../lib/notificationSound';
 import { recordCallMessage } from '../lib/directMessages';
 import { callRtcConfig } from '../lib/turnServers';
+import { startRealtimeAudioRelay, type AudioRelay } from '../lib/realtimeAudioRelay';
 
 type CallState = { callId: string; peerId: string; name: string; avatarUrl?: string | null;
   direction: 'incoming' | 'outgoing'; offer?: RTCSessionDescriptionInit; status: string };
@@ -16,6 +17,8 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   const local = useRef<MediaStream | null>(null);
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
   const remoteStream = useRef<MediaStream | null>(null);
+  const audioContext = useRef<AudioContext | null>(null);
+  const audioRelay = useRef<AudioRelay | null>(null);
   const iceQueue = useRef<RTCIceCandidateInit[]>([]);
   const callRef = useRef<CallState | null>(null);
   const acceptedAt = useRef<number | null>(null);
@@ -23,12 +26,16 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   const answerTimer = useRef<number | null>(null);
   const countdownTimer = useRef<number | null>(null);
   const ringTimer = useRef<number | null>(null);
+  const relayTimer = useRef<number | null>(null);
   useEffect(() => { callRef.current = call; }, [call]);
 
   const close = useCallback(() => {
     peer.current?.close(); peer.current = null;
     local.current?.getTracks().forEach((track) => track.stop()); local.current = null;
     remoteStream.current = null;
+    audioRelay.current?.stop(); audioRelay.current = null;
+    if (relayTimer.current) window.clearTimeout(relayTimer.current);
+    void audioContext.current?.close(); audioContext.current = null;
     if (answerTimer.current) window.clearTimeout(answerTimer.current);
     if (countdownTimer.current) window.clearInterval(countdownTimer.current);
     stopRinging();
@@ -56,6 +63,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
       stopRinging();
       await recoverIce(signal.call_id, signal.sender_id);
       await flushIce(peer.current); setCall((old) => old ? { ...old, status: 'Соединяем…' } : old);
+      scheduleAudioRelay(signal.call_id);
     } else if (signal.signal_type === 'ice') {
       const candidate = signal.payload as RTCIceCandidateInit;
       if (peer.current?.remoteDescription) await peer.current.addIceCandidate(candidate).catch(() => undefined);
@@ -85,13 +93,15 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     connection.onconnectionstatechange = () => {
       if (connection.connectionState === 'connected') {
         if (!acceptedAt.current) acceptedAt.current = Date.now();
+        audioRelay.current?.stop(); audioRelay.current = null;
+        if (relayTimer.current) window.clearTimeout(relayTimer.current);
         stopRinging();
         setCall((old) => old ? { ...old, status: 'Разговор идёт' } : old);
         void playRemoteAudio();
       }
       if (connection.connectionState === 'failed') {
         const current = callRef.current;
-        if (current) void saveCallHistory(current).finally(close); else close();
+        if (current) void startAudioRelay(current.callId); else close();
       }
     };
     return connection;
@@ -99,6 +109,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
 
   async function startOutgoing(user: SocialUser) {
     if (callRef.current) return;
+    prepareAudioContext();
     const callId = crypto.randomUUID();
     const next: CallState = { callId, peerId: user.id, name: user.name,
       direction: 'outgoing', status: 'Звоним… ожидание до 1:30' };
@@ -119,6 +130,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
   async function answer() {
     if (!call?.offer) return;
     try {
+      prepareAudioContext();
       if (answerTimer.current) window.clearTimeout(answerTimer.current);
       if (countdownTimer.current) window.clearInterval(countdownTimer.current);
       stopRinging();
@@ -128,6 +140,7 @@ export function GlobalCallManager({ userId }: { userId: string }) {
       const answer = await connection.createAnswer(); await connection.setLocalDescription(answer);
       await sendCallSignal(call.callId, call.peerId, 'answer', answer as unknown as Record<string, unknown>);
       setCall((old) => old ? { ...old, status: 'Соединяем…' } : old);
+      scheduleAudioRelay(call.callId);
     } catch { setCall((old) => old ? { ...old, status: 'Разреши доступ к микрофону' } : old); }
   }
   async function end(reject = false) {
@@ -141,6 +154,27 @@ export function GlobalCallManager({ userId }: { userId: string }) {
     stopRinging();
     playNotificationSound('call');
     ringTimer.current = window.setInterval(() => playNotificationSound('call'), 2_600);
+  }
+  function scheduleAudioRelay(callId: string) {
+    if (relayTimer.current) window.clearTimeout(relayTimer.current);
+    relayTimer.current = window.setTimeout(() => void startAudioRelay(callId), 4_000);
+  }
+  function prepareAudioContext() {
+    audioContext.current ??= new AudioContext();
+    void audioContext.current.resume();
+  }
+  async function startAudioRelay(callId: string) {
+    if (callRef.current?.callId !== callId || !local.current || peer.current?.connectionState === 'connected') return;
+    try {
+      const context = audioContext.current ?? new AudioContext(); audioContext.current = context;
+      const relay = await startRealtimeAudioRelay(callId, local.current, context);
+      if (callRef.current?.callId !== callId) { relay.stop(); return; }
+      audioRelay.current = relay;
+      if (!acceptedAt.current) acceptedAt.current = Date.now();
+      setCall((old) => old?.callId === callId ? { ...old, status: 'Разговор идёт · резервное соединение' } : old);
+    } catch {
+      setCall((old) => old?.callId === callId ? { ...old, status: 'Не удалось подключить звук' } : old);
+    }
   }
   function startAnswerCountdown(callId: string) {
     const deadline = Date.now() + 90_000;
