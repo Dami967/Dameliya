@@ -51,7 +51,6 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
         if (translated) target.apply(translated);
         else missing.add(target.source);
       });
-      if (missing.size) showSwitching();
       const batch = takeBatch([...missing]);
       if (!batch.length) { finishSwitching(); return; }
       running = true;
@@ -71,10 +70,7 @@ export function AutomaticTranslation({ children }: { children: ReactNode }) {
       timer = window.setTimeout(() => void translatePage(), 0);
     }
 
-    const observer = new MutationObserver((mutations) => {
-      if (language !== 'ru' && mutations.some(mutationNeedsTranslation)) showSwitching();
-      schedule();
-    });
+    const observer = new MutationObserver(schedule);
     observer.observe(document.body, {
       childList: true,
       subtree: true,
@@ -151,32 +147,6 @@ function collectTargets() {
 function isInterfaceText(value: string) {
   const text = value.trim();
   return text.length >= 2 && text.length <= 600 && /[А-Яа-яЁёІіҚқҒғҢңӨөҰұҮүҺһ]/.test(text);
-}
-
-function mutationNeedsTranslation(mutation: MutationRecord) {
-  if (mutation.type === 'characterData') return untranslatedTextNode(mutation.target as Text);
-  if (mutation.type === 'attributes' && mutation.target instanceof Element && mutation.attributeName) {
-    const value = mutation.target.getAttribute(mutation.attributeName) ?? '';
-    const original = originalAttributes.get(mutation.target)?.get(mutation.attributeName);
-    return value !== original?.lastApplied && isInterfaceText(value);
-  }
-  return [...mutation.addedNodes].some((node) => {
-    if (node instanceof Text) return untranslatedTextNode(node);
-    if (!(node instanceof Element) || node.closest(excluded)) return false;
-    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
-    let text = walker.nextNode();
-    while (text) {
-      if (untranslatedTextNode(text as Text)) return true;
-      text = walker.nextNode();
-    }
-    return false;
-  });
-}
-
-function untranslatedTextNode(text: Text) {
-  if (text.parentElement?.closest(excluded)) return false;
-  const value = text.nodeValue ?? '';
-  return value !== originalText.get(text)?.lastApplied && isInterfaceText(value);
 }
 
 function preserveSpace(source: string, translated: string) {
