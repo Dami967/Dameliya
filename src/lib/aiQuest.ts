@@ -51,8 +51,8 @@ export async function createAiQuest(userId: string, goal: string, request: strin
     `Цель пользователя: ${goal}. Пожелание: ${request || 'Создай понятный маршрут'}. ${profileContext}
 Верни ТОЛЬКО JSON без markdown: {"map_title":"короткое название","steps":[{"title":"действие","subtitle":"результат этапа","objective":"подробное персональное задание","expected_answer":"эталон готового правильного результата для проверки","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как его выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем смотреть"}]}]}.
 Ровно 10 конкретных, безопасных и выполнимых этапов. В каждом этапе ровно 3 пункта checklist и 0–2 полезных ресурса.
-Если предлагаешь посмотреть урок, статью или пройти тест, обязательно добавь рабочую публичную https-ссылку в resources.
-Для видео выбирай существующий ролик известного образовательного канала, доступный без входа. Не выдумывай video ID, адреса и не указывай платные материалы.`,
+Статьи и тесты создаются внутри GoalQuest: для них укажи url "goalquest://material" и не предлагай внешний сайт.
+Только для видео выбирай существующий ролик известного образовательного канала, доступный без входа. Не выдумывай video ID и не указывай платные материалы.`,
     `Ты создаёшь персональные карты GoalQuest для подростков. Весь пользовательский текст пиши на языке ${outputLanguage}. Отвечай только валидным JSON.`,
     [], false, true,
   );
@@ -170,12 +170,14 @@ function normalizeDetails(value: Partial<QuestTaskDetails>, fallback: string): Q
     hint: String(item.hint || 'Сосредоточься на небольшом измеримом результате.'),
   })) : [];
   if (checklist.length !== 3) return fallbackDetails({ title: fallback, subtitle: fallback } as QuestStep);
-  const explicitResources = Array.isArray(value.resources) ? value.resources.slice(0, 2).flatMap((resource) => {
+  const explicitResources = Array.isArray(value.resources) ? value.resources.slice(0, 2).flatMap((resource, index) => {
     const type = resource.type;
     const url = String(resource.url || '');
-    if (!['video', 'article', 'test'].includes(type) || !isSafeResourceUrl(url)) return [];
+    if (!['video', 'article', 'test'].includes(type)) return [];
+    if (type === 'video' && !isSafeResourceUrl(url)) return [];
     return [{ type, title: String(resource.title || 'Полезный материал'),
-      description: String(resource.description || ''), url }] as QuestTaskDetails['resources'];
+      description: String(resource.description || ''),
+      url: type === 'video' ? url : `goalquest://material/${index}` }] as QuestTaskDetails['resources'];
   }) : [];
   const text = `${value.objective || ''} ${checklist.map((item) => `${item.title} ${item.hint}`).join(' ')}`;
   const discovered = discoverResources(text, String(value.category || ''));
