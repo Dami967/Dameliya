@@ -7,6 +7,7 @@ type ProfileSetupStepProps = {
   username: string;
   avatarUrl: string | null;
   onChange: (changes: { displayName?: string; username?: string; avatarUrl?: string }) => void;
+  onBack: () => void;
   onContinue: () => void;
 };
 
@@ -58,6 +59,7 @@ export function ProfileSetupStep(props: ProfileSetupStepProps) {
       </div>
       {message && <p className="form-error">{message}</p>}
       <div className="onboarding-actions">
+        <button className="back-button" type="button" onClick={props.onBack}>← Назад</button>
         <button className="continue-button" disabled={saving} onClick={continueToInterview}>{saving ? 'Сохраняем…' : 'Перейти к интервью →'}</button>
       </div>
     </>

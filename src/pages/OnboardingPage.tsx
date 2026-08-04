@@ -95,7 +95,7 @@ export function OnboardingPage() {
                   ...(changes.displayName !== undefined ? { display_name: changes.displayName } : {}),
                   ...(changes.username !== undefined ? { username: changes.username } : {}),
                 }));
-              }} onContinue={() => setProfileCreated(true)} />
+              }} onBack={() => navigate('/')} onContinue={() => setProfileCreated(true)} />
           : <>
         <div className="onboarding-progress">{[0, 1, 2, 3].map((item) => <i key={item} className={item <= step + 1 ? 'active' : ''} />)}</div>
         <select className="interview-language" value={language} onChange={(event) => {
@@ -116,7 +116,10 @@ export function OnboardingPage() {
         </div>
         {message && <p className="form-error">{message}</p>}
         <div className="onboarding-actions">
-          {step > 0 && <button className="back-button" onClick={() => setStep(step - 1)}>{copy.back}</button>}
+          <button className="back-button" type="button" onClick={() => {
+            if (step > 0) setStep(step - 1);
+            else setProfileCreated(false);
+          }}>← {copy.back}</button>
           <button className="continue-button" disabled={saving} onClick={() => step === steps.length - 1 ? finish() : setStep(step + 1)}>
             {saving ? copy.saving : step === steps.length - 1 ? copy.finish : copy.next} <Icon name="arrow" size={18} />
           </button>
