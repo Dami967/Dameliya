@@ -137,13 +137,14 @@ export function HomePage() {
           </section>
           <section className="streak-card">
             <div className="streak-head"><span className="flame-circle"><Icon name="flame" /></span>
-              <div><small>ТВОЯ СЕРИЯ</small><h3>{progress.streak ? `${progress.streak} дн. в пути!` : 'Начни серию сегодня!'}</h3>
-                <p className="streak-freezes">❄ Заморозки: {progress.freezesUsed} из 5 использовано</p></div></div>
+              <div><small>ТВОЯ СЕРИЯ</small><h3>{progress.streak ? `${progress.streak} дн. в пути!` : 'Начни серию сегодня!'}</h3></div></div>
             <div className="week-row">
               {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((day, i) => (
                 <div key={day} className={progress.activeWeekdays[i] ? 'checked' : ''}><span>{progress.activeWeekdays[i] && <Icon name="check" size={13} />}</span><small>{day}</small></div>
               ))}
             </div>
+            <div className="streak-freezes"><b>❄ Осталось {progress.freezesRemaining} из 5 заморозок</b>
+              <span>{progress.freezesUsed} использовано в этом месяце</span></div>
           </section>
           <section className="mentor-mini">
             <span className="mentor-avatar">AI</span>
