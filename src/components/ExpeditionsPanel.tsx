@@ -3,19 +3,26 @@ import { Link } from 'wouter';
 import { loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { Icon } from './Icon';
+import { cachedQuestPlans } from '../lib/questCache';
 
 export function ExpeditionsPanel() {
   const { session } = useSession();
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
   useEffect(() => {
     if (!session) return;
-    void loadAiQuests(session.user.id).then(({ data }) => {
-      setPlans(data ?? []);
+    const cached = cachedQuestPlans(session.user.id);
+    if (cached.length) setPlans(cached);
+    void loadAiQuests(session.user.id).then(({ data, error }) => {
+      if (!error) setPlans(data ?? []);
       setSelectedId((current) => current || data?.[0]?.id || '');
+      setLoading(false);
     });
   }, [session]);
   const active = plans.find((plan) => plan.id === selectedId) ?? plans[0];
+  if (!active && loading) return <section className="rewards-panel-loading"><Icon name="map" size={34} />
+    <b>Загружаем экспедиции…</b></section>;
   if (!active) return <section className="empty-state"><Icon name="map" size={40} />
     <h2>Экспедиций пока нет</h2><p>Создай цель вместе с Кью — здесь появится её путешествие.</p>
     <Link href="/mentor" className="primary-button">Создать цель</Link></section>;

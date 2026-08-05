@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { cancelCompetition, createCompetition, finishCompetition, loadCompetitions, answerCompetition,
-  type Competition } from '../lib/competitions';
+  cacheCompetitions, cachedCompetitions, type Competition } from '../lib/competitions';
 import type { ChallengeDraft } from '../lib/collaborationData';
-import { loadMutualFriends } from '../lib/friends';
+import { cachedMutualFriends, loadMutualFriends } from '../lib/friends';
 import type { SocialUser } from '../lib/socialData';
 import { useSession } from '../lib/useSession';
 import { ChallengeModal } from './ChallengeModal';
@@ -15,15 +15,27 @@ export function CompetitionsPanel() {
   const { session } = useSession();
   const [friends, setFriends] = useState<SocialUser[]>([]);
   const [items, setItems] = useState<Competition[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(
     () => new URLSearchParams(window.location.search).get('new') === '1',
   );
   const refresh = useCallback(async () => {
     if (!session) return;
     const [people, competitions] = await Promise.all([loadMutualFriends(session.user.id), loadCompetitions()]);
-    setFriends(people); setItems(competitions.data ?? []);
+    setFriends(people);
+    if (!competitions.error) {
+      const loaded = competitions.data ?? [];
+      setItems(loaded); cacheCompetitions(session.user.id, loaded);
+    }
+    setLoading(false);
   }, [session]);
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (session) {
+      setFriends(cachedMutualFriends(session.user.id));
+      setItems(cachedCompetitions(session.user.id));
+    }
+    void refresh();
+  }, [refresh, session]);
 
   async function create(draft: ChallengeDraft) {
     if (!session) return null;
@@ -38,6 +50,9 @@ export function CompetitionsPanel() {
     item.user_id === session?.user.id && item.invitation_status === 'accepted')) ?? null;
   const canCancel = Boolean(active && active.creator_id === session?.user.id
     && Date.now() - new Date(active.created_at).getTime() <= 86400000);
+
+  if (loading && !items.length) return <section className="rewards-panel-loading"><Icon name="trophy" size={34} />
+    <b>Загружаем соревнования…</b></section>;
 
   return <div className="competitions-layout">
     <section className="competition-main">

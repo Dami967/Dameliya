@@ -30,6 +30,15 @@ export function loadCompetitions() {
     .order('created_at', { ascending: false }).returns<Competition[]>();
 }
 
+export function cachedCompetitions(userId: string) {
+  try { return JSON.parse(localStorage.getItem(`goalquest-competitions-${userId}`) ?? '[]') as Competition[]; }
+  catch { return []; }
+}
+
+export function cacheCompetitions(userId: string, competitions: Competition[]) {
+  localStorage.setItem(`goalquest-competitions-${userId}`, JSON.stringify(competitions));
+}
+
 export async function answerCompetition(challengeId: string, userId: string, accept: boolean) {
   const answered = await supabase.from('challenge_participants').update({
     invitation_status: accept ? 'accepted' : 'declined',
