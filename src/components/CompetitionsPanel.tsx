@@ -28,7 +28,9 @@ export function CompetitionsPanel() {
   async function create(draft: ChallengeDraft) {
     if (!session) return null;
     const result = await createCompetition(session.user.id, { ...draft, reward: 'Случайный приз' });
-    await refresh(); return result.error ? null : result.data?.id ?? null;
+    if (result.error || !result.data) return null;
+    void refresh();
+    return result.data.id;
   }
   const invitations = items.filter((competition) => competition.challenge_participants.some((item) =>
     item.user_id === session?.user.id && item.invitation_status === 'pending'));

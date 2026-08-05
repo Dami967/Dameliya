@@ -16,18 +16,13 @@ export type CompetitionInviteDetails = {
 };
 
 export async function createCompetition(userId: string, draft: ChallengeDraft) {
-  const created = await supabase.from('challenges').insert({
-    creator_id: userId, title: draft.title, type: draft.type, starts_at: draft.startsAt,
-    ends_at: draft.endsAt, reward: 'Случайный приз',
-  }).select('*').single<{ id: string }>();
-  if (!created.data || created.error) return created;
-  const participants = [userId, ...draft.participantIds.slice(0, 5)].map((id) => ({
-    challenge_id: created.data!.id, user_id: id,
-    invitation_status: id === userId ? 'accepted' : 'pending',
-    joined_at: id === userId ? new Date().toISOString() : null,
-  }));
-  const invited = await supabase.from('challenge_participants').insert(participants);
-  return { data: created.data, error: invited.error };
+  void userId;
+  const result = await supabase.rpc('create_competition', {
+    challenge_title: draft.title, challenge_type: draft.type,
+    start_date: draft.startsAt, end_date: draft.endsAt,
+    participant_ids: draft.participantIds.slice(0, 5),
+  });
+  return { data: typeof result.data === 'string' ? { id: result.data } : null, error: result.error };
 }
 
 export function loadCompetitions() {
