@@ -15,28 +15,32 @@ import { MobileQuestHeader } from '../components/MobileQuestHeader';
 export function QuestPage() {
   const { session } = useSession();
   const [, navigate] = useLocation();
+  const requestedId = new URLSearchParams(window.location.search).get('plan');
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(() => requestedId ?? activeQuestId());
   const [deleting, setDeleting] = useState(false);
   const [showExternalProgress, setShowExternalProgress] = useState(false);
-  const requestedId = new URLSearchParams(window.location.search).get('plan');
 
   useEffect(() => {
     if (!session) return;
     let activeRequest = true;
-    setPlans([]);
-    setSelectedPlanId(null);
     setPlansLoading(true);
     const cached = cachedQuestPlans(session.user.id);
-    if (cached.length) setPlans(cached);
+    const preferred = requestedId ?? activeQuestId();
+    if (cached.length) {
+      setPlans(cached);
+      setSelectedPlanId(cached.some((plan) => plan.id === preferred) ? preferred : cached[0].id);
+    } else {
+      setPlans([]);
+      setSelectedPlanId(null);
+    }
     void loadAiQuests(session.user.id).then(({ data }) => {
       if (!activeRequest) return;
       const loaded = data ?? [];
       setPlans(loaded);
-      const preferred = requestedId ?? activeQuestId();
       const selected = loaded.some((plan) => plan.id === preferred) ? preferred : loaded[0]?.id ?? null;
-      setSelectedPlanId((current) => current ?? selected);
+      setSelectedPlanId((current) => loaded.some((plan) => plan.id === current) ? current : selected);
       if (selected) rememberActiveQuest(selected);
       setPlansLoading(false);
     });
