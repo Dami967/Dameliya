@@ -6,8 +6,10 @@ import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { AutomaticTranslation } from './components/AutomaticTranslation';
 import { registerNotificationWorker } from './lib/browserNotifications';
 import { detectLanguage } from './lib/languages';
+import { watchForAppUpdates } from './lib/appUpdates';
 
 void registerNotificationWorker();
+watchForAppUpdates();
 const initialLanguage = detectLanguage();
 document.documentElement.lang = initialLanguage;
 if (initialLanguage !== 'ru') {
