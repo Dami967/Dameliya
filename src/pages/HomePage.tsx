@@ -13,7 +13,8 @@ import { NotificationBell } from '../components/NotificationBell';
 import { cachedQuestPlans } from '../lib/questCache';
 
 const emptyProgress: HomeProgress = {
-  streak: 0, weekCounts: Array(7).fill(0), activeWeekdays: Array(7).fill(false),
+  streak: 0, freezesUsed: 0, freezesRemaining: 5,
+  weekCounts: Array(7).fill(0), activeWeekdays: Array(7).fill(false),
   growth: null, completedToday: 0,
 };
 
@@ -136,7 +137,8 @@ export function HomePage() {
           </section>
           <section className="streak-card">
             <div className="streak-head"><span className="flame-circle"><Icon name="flame" /></span>
-              <div><small>ТВОЯ СЕРИЯ</small><h3>{progress.streak ? `${progress.streak} дн. подряд!` : 'Начни серию сегодня!'}</h3></div></div>
+              <div><small>ТВОЯ СЕРИЯ</small><h3>{progress.streak ? `${progress.streak} дн. в пути!` : 'Начни серию сегодня!'}</h3>
+                <p className="streak-freezes">❄ Заморозки: {progress.freezesUsed} из 5 использовано</p></div></div>
             <div className="week-row">
               {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((day, i) => (
                 <div key={day} className={progress.activeWeekdays[i] ? 'checked' : ''}><span>{progress.activeWeekdays[i] && <Icon name="check" size={13} />}</span><small>{day}</small></div>

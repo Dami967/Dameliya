@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 
 export type HomeProgress = {
   streak: number;
+  freezesUsed: number;
+  freezesRemaining: number;
   weekCounts: number[];
   activeWeekdays: boolean[];
   growth: number | null;
@@ -9,7 +11,8 @@ export type HomeProgress = {
 };
 
 const emptyProgress: HomeProgress = {
-  streak: 0, weekCounts: Array(7).fill(0), activeWeekdays: Array(7).fill(false),
+  streak: 0, freezesUsed: 0, freezesRemaining: 5,
+  weekCounts: Array(7).fill(0), activeWeekdays: Array(7).fill(false),
   growth: null, completedToday: 0,
 };
 
@@ -51,18 +54,59 @@ export async function loadHomeProgress(userId: string): Promise<HomeProgress> {
   }).reduce((sum, count) => sum + count, 0);
   const currentTotal = weekCounts.reduce((sum, count) => sum + count, 0);
 
-  let streak = 0;
-  const cursor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  if (!counts.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
-  while (counts.has(dateKey(cursor))) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
+  const { streak, freezesUsed } = calculateStreak(counts, today);
   return {
     streak,
+    freezesUsed,
+    freezesRemaining: Math.max(0, 5 - freezesUsed),
     weekCounts,
     activeWeekdays: weekCounts.map((count) => count > 0),
     growth: previousTotal ? Math.round((currentTotal - previousTotal) / previousTotal * 100) : null,
     completedToday: counts.get(dateKey(today)) ?? 0,
   };
+}
+
+function calculateStreak(counts: Map<string, number>, today: Date) {
+  if (!counts.size) return { streak: 0, freezesUsed: 0 };
+  const activeDates = [...counts.keys()].map(parseDateKey).sort((a, b) => a.getTime() - b.getTime());
+  const firstActivity = activeDates[0];
+  const yesterday = dayStart(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const protectedDays = new Set<string>();
+  const missedByMonth = new Map<string, number>();
+  const day = dayStart(firstActivity);
+  while (day <= yesterday) {
+    const key = dateKey(day);
+    if (!counts.has(key)) {
+      const month = monthKey(day);
+      const missed = (missedByMonth.get(month) ?? 0) + 1;
+      missedByMonth.set(month, missed);
+      if (missed <= 5) protectedDays.add(key);
+    }
+    day.setDate(day.getDate() + 1);
+  }
+
+  let streak = 0;
+  const cursor = dayStart(today);
+  if (!counts.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (cursor >= firstActivity) {
+    const key = dateKey(cursor);
+    if (counts.has(key)) streak += 1;
+    else if (!protectedDays.has(key)) break;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return { streak, freezesUsed: Math.min(5, missedByMonth.get(monthKey(today)) ?? 0) };
+}
+
+function dayStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function monthKey(date: Date) {
+  return `${date.getFullYear()}-${date.getMonth()}`;
+}
+
+function parseDateKey(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month, day);
 }
