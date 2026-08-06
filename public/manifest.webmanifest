@@ -1,0 +1,25 @@
+{
+  "name": "GoalQuest — цели в приключения",
+  "short_name": "GoalQuest",
+  "description": "AI-наставник, который превращает цели в персональные квесты.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f7f6ff",
+  "theme_color": "#5f65e8",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
