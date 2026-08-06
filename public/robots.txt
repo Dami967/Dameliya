@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /home
+Disallow: /quest
+Disallow: /task
+Disallow: /notes
+Disallow: /rewards
+Disallow: /profile
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /friends
+Disallow: /challenges
+Disallow: /mentor
+Disallow: /support
+Disallow: /report-bug
+Disallow: /rate
+Disallow: /reset-password
+
+Sitemap: https://dameliya-steel.vercel.app/sitemap.xml
