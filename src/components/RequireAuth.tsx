@@ -8,7 +8,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    if (isSupabaseConfigured && !loading && !session) navigate('/auth');
+    if (isSupabaseConfigured && !loading && !session) navigate('/');
   }, [loading, navigate, session]);
 
   if (loading) return <main className="center-loader">Открываем GoalQuest…</main>;
