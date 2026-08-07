@@ -14,7 +14,7 @@ export function WelcomePage() {
           <span><Icon name="star" size={25} /></span>
           GoalQuest
         </Link>
-        <Link href="/auth" className="welcome-login">Уже есть аккаунт? <b>Войти</b></Link>
+        <Link href="/auth?entry=app" className="welcome-login">Уже есть аккаунт? <b>Войти</b></Link>
       </header>
 
       <section className="welcome-hero">
@@ -27,7 +27,7 @@ export function WelcomePage() {
             GoalQuest — AI-помощник, который превращает любые долгосрочные цели в игровые квесты. AI создаёт персональный план, помогает на каждом этапе, мотивирует наградами и сопровождает до достижения результата.
           </p>
           <div className="welcome-actions welcome-reveal" style={{ '--delay': '210ms' } as React.CSSProperties}>
-            <Link href="/auth?mode=signup" className="welcome-button welcome-button--primary">Начать <span>→</span></Link>
+            <Link href="/auth?mode=signup&entry=app" className="welcome-button welcome-button--primary">Начать <span>→</span></Link>
             <button type="button" className="welcome-button welcome-button--secondary" onClick={() => setIsIntroOpen(true)}>Узнать больше <span>▶</span></button>
           </div>
           <WelcomeFeatures />

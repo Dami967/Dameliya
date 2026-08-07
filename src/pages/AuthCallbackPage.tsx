@@ -46,7 +46,7 @@ export function AuthCallbackPage() {
       <p>{message}</p>
       {failed
         ? <div className="auth-callback__actions">
-          <Link href="/auth" className="auth-submit">Повторить вход</Link>
+          <Link href="/auth?entry=app" className="auth-submit">Повторить вход</Link>
           <Link href="/" className="auth-switch">На главную</Link>
         </div>
         : <span className="auth-callback__loader" aria-hidden="true" />}

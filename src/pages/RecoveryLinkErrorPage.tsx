@@ -13,7 +13,7 @@ export function RecoveryLinkErrorPage() {
         <h1>Не удалось войти через Google</h1>
         <p>Google отменил вход или не смог вернуть аккаунт в GoalQuest. Попробуй войти ещё раз.</p>
       </div></div>
-      <button type="button" className="auth-submit" onClick={() => navigate('/auth')}>Повторить вход</button>
+      <button type="button" className="auth-submit" onClick={() => navigate('/auth?entry=app')}>Повторить вход</button>
     </section>
   </main>;
 
@@ -28,7 +28,7 @@ export function RecoveryLinkErrorPage() {
             : 'Не удалось подтвердить восстановление. Запроси новую защищённую ссылку.'}</p>
         </div>
       </div>
-      <PasswordRecovery initialEmail="" onCancel={() => navigate('/auth')} />
+      <PasswordRecovery initialEmail="" onCancel={() => navigate('/auth?entry=app')} />
     </section>
   </main>;
 }

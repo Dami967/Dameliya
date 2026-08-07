@@ -101,5 +101,5 @@ function Info({ icon, label, value }: { icon: string; label: string; value: stri
 function GuestProfile() {
   return <main className="empty-state"><Icon name="user" size={40} /><h1>Создай свой профиль</h1>
     <p>Войди или зарегистрируйся, чтобы сохранять прогресс и достижения.</p>
-    <Link href="/auth?mode=signup" className="primary-button">Создать аккаунт</Link></main>;
+    <Link href="/auth?mode=signup&entry=app" className="primary-button">Создать аккаунт</Link></main>;
 }

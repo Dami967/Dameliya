@@ -39,7 +39,7 @@ export function ResetPasswordPage() {
         <span className="eyebrow">GOALQUEST</span>
         <h1>{isSaved ? 'Пароль изменён!' : 'Создайте новый пароль'}</h1>
         {isSaved
-          ? <><p>Теперь можно войти в аккаунт с новым паролем.</p><Link href="/auth" className="auth-submit">Перейти ко входу</Link></>
+          ? <><p>Теперь можно войти в аккаунт с новым паролем.</p><Link href="/auth?entry=app" className="auth-submit">Перейти ко входу</Link></>
           : isReady && <form className="auth-form" onSubmit={savePassword}>
             <label>Новый пароль<div className="password-input">
               <input type={showPasswords ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} autoFocus required />
@@ -52,7 +52,7 @@ export function ResetPasswordPage() {
             <button className="auth-submit" disabled={busy}>{busy ? 'Сохраняем…' : 'Сохранить новый пароль'}</button>
           </form>}
         {message && <p className="auth-message" role="status">{message}</p>}
-        {!isReady && !isSaved && <Link href="/auth" className="auth-switch">Запросить новую ссылку</Link>}
+        {!isReady && !isSaved && <Link href="/auth?entry=app" className="auth-switch">Запросить новую ссылку</Link>}
       </section>
     </main>
   );

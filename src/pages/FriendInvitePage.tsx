@@ -26,7 +26,7 @@ export function FriendInvitePage({ params }: { params: { token: string } }) {
     <span className="invite-eagle">🦅</span><span className="eyebrow">GOALQUEST</span>
     <h1>Тебя приглашают в друзья</h1>
     <p>Подтверди приглашение, чтобы поддерживать друг друга и проходить квесты вместе.</p>
-    {!session ? <Link href="/auth" className="social-primary">Войти или зарегистрироваться</Link>
+    {!session ? <Link href="/auth?entry=app" className="social-primary">Войти или зарегистрироваться</Link>
       : <button className="social-primary" onClick={() => void accept()}>Принять приглашение</button>}
     {message && <p className="invite-result">{message}</p>}
     <Link href="/" className="invite-home">На главную</Link>

@@ -39,7 +39,7 @@ export function ChallengeInvitePage({ params }: { params: { token: string } }) {
       <div className="challenge-invite-details"><span>⏱ {days} дней</span>
         <span>🎯 {type ? challengeLabels[type] : 'Задания квеста'}</span>
         <span>👥 {details.participant_count} из 6 участников</span></div></>}
-    {!session ? <Link href="/auth" className="social-primary">Войти или зарегистрироваться</Link>
+    {!session ? <Link href="/auth?entry=app" className="social-primary">Войти или зарегистрироваться</Link>
       : details && <div className="challenge-answer-actions"><button className="social-primary" onClick={() => void accept()}>Принять</button>
         <button className="social-outline" onClick={() => navigate('/home')}>Отклонить</button></div>}
     {message && <p className="invite-result">{message}</p>}

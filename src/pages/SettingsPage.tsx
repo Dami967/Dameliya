@@ -110,7 +110,7 @@ export function SettingsPage() {
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     setAccountBusy(false);
     if (error) return setAccountError(error.message);
-    navigate('/auth');
+    navigate('/auth?entry=app');
   }
   async function clearChats() {
     if (!session || !window.confirm('Очистить всю историю чатов?')) return;

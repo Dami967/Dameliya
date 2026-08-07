@@ -49,7 +49,7 @@ export function OnboardingPage() {
   }, [session]);
 
   async function finish() {
-    if (!session) return navigate('/auth?mode=signup');
+    if (!session) return navigate('/auth?mode=signup&entry=app');
     setSaving(true);
     await saveSettings(session.user.id, { language });
     const { error } = await saveProfile(session.user.id, {
