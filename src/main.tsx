@@ -8,7 +8,11 @@ import { registerNotificationWorker } from './lib/browserNotifications';
 import { detectLanguage } from './lib/languages';
 import { watchForAppUpdates } from './lib/appUpdates';
 
-window.sessionStorage.removeItem('goalquest-module-recovery');
+try {
+  window.sessionStorage.removeItem('goalquest-module-recovery');
+} catch {
+  // Safari может запретить storage настройками приватности — приложение всё равно должно открыться.
+}
 void registerNotificationWorker();
 watchForAppUpdates();
 const initialLanguage = detectLanguage();

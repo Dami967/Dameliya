@@ -11,7 +11,11 @@ export function readUiTranslation(language: string, source: string) {
 export function saveUiTranslations(language: string, translations: Record<string, string>) {
   const cache = { ...readCache(language), ...translations };
   const entries = Object.entries(cache).slice(-700);
-  window.localStorage.setItem(`${cachePrefix}${language}`, JSON.stringify(Object.fromEntries(entries)));
+  try {
+    window.localStorage.setItem(`${cachePrefix}${language}`, JSON.stringify(Object.fromEntries(entries)));
+  } catch {
+    // Перевод продолжит работать без кеша, если Safari запретил storage.
+  }
 }
 
 export async function translateUiBatch(sources: string[], language: string) {

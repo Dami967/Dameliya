@@ -47,7 +47,7 @@ export const appLanguages: AppLanguage[] = [
 const supportedCodes = new Set(appLanguages.map((language) => language.code));
 
 export function detectLanguage() {
-  const saved = window.localStorage.getItem('goalquest-language');
+  const saved = readSavedLanguage();
   if (saved && supportedCodes.has(saved)) return saved;
   const candidates = navigator.languages.length ? navigator.languages : [navigator.language];
   return candidates.map((locale) => locale.toLowerCase().split('-')[0])
@@ -55,7 +55,11 @@ export function detectLanguage() {
 }
 
 export function rememberLanguage(code: string) {
-  window.localStorage.setItem('goalquest-language', code);
+  try {
+    window.localStorage.setItem('goalquest-language', code);
+  } catch {
+    // Язык всё равно меняется для текущей вкладки, даже если Safari запретил storage.
+  }
   document.documentElement.lang = code;
   document.documentElement.dir = appLanguages.find((language) => language.code === code)?.direction ?? 'ltr';
   window.dispatchEvent(new CustomEvent('goalquest-language-changed', { detail: code }));
@@ -63,4 +67,12 @@ export function rememberLanguage(code: string) {
 
 export function languageName(code: string) {
   return appLanguages.find((language) => language.code === code)?.name ?? 'English';
+}
+
+function readSavedLanguage() {
+  try {
+    return window.localStorage.getItem('goalquest-language');
+  } catch {
+    return null;
+  }
 }

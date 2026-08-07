@@ -24,16 +24,40 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
     <title>GoalQuest — цели в приключения</title>
     <script>
+      function showGoalQuestStartupError(message) {
+        var boot = document.getElementById('goalquest-boot');
+        if (!boot) return;
+        var status = document.getElementById('goalquest-boot-status');
+        if (status) status.textContent = message || 'Не удалось запустить приложение.';
+        var button = document.getElementById('goalquest-boot-refresh');
+        if (button) button.style.display = 'inline-block';
+      }
       window.addEventListener('error', function (event) {
         var failedScript = event.target;
-        if (!(failedScript instanceof HTMLScriptElement) || failedScript.type !== 'module') return;
+        if (!(failedScript instanceof HTMLScriptElement) || failedScript.type !== 'module') {
+          showGoalQuestStartupError(event.message || 'Safari остановил запуск приложения.');
+          return;
+        }
         var recoveryKey = 'goalquest-module-recovery';
-        if (sessionStorage.getItem(recoveryKey)) return;
-        sessionStorage.setItem(recoveryKey, '1');
+        var alreadyTried = false;
+        try {
+          alreadyTried = sessionStorage.getItem(recoveryKey) === '1';
+          sessionStorage.setItem(recoveryKey, '1');
+        } catch (storageError) {}
+        if (alreadyTried) {
+          showGoalQuestStartupError('Safari не смог загрузить обновление. Нажми кнопку ниже.');
+          return;
+        }
         var freshUrl = new URL(window.location.href);
         freshUrl.searchParams.set('app-update', Date.now().toString());
         window.location.replace(freshUrl.toString());
       }, true);
+      window.addEventListener('unhandledrejection', function () {
+        showGoalQuestStartupError('Не удалось завершить запуск приложения.');
+      });
+      window.setTimeout(function () {
+        showGoalQuestStartupError('Загрузка занимает слишком много времени. Попробуй обновить страницу.');
+      }, 10000);
     </script>
     <script type="application/ld+json">
       {
@@ -48,7 +72,13 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main id="goalquest-boot" style="min-height:100vh;display:grid;place-content:center;justify-items:center;gap:12px;padding:24px;color:#5f65e8;background:#f8f8ff;font-family:system-ui,sans-serif;text-align:center">
+        <strong style="font-size:22px">GoalQuest</strong>
+        <span id="goalquest-boot-status">Открываем приложение…</span>
+        <button id="goalquest-boot-refresh" type="button" style="display:none;padding:12px 18px;border:0;border-radius:12px;color:white;background:#5f65e8;font-weight:700" onclick="location.replace('/?app-update=' + Date.now())">Обновить</button>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
