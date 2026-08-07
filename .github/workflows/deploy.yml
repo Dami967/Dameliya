@@ -18,20 +18,18 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Check Supabase production configuration
+      - name: Check Supabase deployment configuration
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
-          env_file=.vercel/.env.production.local
-          if [ ! -s "$env_file" ]; then
-            echo "::error::Vercel production environment was not downloaded"
+          if [[ ! "$VITE_SUPABASE_URL" =~ ^https?:// ]]; then
+            echo "::error::SUPABASE_URL GitHub Secret is missing or invalid"
             exit 1
           fi
-          if ! grep -Eq '^VITE_SUPABASE_URL="?https?://' "$env_file"; then
-            echo "::error::VITE_SUPABASE_URL is missing or invalid in Vercel Production"
-            exit 1
-          fi
-          if ! grep -Eq '^VITE_SUPABASE_ANON_KEY="?.+' "$env_file"; then
-            echo "::error::VITE_SUPABASE_ANON_KEY is missing in Vercel Production"
+          if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_ANON_KEY GitHub Secret is missing"
             exit 1
           fi
 
@@ -40,6 +38,8 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
