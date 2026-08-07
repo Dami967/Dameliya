@@ -23,6 +23,18 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
     <title>GoalQuest — цели в приключения</title>
+    <script>
+      window.addEventListener('error', function (event) {
+        var failedScript = event.target;
+        if (!(failedScript instanceof HTMLScriptElement) || failedScript.type !== 'module') return;
+        var recoveryKey = 'goalquest-module-recovery';
+        if (sessionStorage.getItem(recoveryKey)) return;
+        sessionStorage.setItem(recoveryKey, '1');
+        var freshUrl = new URL(window.location.href);
+        freshUrl.searchParams.set('app-update', Date.now().toString());
+        window.location.replace(freshUrl.toString());
+      }, true);
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

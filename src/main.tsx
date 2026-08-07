@@ -8,6 +8,7 @@ import { registerNotificationWorker } from './lib/browserNotifications';
 import { detectLanguage } from './lib/languages';
 import { watchForAppUpdates } from './lib/appUpdates';
 
+window.sessionStorage.removeItem('goalquest-module-recovery');
 void registerNotificationWorker();
 watchForAppUpdates();
 const initialLanguage = detectLanguage();

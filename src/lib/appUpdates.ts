@@ -13,7 +13,7 @@ export function watchForAppUpdates() {
       if (!response.ok) return;
       const latestDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
       const latestBundle = bundlePath(latestDocument);
-      if (latestBundle && latestBundle !== currentBundle) window.location.reload();
+      if (latestBundle && latestBundle !== currentBundle) loadFreshPage();
     } catch {
       // Проверка повторится при следующем фокусе или через две минуты.
     } finally {
@@ -31,6 +31,12 @@ export function watchForAppUpdates() {
     window.removeEventListener('focus', check);
     document.removeEventListener('visibilitychange', check);
   };
+}
+
+function loadFreshPage() {
+  const freshUrl = new URL(window.location.href);
+  freshUrl.searchParams.set('app-update', Date.now().toString());
+  window.location.replace(freshUrl.toString());
 }
 
 function bundlePath(page: Document) {
