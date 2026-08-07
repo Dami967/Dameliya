@@ -12,14 +12,17 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel
 
-      - name: Pull Vercel Environment Information
+      - name: Link Vercel project
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Check Supabase deployment configuration
+      - name: Save Supabase variables in Vercel
         env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
@@ -32,14 +35,35 @@ jobs:
             echo "::error::SUPABASE_ANON_KEY GitHub Secret is missing"
             exit 1
           fi
+          printf '%s' "$VITE_SUPABASE_URL" | vercel env add VITE_SUPABASE_URL production --force --token="$VERCEL_TOKEN"
+          printf '%s' "$VITE_SUPABASE_ANON_KEY" | vercel env add VITE_SUPABASE_ANON_KEY production --force --token="$VERCEL_TOKEN"
+          printf '%s' "$VITE_SUPABASE_URL" | vercel env add VITE_SUPABASE_URL preview --force --token="$VERCEL_TOKEN"
+          printf '%s' "$VITE_SUPABASE_ANON_KEY" | vercel env add VITE_SUPABASE_ANON_KEY preview --force --token="$VERCEL_TOKEN"
+
+      - name: Pull verified Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Check Vercel environment
+        run: |
+          set -euo pipefail
+          env_file=.vercel/.env.production.local
+          if ! grep -Eq '^VITE_SUPABASE_URL="?https?://' "$env_file"; then
+            echo "::error::VITE_SUPABASE_URL was not saved in Vercel Production"
+            exit 1
+          fi
+          if ! grep -Eq '^VITE_SUPABASE_ANON_KEY="?.+' "$env_file"; then
+            echo "::error::VITE_SUPABASE_ANON_KEY was not saved in Vercel Production"
+            exit 1
+          fi
 
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
