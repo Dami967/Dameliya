@@ -146,12 +146,12 @@ export function TaskPage() {
       <h1>{activeStep.title}</h1><p className="task-lead">{details.objective}</p>
       <div className="task-info"><span><Icon name="clock" size={18} />{details.duration_minutes} минут</span>
         <span><Icon name="zap" size={18} />+{activeStep.xp} XP</span><span><Icon name="target" size={18} />{details.category}</span></div>
-      <section className="content-card"><h2>Что нужно сделать</h2><ol className="steps-list">
-        {details.checklist.map((item, index) => <li key={`${item.title}-${index}`}><span>{index + 1}</span>
-          <p><b>{item.title}</b><small><LinkedTaskText text={item.hint} /></small></p></li>)}</ol></section>
       <TaskResources resources={details.resources} loading={resourcesLoading} expectsVideo={expectsVideo}
         notes={notes} task={taskContext} chat={chat} readOnly={view === 'history'} onFindVideo={() => void findTaskVideo()}
         onNotes={setNotes} onChat={setChat} />
+      <section className="content-card"><h2>Что нужно сделать</h2><ol className="steps-list">
+        {details.checklist.map((item, index) => <li key={`${item.title}-${index}`}><span>{index + 1}</span>
+          <p><b>{item.title}</b><small><LinkedTaskText text={item.hint} /></small></p></li>)}</ol></section>
       <section className="content-card"><h2>Заметки этого квеста</h2><textarea value={notes} readOnly={view === 'history'}
         onChange={(event) => setNotes(event.target.value)} placeholder="Записывай сюда результаты именно этого задания…" />
         <small className="autosave">{notes ? 'Сохранено внутри задания' : 'Не попадёт в личную записную книжку'}</small></section>
