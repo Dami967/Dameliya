@@ -97,7 +97,7 @@ export async function createAiQuest(userId: string, goal: string, request: strin
 export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, stepId: number) {
   const step = plan.steps.find((item) => item.id === stepId);
   if (!step) return { data: null, error: null };
-  if (step.details) {
+  if (step.details && !needsFreshDetails(step.details)) {
     const normalized = normalizeQuestStep(step);
     const details = normalized.details!;
     if (!requestsVideo(details)) {
@@ -150,6 +150,14 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
   } catch {
     return { data: { ...step, details: fallbackDetails(step) }, error: new Error('Не удалось адаптировать задание.') };
   }
+}
+
+function needsFreshDetails(details: QuestTaskDetails) {
+  if (!Array.isArray(details.checklist) || details.checklist.length !== 3) return true;
+  const titles = details.checklist.map((item) => item.title.trim().toLocaleLowerCase());
+  const hints = details.checklist.map((item) => item.hint.trim().toLocaleLowerCase());
+  return titles.some((title) => !title || title === 'выполни следующий шаг')
+    || new Set(titles).size < 3 || new Set(hints).size < 2;
 }
 
 function requestsVideo(details: QuestTaskDetails) {
