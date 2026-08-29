@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { QuestResource, QuestStep, QuestTaskDetails } from './questData';
-import { askAi, parseAiJson, searchYoutubeVideo, validateYoutubeVideo } from './ai';
+import { askAi, parseAiJson, searchYoutubeVideo } from './ai';
 import { loadProfile, loadSettings } from './userProfile';
 import { loadQuestLearning } from './questLearning';
 import { cacheQuestPlans } from './questCache';
@@ -18,6 +18,8 @@ export type AiQuestPlan = {
 };
 
 export type QuestInsight = { step_id: number; title: string; note: string };
+
+const VIDEO_VERSION_TAG = 'Проверено: video-v2';
 
 export async function loadAiQuest(userId: string) {
   return supabase.from('ai_quest_plans').select('*').eq('user_id', userId)
@@ -102,8 +104,8 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
       return { data: normalized, error: null };
     }
     const savedVideo = details.resources.find((item) => item.type === 'video');
-    const belongsToStep = savedVideo?.description.includes(`Задание: ${step.title}`) ?? false;
-    if (savedVideo && belongsToStep && await validateYoutubeVideo(savedVideo.url)) {
+    const usesCurrentSearch = savedVideo?.description.includes(VIDEO_VERSION_TAG) ?? false;
+    if (savedVideo && usesCurrentSearch) {
       return { data: normalized, error: null };
     }
     const usableResources = details.resources.filter((item) => item.type !== 'video');
@@ -116,7 +118,8 @@ export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, 
       if (savedVideo) await saveUpdatedStep(userId, plan, cleanedStep);
       return { data: cleanedStep, error: null };
     }
-    const taggedVideo = { ...video, description: `${video.description} Задание: ${step.title}` };
+    const taggedVideo = { ...video,
+      description: `${video.description} Задание: ${step.title}. ${VIDEO_VERSION_TAG}` };
     const updatedStep = { ...normalized, details: { ...details, resources: [...usableResources, taggedVideo].slice(0, 3) } };
     await saveUpdatedStep(userId, plan, updatedStep);
     return { data: updatedStep, error: null };
@@ -230,9 +233,9 @@ async function verifyDetailsResources(details: QuestTaskDetails, topic: string) 
   const resources: QuestResource[] = [];
   for (const resource of details.resources) {
     if (resource.type !== 'video') { resources.push(resource); continue; }
-    if (await validateYoutubeVideo(resource.url)) { resources.push(resource); continue; }
     const replacement = await findVerifiedVideo(topic, resource.url);
-    if (replacement) resources.push(replacement);
+    if (replacement) resources.push({ ...replacement,
+      description: `${replacement.description} ${VIDEO_VERSION_TAG}` });
   }
   return { ...details, resources };
 }

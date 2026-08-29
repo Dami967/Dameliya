@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { askAi, parseAiJson, validateYoutubeVideo } from '../lib/ai';
+import { searchYoutubeVideo } from '../lib/ai';
 import type { QuestResource } from '../lib/questData';
 import type { TaskChatMessage } from '../lib/taskRecords';
 import { TaskMentor } from './TaskMentor';
@@ -12,7 +12,6 @@ export function TaskResources({ resources, loading, expectsVideo, notes, task, c
 }) {
   const [video, setVideo] = useState<QuestResource | null>(null);
   const [material, setMaterial] = useState<QuestResource | null>(null);
-  const [checking, setChecking] = useState('');
   if (!resources.length && !expectsVideo) return null;
   const hasVideo = resources.some((resource) => resource.type === 'video' && youtubeEmbed(resource.url));
   return <><section className="content-card task-resources"><h2>Материалы от Кью</h2>
@@ -20,13 +19,7 @@ export function TaskResources({ resources, loading, expectsVideo, notes, task, c
       const embed = resource.type === 'video' && youtubeEmbed(resource.url);
       return <article key={resource.url}><span>{resource.type === 'video' ? '▶' : resource.type === 'test' ? '✓' : '↗'}</span>
         <div><b>{resource.title}</b><p>{resource.description}</p></div>
-        {embed ? <button disabled={checking === resource.url} onClick={() => {
-          setChecking(resource.url);
-          void validateYoutubeVideo(resource.url).then((valid) => {
-            setChecking('');
-            if (valid) setVideo(resource); else onFindVideo();
-          });
-        }}>{checking === resource.url ? 'Проверяем…' : 'Смотреть'}</button>
+        {embed ? <button onClick={() => setVideo(resource)}>Смотреть</button>
           : <button onClick={() => setMaterial(resource)}>Открыть</button>}
       </article>;
     })}{expectsVideo && !hasVideo && <article className="resource-loading"><span>▶</span>
@@ -53,19 +46,10 @@ function VideoLesson({ resource, notes, task, chat, readOnly, onNotes, onChat, o
 
   async function replaceVideo() {
     setReplacing(true); setMessage('Кью ищет похожий видеоурок…');
-    const result = await askAi(
-      `Тема урока: ${activeVideo.title}. Задание пользователя: ${task}.
-Текущее видео недоступно: ${activeVideo.url}. Подбери ДРУГОЙ существующий бесплатный YouTube-видеоурок по той же теме.
-Верни только JSON без markdown: {"title":"название","url":"https://www.youtube.com/watch?v=ID","description":"чем поможет"}.`,
-      'Ты подбираешь существующие образовательные видео для GoalQuest. Не повторяй исходную ссылку, не выдумывай video ID. Отвечай только JSON.',
-    );
-    try {
-      const alternative = parseAiJson<QuestResource>(result.text ?? '');
-      if (!youtubeEmbed(alternative.url) || alternative.url === activeVideo.url) throw new Error();
-      setActiveVideo({ ...alternative, type: 'video' }); setMessage('Новое видео готово ✓');
-    } catch {
-      setMessage(result.error?.message ?? 'Не получилось найти замену. Попробуй ещё раз.');
-    }
+    const alternative = await searchYoutubeVideo(`${task}. ${activeVideo.title}`, activeVideo.url);
+    if (alternative) {
+      setActiveVideo(alternative); setMessage('Новое видео готово ✓');
+    } else setMessage('Не получилось найти доступный урок по этой теме. Попробуй ещё раз.');
     setReplacing(false);
   }
   return <div className="video-lesson-backdrop"><section className="video-lesson">

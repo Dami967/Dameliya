@@ -35,18 +35,10 @@ export function parseAiJson<T>(text: string): T {
   }
 }
 
-export async function validateYoutubeVideo(url: string) {
-  const videoId = youtubeId(url);
-  if (!videoId) return false;
-  const { data, error } = await supabase.functions.invoke<{ valid?: unknown }>('ai', {
-    body: { action: 'validate_youtube', videoId },
-  });
-  return !error && data?.valid === true;
-}
-
-export async function searchYoutubeVideo(query: string) {
+export async function searchYoutubeVideo(query: string, excludedUrl = '') {
+  const excludedVideoId = youtubeId(excludedUrl) ?? '';
   const { data, error } = await supabase.functions.invoke<{ video?: YoutubeVideoResult | null }>('ai', {
-    body: { action: 'search_youtube', query },
+    body: { action: 'search_youtube', query, excludedVideoId },
   });
   return error ? null : data?.video ?? null;
 }
