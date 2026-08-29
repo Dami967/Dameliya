@@ -7,7 +7,7 @@
 //   3) Задеплой:        npm run ai:deploy
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const MODEL = 'gemini-2.5-flash-lite';
+const MODEL = 'gemini-3.5-flash-lite';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -125,7 +125,6 @@ Deno.serve(async (req) => {
           contents: [{ parts }],
           generationConfig: {
             maxOutputTokens: 8_192,
-            thinkingConfig: { thinkingBudget: 0 },
             ...(expectsJson ? { responseMimeType: 'application/json' } : {}),
           },
         }),
