@@ -8,7 +8,6 @@ import { RewardsHero } from '../components/RewardsHero';
 import { isWearableReward, rewardCategories, rewards, type Reward, type RewardCategory } from '../lib/rewardsData';
 import { equipRewardForCategory, loadUserRewards } from '../lib/userRewards';
 import { useSession } from '../lib/useSession';
-import { NewRewardToast } from '../components/NewRewardToast';
 import { UserBalance } from '../components/UserBalance';
 import { ChestPreview } from '../components/ChestPreview';
 import { asReward, loadGeneratedRewards } from '../lib/generatedRewards';
@@ -25,7 +24,6 @@ export function RewardsPage() {
   const [selected, setSelected] = useState<Reward | null>(null);
   const [equipped, setEquipped] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
-  const [showNewReward, setShowNewReward] = useState(true);
   const [showChestPreview, setShowChestPreview] = useState(() =>
     new URLSearchParams(window.location.search).get('preview') === 'chest');
   const [aiRewards, setAiRewards] = useState<Reward[]>([]);
@@ -89,8 +87,6 @@ export function RewardsPage() {
       {section === 'competitions' && <CompetitionsPanel />}
       {selected && <RewardDetails reward={selected} equipped={equipped.includes(selected.id)}
         saving={saving} onEquip={equipReward} onClose={() => setSelected(null)} />}
-      {showNewReward && rewards.find((reward) => reward.isNew) && <NewRewardToast
-        reward={rewards.find((reward) => reward.isNew)!} onClose={() => setShowNewReward(false)} />}
       {showChestPreview && <ChestPreview onClose={() => setShowChestPreview(false)} />}
     </AppShell>
   );
