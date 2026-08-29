@@ -26,6 +26,7 @@ export function MentorPage() {
   const [messages, setMessages] = useState<Message[]>([{ role: 'q', text: mentorGreeting(detectLanguage()) }]);
   const editingPlan = plans.find((plan) => plan.id === editingId);
   const editingChat = mode === 'edit' && Boolean(editingPlan);
+  const newOnly = new URLSearchParams(window.location.search).get('new') === '1';
   useLayoutEffect(() => {
     const scrollToStart = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     scrollToStart();
@@ -36,8 +37,18 @@ export function MentorPage() {
   useEffect(() => {
     if (!session) return;
     const params = new URLSearchParams(window.location.search);
-    void loadAiQuests(session.user.id).then(({ data }) => setPlans(data ?? []));
+    const editId = params.get('edit');
+    void loadAiQuests(session.user.id).then(({ data }) => {
+      const loaded = data ?? [];
+      setPlans(loaded);
+      if (editId) {
+        setMode('edit');
+        const selected = loaded.find((plan) => plan.id === editId);
+        if (selected) selectPlanForEdit(selected);
+      }
+    });
     if (params.get('new') === '1') { setMode('add'); setGoal(''); setRequest(''); return; }
+    if (editId) return;
     if (params.get('choose') === '1') { setMode(null); setGoal(''); setRequest(''); return; }
     void loadActiveQuest(session.user.id).then(({ data }) => data && setGoal(data.goal));
   }, [session]);
@@ -89,12 +100,12 @@ export function MentorPage() {
   return <AppShell><div className="mentor-page">
     <header><div><span className="mentor-avatar">Q</span><div><span className="eyebrow">AI-НАСТАВНИК</span><h1>Создай своё приключение</h1><p>Добавь цель, а Q превратит её в персональную карту.</p></div></div><Link href="/quest" className="social-outline">Открыть карту →</Link></header>
     <div className={`mentor-layout ${editingChat ? 'mentor-layout--chat-only' : ''}`}>{!editingChat && <aside className="goal-builder"><span className="eyebrow">ТВОЯ ЦЕЛЬ</span><h2>К чему ты хочешь прийти?</h2>
-      <div className="goal-mode-picker"><button className={mode === 'add' ? 'is-active' : ''} onClick={() => {
+      {!newOnly && <div className="goal-mode-picker"><button className={mode === 'add' ? 'is-active' : ''} onClick={() => {
         setMode('add'); setEditingId(null); setGoal(''); setRequest('');
       }}>＋ Добавить цель</button><button className={mode === 'edit' ? 'is-active' : ''} onClick={() => {
         setMode('edit'); setEditingId(null); setGoal(''); setRequest('');
         if (plans.length === 1) selectPlanForEdit(plans[0]);
-      }}>✎ Изменить цель</button></div>
+      }}>✎ Изменить цель</button></div>}
       {mode === 'edit' && <div className="goal-edit-list">{plans.map((plan) => <button
         className={editingId === plan.id ? 'is-active' : ''} key={plan.id} onClick={() => {
           selectPlanForEdit(plan);

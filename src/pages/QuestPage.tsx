@@ -8,7 +8,6 @@ import { deleteAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { ensureQuestInsights } from '../lib/questInsights';
 import { activeQuestId, rememberActiveQuest } from '../lib/activeQuest';
-import { ExternalProgressModal } from '../components/ExternalProgressModal';
 import { cachedQuestPlans, cacheQuestPlans } from '../lib/questCache';
 import { MobileQuestHeader } from '../components/MobileQuestHeader';
 
@@ -20,7 +19,6 @@ export function QuestPage() {
   const [plansLoading, setPlansLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(() => requestedId ?? activeQuestId());
   const [deleting, setDeleting] = useState(false);
-  const [showExternalProgress, setShowExternalProgress] = useState(false);
 
   useEffect(() => {
     if (!session) return;
@@ -123,17 +121,14 @@ export function QuestPage() {
             : <p>{done.length ? 'Кью анализирует разговор и заметки завершённого этапа…'
               : `После этапа «${steps[0]?.title}» Кью сохранит здесь твою главную мысль.`}</p>}
         </section>
-        <button className="external-progress-button" onClick={() => setShowExternalProgress(true)}>
-          <Icon name="sparkles" size={17} /> Я продвинулся самостоятельно</button>
-        <Link href="/mentor?choose=1" className="secondary-button"><Icon name="sparkles" size={18} /> Добавить или изменить цель</Link>
+        <Link href={`/mentor?edit=${plan.id}`} className="external-progress-button">
+          <Icon name="sparkles" size={17} /> Изменить цель</Link>
+        <Link href="/mentor?new=1" className="secondary-button"><Icon name="sparkles" size={18} /> Добавить цель</Link>
         <button className="delete-quest-button" disabled={deleting} onClick={() => void removePlan()}>
           {deleting ? 'Удаляем…' : 'Удалить эту цель'}</button>
       </aside>
     </div> : plansLoading ? <section className="center-loader">Загружаем твою карту приключений…</section>
       : <section className="empty-state"><Icon name="map" size={40} /><h2>Личных карт пока нет</h2>
       <p>Расскажи Кью о цели, и он создаст первую экспедицию.</p><Link href="/mentor" className="primary-button">Создать цель</Link></section>}
-    {showExternalProgress && session && plan && <ExternalProgressModal userId={session.user.id} plan={plan}
-      onClose={() => setShowExternalProgress(false)} onAdapted={(updated) => setPlans((current) =>
-        current.map((item) => item.id === updated.id ? updated : item))} />}
   </div></AppShell>;
 }
