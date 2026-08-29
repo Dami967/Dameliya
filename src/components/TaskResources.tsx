@@ -4,6 +4,7 @@ import type { QuestResource } from '../lib/questData';
 import type { TaskChatMessage } from '../lib/taskRecords';
 import { TaskMentor } from './TaskMentor';
 import { TaskMaterial } from './TaskMaterial';
+import { TaskQuiz } from './TaskQuiz';
 
 export function TaskResources({ resources, loading, expectsVideo, notes, task, chat, readOnly, onFindVideo, onNotes, onChat }: {
   resources: QuestResource[]; loading: boolean; expectsVideo: boolean; notes: string; task: string; chat: TaskChatMessage[];
@@ -12,6 +13,7 @@ export function TaskResources({ resources, loading, expectsVideo, notes, task, c
 }) {
   const [video, setVideo] = useState<QuestResource | null>(null);
   const [material, setMaterial] = useState<QuestResource | null>(null);
+  const [quiz, setQuiz] = useState<QuestResource | null>(null);
   if (!resources.length && !expectsVideo) return null;
   const hasVideo = resources.some((resource) => resource.type === 'video' && youtubeEmbed(resource.url));
   return <><section className="content-card task-resources"><h2>Материалы от Кью</h2>
@@ -20,7 +22,8 @@ export function TaskResources({ resources, loading, expectsVideo, notes, task, c
       return <article key={resource.url}><span>{resource.type === 'video' ? '▶' : resource.type === 'test' ? '✓' : '↗'}</span>
         <div><b>{resource.title}</b><p>{resource.description}</p></div>
         {embed ? <button onClick={() => setVideo(resource)}>Смотреть</button>
-          : <button onClick={() => setMaterial(resource)}>Открыть</button>}
+          : resource.type === 'test' ? <button onClick={() => setQuiz(resource)}>Пройти тест</button>
+            : <button onClick={() => setMaterial(resource)}>Открыть</button>}
       </article>;
     })}{expectsVideo && !hasVideo && <article className="resource-loading"><span>▶</span>
       <div><b>{loading ? 'Кью подбирает видео к этому заданию…' : 'Видео не удалось подобрать автоматически'}</b>
@@ -30,7 +33,8 @@ export function TaskResources({ resources, loading, expectsVideo, notes, task, c
   </section>
   {video && <VideoLesson resource={video} notes={notes} task={task} chat={chat} readOnly={readOnly}
     onNotes={onNotes} onChat={onChat} onClose={() => setVideo(null)} />}
-  {material && <TaskMaterial resource={material} task={task} onClose={() => setMaterial(null)} />}</>;
+  {material && <TaskMaterial resource={material} task={task} onClose={() => setMaterial(null)} />}
+  {quiz && <TaskQuiz resource={quiz} task={task} onClose={() => setQuiz(null)} />}</>;
 }
 
 function VideoLesson({ resource, notes, task, chat, readOnly, onNotes, onChat, onClose }: {

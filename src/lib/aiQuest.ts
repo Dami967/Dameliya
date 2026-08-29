@@ -191,6 +191,7 @@ function normalizeDetails(value: Partial<QuestTaskDetails>, fallback: string): Q
       url: type === 'video' ? url : `goalquest://material/${index}` }] as QuestTaskDetails['resources'];
   }) : [];
   const text = `${value.objective || ''} ${checklist.map((item) => `${item.title} ${item.hint}`).join(' ')}`;
+  const implied = impliedResources(text);
   const discovered = discoverResources(text, String(value.category || ''));
   return {
     objective: String(value.objective || fallback),
@@ -198,9 +199,15 @@ function normalizeDetails(value: Partial<QuestTaskDetails>, fallback: string): Q
     duration_minutes: Math.min(180, Math.max(5, Number(value.duration_minutes) || 25)),
     category: String(value.category || 'Практика'),
     checklist,
-    resources: [...explicitResources, ...discovered.filter((item) =>
-      !explicitResources.some((resource) => resource.url === item.url))].slice(0, 3),
+    resources: [...explicitResources, ...implied, ...discovered].filter((resource, index, items) =>
+      items.findIndex((item) => item.url === resource.url) === index).slice(0, 3),
   };
+}
+
+function impliedResources(text: string): QuestResource[] {
+  if (!/тест|test|quiz|викторин|диагност/i.test(text)) return [];
+  return [{ type: 'test', title: 'Диагностический тест', url: 'goalquest://material/test',
+    description: 'Пять вопросов по теме задания с проверкой и объяснениями.' }];
 }
 
 function fallbackDetails(step: QuestStep): QuestTaskDetails {
