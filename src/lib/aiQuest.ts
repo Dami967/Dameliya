@@ -49,49 +49,46 @@ export async function createAiQuest(userId: string, goal: string, request: strin
   const profileContext = profile ? `Возраст: ${profile.age || 'не указан'}. Интересы: ${profile.interests.join(', ') || 'не указаны'}.
 Сильные стороны: ${profile.strengths || 'не указаны'}. Трудности: ${profile.challenges || 'не указаны'}.
 Доступно времени в день: ${profile.daily_minutes} минут.` : '';
-  const { text, error } = await askAi(
-    `Цель пользователя: ${goal}. Пожелание: ${request || 'Создай понятный маршрут'}. ${profileContext}
+  const planPrompt = `Цель пользователя: ${goal}. Пожелание: ${request || 'Создай понятный маршрут'}. ${profileContext}
 Верни ТОЛЬКО JSON без markdown: {"map_title":"короткое название","steps":[{"title":"действие","subtitle":"результат этапа","objective":"подробное персональное задание","expected_answer":"эталон готового правильного результата для проверки","duration_minutes":25,"category":"тип задания","checklist":[{"title":"конкретный шаг","hint":"как его выполнить"}],"resources":[{"type":"video","title":"название","url":"https://www.youtube.com/watch?v=ID","description":"зачем смотреть"}]}]}.
 Ровно 10 конкретных, безопасных и выполнимых этапов. В каждом этапе ровно 3 пункта checklist и 0–2 полезных ресурса.
 Статьи и тесты создаются внутри GoalQuest: для них укажи url "goalquest://material" и не предлагай внешний сайт.
-Только для видео выбирай существующий ролик известного образовательного канала, доступный без входа. Не выдумывай video ID и не указывай платные материалы.`,
-    `Ты создаёшь персональные карты GoalQuest для подростков. Весь пользовательский текст пиши на языке ${outputLanguage}. Отвечай только валидным JSON.`,
-    [], false, true,
-  );
-  if (error) return { data: null, error };
-  try {
-    const parsed = parseAiJson<{
-      map_title: string;
-      steps: Array<{ title: string; subtitle: string } & QuestTaskDetails>;
-    }>(text ?? '');
-    const steps: QuestStep[] = parsed.steps.slice(0, 10).map((step, index) => ({
-      id: index + 1,
-      title: step.title,
-      subtitle: index === 0 ? 'Текущее задание' : step.subtitle,
-      state: index === 0 ? 'active' : 'locked',
-      xp: 50 + index * 30,
-      icon: index === 9 ? 'rocket' : index % 3 === 0 ? 'sparkles' : 'book',
-      details: normalizeDetails(step, step.subtitle),
-    }));
-    if (steps.length !== 10) throw new Error('AI returned an incomplete plan');
-    const values = {
-      user_id: userId, goal, map_title: parsed.map_title, steps,
-      insight: `Главное сейчас — начать с этапа «${steps[0].title}» и сохранить конкретный результат.`,
-      updated_at: new Date().toISOString(),
-    };
-    if (planId) {
-      const updated = await supabase.from('ai_quest_plans').update({ ...values, insights: [] })
-        .eq('user_id', userId).eq('id', planId).select().single<AiQuestPlan>();
-      if (!updated.error && previous?.data) {
-        await supabase.from('quest_task_records').delete().eq('user_id', userId).eq('goal', previous.data.goal);
-      }
-      return updated;
+Только для видео выбирай существующий ролик известного образовательного канала, доступный без входа. Не выдумывай video ID и не указывай платные материалы.`;
+  const planSystem = `Ты создаёшь персональные карты GoalQuest для подростков. Весь пользовательский текст пиши на языке ${outputLanguage}. Отвечай только валидным JSON.`;
+  type GeneratedPlan = { map_title: string; steps: Array<{ title: string; subtitle: string } & QuestTaskDetails> };
+  let result = await askAi(planPrompt, planSystem, [], false, true);
+  if (result.error) return { data: null, error: result.error };
+  let parsed: GeneratedPlan | null = null;
+  for (let attempt = 0; attempt < 2 && !parsed; attempt += 1) {
+    try {
+      const candidate = parseAiJson<GeneratedPlan>(result.text ?? '');
+      if (!candidate.map_title || !Array.isArray(candidate.steps) || candidate.steps.length !== 10) throw new Error();
+      parsed = candidate;
+    } catch {
+      if (attempt === 0) result = await askAi(`${planPrompt}\nПредыдущая попытка была неполной. Проверь перед ответом: steps содержит РОВНО 10 объектов, а checklist каждого объекта — РОВНО 3 разных пункта.`,
+        planSystem, [], false, true);
     }
-    return supabase.from('ai_quest_plans').upsert(values, { onConflict: 'user_id,goal' })
-      .select().single<AiQuestPlan>();
-  } catch {
-    return { data: null, error: new Error('AI не смог собрать карту. Попробуй ещё раз.') };
   }
+  if (!parsed) return { data: null, error: result.error ?? new Error('AI не смог собрать карту после двух попыток.') };
+  const steps: QuestStep[] = parsed.steps.map((step, index) => ({
+    id: index + 1, title: String(step.title), subtitle: index === 0 ? 'Текущее задание' : String(step.subtitle),
+    state: index === 0 ? 'active' : 'locked', xp: 50 + index * 30,
+    icon: index === 9 ? 'rocket' : index % 3 === 0 ? 'sparkles' : 'book',
+    details: normalizeDetails(step, String(step.subtitle)),
+  }));
+  const values = { user_id: userId, goal, map_title: parsed.map_title, steps,
+    insight: `Главное сейчас — начать с этапа «${steps[0].title}» и сохранить конкретный результат.`,
+    updated_at: new Date().toISOString() };
+  if (planId) {
+    const updated = await supabase.from('ai_quest_plans').update({ ...values, insights: [] })
+      .eq('user_id', userId).eq('id', planId).select().single<AiQuestPlan>();
+    if (!updated.error && previous?.data) {
+      await supabase.from('quest_task_records').delete().eq('user_id', userId).eq('goal', previous.data.goal);
+    }
+    return updated;
+  }
+  return supabase.from('ai_quest_plans').upsert(values, { onConflict: 'user_id,goal' })
+    .select().single<AiQuestPlan>();
 }
 
 export async function ensureQuestTaskDetails(userId: string, plan: AiQuestPlan, stepId: number) {

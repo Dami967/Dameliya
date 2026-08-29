@@ -60,7 +60,6 @@ export function MentorPage() {
     if (!session || goal.trim().length < 2) return;
     const discussion = messages.filter((message) => message.role === 'user').map((message) => message.text).join('\n');
     if (editingId && !discussion) return;
-    if (editingId && !window.confirm('Изменить выбранную цель? Карта заданий будет создана заново, а старый прогресс этой цели удалится.')) return;
     setBusy(true);
     let nextGoal = goal.trim();
     let adaptationRequest = request.trim();
