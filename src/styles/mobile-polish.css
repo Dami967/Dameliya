@@ -1,7 +1,7 @@
 @media(max-width:820px){
-  :root{--mobile-safe-top:calc(env(safe-area-inset-top) + 20px);--mobile-nav-height:calc(env(safe-area-inset-bottom) + 82px)}
-  .app-shell{padding-top:0;padding-bottom:var(--mobile-nav-height)}
-  .bottom-nav{inset:auto 0 0;min-height:var(--mobile-nav-height);padding:10px 8px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);border-bottom:0;box-shadow:0 -5px 18px #29265210}
+  :root{--mobile-safe-top:calc(env(safe-area-inset-top) + 34px);--mobile-top-nav-height:calc(env(safe-area-inset-top) + 106px)}
+  .app-shell{padding-top:var(--mobile-top-nav-height);padding-bottom:0}
+  .bottom-nav{inset:0 0 auto;min-height:var(--mobile-top-nav-height);padding:var(--mobile-safe-top) 8px 12px;border-top:0;border-bottom:1px solid var(--line);box-shadow:0 5px 18px #29265210}
   .bottom-nav a{min-height:56px}
   .global-notifications{top:var(--mobile-safe-top);right:12px}
   .notification-panel{top:calc(var(--mobile-safe-top) + 52px)}
@@ -32,7 +32,7 @@
 }
 
 @media(max-width:680px){
-  .task-topbar{height:calc(68px + var(--mobile-safe-top));padding-top:var(--mobile-safe-top)}
+  .task-topbar{height:128px;padding-top:60px}
   .task-topbar .back-link{display:flex;min-height:44px;align-items:center;font-size:13px}
 }
 
