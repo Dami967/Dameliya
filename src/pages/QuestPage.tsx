@@ -4,7 +4,7 @@ import { AppShell } from '../components/AppShell';
 import { Icon } from '../components/Icon';
 import { QuestMap } from '../components/QuestMap';
 import { QuestGoalPicker, QuestGoalTabs } from '../components/QuestGoalPicker';
-import { deleteAiQuest, loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
+import { deleteAiQuest, loadAiQuests, questDisplayTitle, type AiQuestPlan } from '../lib/aiQuest';
 import { useSession } from '../lib/useSession';
 import { ensureQuestInsights } from '../lib/questInsights';
 import { activeQuestId, rememberActiveQuest } from '../lib/activeQuest';
@@ -98,7 +98,7 @@ export function QuestPage() {
       <button className="quest-switch" disabled={plans.length < 2} onClick={() => choose(selectedIndex - 1)}
         aria-label="Предыдущая карта">←</button>
       <div><span className="eyebrow">МОЙ КВЕСТ · {selectedIndex + 1} ИЗ {plans.length || 1}</span>
-        <h1>{plan?.goal || (plansLoading ? 'Загружаем карту…' : 'Создай свою первую цель')}</h1>
+        <h1>{plan ? questDisplayTitle(plan) : plansLoading ? 'Загружаем карту…' : 'Создай свою первую цель'}</h1>
         <p>Большая цель становится простой, когда виден следующий шаг.</p>
         <QuestGoalPicker plans={plans} selectedId={selectedPlanId} onChange={chooseById} />
         <Link href="/mentor?new=1" className="new-quest-link">＋ Новая цель</Link></div>

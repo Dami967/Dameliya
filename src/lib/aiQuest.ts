@@ -19,6 +19,10 @@ export type AiQuestPlan = {
 
 export type QuestInsight = { step_id: number; title: string; note: string };
 
+export function questDisplayTitle(plan: AiQuestPlan) {
+  return plan.map_title.trim() || plan.goal.trim();
+}
+
 const VIDEO_VERSION_TAG = 'Проверено: video-v2';
 
 export async function loadAiQuest(userId: string) {

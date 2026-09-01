@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
-import type { AiQuestPlan } from '../lib/aiQuest';
+import { questDisplayTitle, type AiQuestPlan } from '../lib/aiQuest';
 
 export function MobileQuestHeader({ plans, selectedId, loading, onChange }: {
   plans: AiQuestPlan[];
@@ -37,7 +37,8 @@ export function MobileQuestHeader({ plans, selectedId, loading, onChange }: {
     };
   }, [open]);
 
-  const title = selected?.goal || (loading ? 'Загружаем карту…' : 'Создай свою первую цель');
+  const title = selected ? questDisplayTitle(selected)
+    : loading ? 'Загружаем карту…' : 'Создай свою первую цель';
   return <header className="mobile-quest-header"
     onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; }}
     onTouchEnd={(event) => finishSwipe(event.changedTouches[0]?.clientX ?? 0)}>
@@ -49,13 +50,13 @@ export function MobileQuestHeader({ plans, selectedId, loading, onChange }: {
       {plans.length > 0 && <div className="mobile-goal-picker" ref={picker}>
         <button type="button" className="mobile-goal-picker__trigger" aria-expanded={open}
           onClick={() => setOpen((value) => !value)}>
-          <span><small>Текущая цель</small><b>{selected?.goal}</b></span><i>{open ? '↑' : '↓'}</i>
+          <span><small>Текущая цель</small><b>{selected && questDisplayTitle(selected)}</b></span><i>{open ? '↑' : '↓'}</i>
         </button>
         {open && <div className="mobile-goal-picker__menu" role="listbox">
           {plans.map((plan, index) => <button type="button" role="option" aria-selected={plan.id === selected?.id}
             className={plan.id === selected?.id ? 'is-selected' : ''} key={plan.id} onClick={() => {
               onChange(plan.id); setOpen(false);
-            }}><span>{index + 1}</span><b>{plan.goal}</b>{plan.id === selected?.id && <i>✓</i>}</button>)}
+            }}><span>{index + 1}</span><b>{questDisplayTitle(plan)}</b>{plan.id === selected?.id && <i>✓</i>}</button>)}
         </div>}
       </div>}
       <Link href="/mentor?new=1" className="mobile-new-goal"><span>＋</span><b>Новая цель</b></Link>
