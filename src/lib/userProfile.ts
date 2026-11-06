@@ -35,6 +35,8 @@ export type UserSettings = {
   push_notifications: boolean;
   email_notifications: boolean;
   reminder_time: string;
+  streak_notifications: boolean;
+  achievement_notifications: boolean;
 };
 
 export async function loadProfile(userId: string) {
@@ -51,8 +53,10 @@ export async function saveProfile(userId: string, changes: Partial<UserProfile>)
   return result;
 }
 
-export async function loadSettings(userId: string) {
-  return supabase.from('user_settings').select('*').eq('user_id', userId).single<UserSettings>();
+export async function loadSettings(userId: string, signal?: AbortSignal) {
+  const query = supabase.from('user_settings').select('*').eq('user_id', userId);
+  if (signal) query.abortSignal(signal);
+  return query.single<UserSettings>();
 }
 
 export async function saveSettings(userId: string, changes: Partial<UserSettings>) {

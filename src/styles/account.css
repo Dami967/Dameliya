@@ -1,7 +1,7 @@
 .profile-page-head { margin-bottom: 20px; }.profile-hero { background: radial-gradient(circle at 95% 10%, #f1e8ff, transparent 30%), #fff; }
 .profile-avatar { overflow: visible; }.profile-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }.profile-username { color: var(--purple); font-size: 9px; font-weight: 800; }
 .profile-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 18px; }.profile-stat { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 15px; background: #fff; }
-.profile-stat svg { flex: 0 0 auto; }.profile-stat div { display: grid; min-width: 0; }.profile-stat b { font-size: 17px; }.profile-stat small { overflow: hidden; color: var(--muted); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+.profile-stat svg { flex: 0 0 auto; }.profile-stat div { display: grid; min-width: 0; }.profile-stat b { font-size: 17px; }.profile-stat small { color: var(--muted); font-size: 9px; line-height: 1.4; white-space: normal; }
 .profile-stat--blue { color: var(--blue); }.profile-stat--mint { color: var(--mint); }.profile-stat--purple { color: var(--purple); }.profile-stat--orange { color: #ef834b; }.profile-stat--pink { color: var(--pink); }
 .member-since { display: block; margin: 14px 0 0; color: var(--muted); font-size: 8px; }.edit-layout { display: grid; grid-template-columns: 240px 1fr; gap: 18px; align-items: start; }
 .settings-card { border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: 0 8px 28px #2920500a; }.avatar-editor { display: grid; justify-items: center; gap: 16px; padding: 28px; }
@@ -24,3 +24,6 @@
 [data-theme="dark"] { color-scheme: dark; --ink: #f2f0ff; --muted: #a9abc0; --line: #33344d; --soft-bg: #151522; } [data-theme="dark"] body, [data-theme="dark"] .app-shell { background: #151522; } [data-theme="dark"] .sidebar, [data-theme="dark"] .settings-card, [data-theme="dark"] .profile-hero, [data-theme="dark"] .profile-stat, [data-theme="dark"] .profile-section, [data-theme="dark"] .quest-card { background: #202031; } [data-theme="dark"] .settings-row, [data-theme="dark"] .theme-picker button, [data-theme="dark"] .edit-field > span { background: #202031; }
 @media (max-width: 850px) { .profile-stats { grid-template-columns: repeat(3, 1fr); }.settings-layout { grid-template-columns: 1fr; }.edit-layout { grid-template-columns: 1fr; }.avatar-editor { grid-template-columns: auto auto 1fr; justify-items: start; } }
 @media (max-width: 560px) { .profile-stats { grid-template-columns: 1fr 1fr; }.profile-hero { display: grid; grid-template-columns: auto 1fr; }.profile-hero .secondary-button { grid-column: 1 / -1; }.field-pair { grid-template-columns: 1fr; }.avatar-editor { grid-template-columns: 1fr; justify-items: center; } }
+
+.settings-card .notification-help { margin: 0; padding: 12px 22px; font-size: 12px; line-height: 1.6; color: var(--muted); background: #fafaff; }
+.profile-avatar { flex-shrink: 0; }

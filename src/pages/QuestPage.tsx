@@ -1,3 +1,5 @@
+import { QuestTranslation } from '../components/QuestTranslation';
+import { ProgressSummary } from '../components/ProgressSummary';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AppShell } from '../components/AppShell';
@@ -15,6 +17,7 @@ export function QuestPage() {
   const { session } = useSession();
   const [, navigate] = useLocation();
   const requestedId = new URLSearchParams(window.location.search).get('plan');
+  const creatorPreview = import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview') === 'games';
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(() => requestedId ?? activeQuestId());
@@ -49,8 +52,6 @@ export function QuestPage() {
   const plan = plans[selectedIndex] ?? null;
   const steps = plan?.steps ?? [];
   const done = steps.filter((step) => step.state === 'done');
-  const percent = steps.length ? Math.round(done.length / steps.length * 100) : 0;
-  const earnedXp = done.reduce((sum, step) => sum + step.xp, 0);
 
   useEffect(() => {
     if (!session || !plan || !done.length) return;
@@ -93,6 +94,7 @@ export function QuestPage() {
   }
 
   return <AppShell><div className="quest-page-content">
+    {import.meta.env.DEV && <Link href={plan ? `/dev/games?plan=${plan.id}` : '/dev/games'} className="developer-preview-link">🛠 Проверить викторину, карточки и сундук</Link>}
     <MobileQuestHeader plans={plans} selectedId={selectedPlanId} loading={plansLoading} onChange={chooseById} />
     <header className="page-header quest-page-head quest-desktop-header">
       <button className="quest-switch" disabled={plans.length < 2} onClick={() => choose(selectedIndex - 1)}
@@ -105,16 +107,19 @@ export function QuestPage() {
       <button className="quest-switch" disabled={plans.length < 2} onClick={() => choose(selectedIndex + 1)}
         aria-label="Следующая карта">→</button>
     </header>
+    {plan && <QuestTranslation key={plan.id} plan={plan} onTranslated={(translated) => {
+      setPlans((current) => {
+        const updated = current.map((item) => item.id === translated.id ? translated : item);
+        if (session) cacheQuestPlans(session.user.id, updated);
+        return updated;
+      });
+    }} />}
     <QuestGoalTabs plans={plans} selectedId={selectedPlanId} onChange={chooseById} />
     {plan ? <div className="quest-page-grid">
-      <QuestMap steps={plan.steps} title={plan.map_title} planId={plan.id} />
+      <QuestMap steps={plan.steps} title={plan.map_title} planId={plan.id} preview={creatorPreview} />
       <aside className="goal-summary">
         <div className="summary-orb"><Icon name="rocket" size={34} /></div>
-        <h3>Твой прогресс</h3>
-        <div className="big-progress">{percent}<span>%</span></div>
-        <div className="summary-row"><span>Заданий готово</span><b>{done.length} / {steps.length}</b></div>
-        <div className="summary-row"><span>Заработано</span><b>{earnedXp} XP</b></div>
-        <div className="summary-row"><span>Активных карт</span><b>{plans.length}</b></div>
+        <ProgressSummary plan={plan} totalPlans={plans.length} embedded />
         <section className="quest-insight"><span>✨ ЗАМЕТКИ ОТ КЬЮ</span>
           {plan.insights?.length ? <div className="quest-insight-list">{plan.insights.map((item) =>
             <article key={item.step_id}><b>Этап {item.step_id} · {item.title}</b><p>{item.note}</p></article>)}</div>
@@ -123,6 +128,8 @@ export function QuestPage() {
         </section>
         <Link href={`/mentor?edit=${plan.id}`} className="external-progress-button">
           <Icon name="sparkles" size={17} /> Изменить цель</Link>
+        {import.meta.env.DEV && <Link href={`/quest?plan=${plan.id}&preview=games`} className="secondary-button">
+          🎮 Открыть игры (предпросмотр)</Link>}
         <Link href="/mentor?new=1" className="secondary-button"><Icon name="sparkles" size={18} /> Добавить цель</Link>
         <button className="delete-quest-button" disabled={deleting} onClick={() => void removePlan()}>
           {deleting ? 'Удаляем…' : 'Удалить эту цель'}</button>

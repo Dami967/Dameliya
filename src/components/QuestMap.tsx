@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { questSteps, type QuestStep } from '../lib/questData';
 import { Icon } from './Icon';
-import { loadQuestChestOpenings, openQuestChest } from '../lib/questChests';
-import { asReward, createGeneratedReward, saveGeneratedChestReward } from '../lib/generatedRewards';
+import { loadQuestChestOpenings } from '../lib/questChests';
+import { RewardStop } from './RewardStop';
+import { MapPracticeStop } from './MapPracticeStop';
 
-export function QuestMap({ steps = questSteps, title = 'Долина больших идей', planId }: {
-  steps?: QuestStep[]; title?: string; planId?: string;
+export function QuestMap({ steps = questSteps, title = 'Долина больших идей', planId, preview = false }: {
+  steps?: QuestStep[]; title?: string; planId?: string; preview?: boolean;
 }) {
   const levelSize = 10;
   const totalDone = steps.filter((step) => step.state === 'done').length;
@@ -56,6 +57,7 @@ export function QuestMap({ steps = questSteps, title = 'Долина больш�
               {chapterSteps.map((step, stepIndex) => <QuestLevel step={step} planId={planId}
                 index={chapterIndex * 3 + stepIndex} key={step.id} />)}
             </div>
+            <MapPracticeStop steps={chapterSteps} planId={planId} preview={preview} />
             {chapter.reward && chapterSteps.length === 3 && <RewardStop title={chapter.reward}
               unlocked={chapterSteps.every((step) => step.state === 'done')} planId={planId}
               chapterIndex={selectedLevel * 100 + chapterIndex} prize={openedChests[selectedLevel * 100 + chapterIndex]}
@@ -77,32 +79,6 @@ function QuestLevel({ step, index, planId }: { step: QuestStep; index: number; p
     ? <Link href={`/task/${step.id}${planId ? `?plan=${planId}` : ''}`}
       className={`level level--${step.state} level--${index}`}>{content}</Link>
     : <div className={`level level--${step.state} level--${index}`}>{content}</div>;
-}
-
-function RewardStop({ title, unlocked, planId, chapterIndex, prize, onOpened }: {
-  title: string; unlocked: boolean; planId?: string; chapterIndex: number; prize?: string;
-  onOpened: (prize: string) => void;
-}) {
-  const [opening, setOpening] = useState(false);
-  async function open() {
-    if (!planId || opening) return;
-    setOpening(true);
-    const result = await openQuestChest(planId, chapterIndex);
-    if (!result.error && result.data === '🏆 Все уникальные призы уже собраны') {
-      const generated = await createGeneratedReward('chest');
-      if (generated) {
-        const saved = await saveGeneratedChestReward(planId, chapterIndex, asReward(generated));
-        if (!saved.error && typeof saved.data === 'string') onOpened(saved.data);
-      }
-    } else if (!result.error && typeof result.data === 'string') onOpened(result.data);
-    setOpening(false);
-  }
-  return <button type="button" disabled={!unlocked || Boolean(prize) || opening} onClick={() => void open()}
-    className={`reward-stop ${unlocked ? 'is-ready' : 'is-locked'} ${prize ? 'is-opened' : ''}`}>
-    <span>{prize ? '✨' : '🎁'}</span>
-    <div><small>ПОДАРОК ЗА 3 ЗАДАНИЯ</small><b>{prize || title}</b></div>
-    <em>{prize ? 'Получен ✓' : opening ? 'Открываем…' : unlocked ? 'Открыть' : 'Выполни все 3'}</em>
-  </button>;
 }
 
 function chapterInfo(index: number) {

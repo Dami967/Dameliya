@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 export type AppNotification = {
   id: string;
   actor_id: string | null;
-  kind: 'follow' | 'message' | 'competition';
+  kind: 'follow' | 'message' | 'competition' | 'reminder' | 'achievement';
   title: string;
   body: string;
   link: string;

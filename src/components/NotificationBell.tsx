@@ -1,31 +1,31 @@
+import { useDraggableNotification } from '../lib/useDraggableNotification';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Icon } from './Icon';
 import { loadNotifications, markAllNotificationsRead, markNotificationRead,
   deleteAllNotifications, deleteNotification, subscribeToNotifications, type AppNotification } from '../lib/notifications';
-import { playNotificationSound, unlockNotificationSound } from '../lib/notificationSound';
-import { showBrowserNotification } from '../lib/browserNotifications';
 
 export function NotificationBell({ userId }: { userId: string }) {
+  const draggable = useDraggableNotification();
   const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
+  const [clearError, setClearError] = useState('');
+  const clearing = useRef(false);
   const requestVersion = useRef(0);
   const refresh = useCallback(() => {
+    if (clearing.current) return;
     const version = ++requestVersion.current;
     void loadNotifications(userId).then(({ data }) => {
       if (version === requestVersion.current) setItems(data ?? []);
     });
   }, [userId]);
   useEffect(() => {
-    const unlock = () => unlockNotificationSound();
-    window.addEventListener('pointerdown', unlock, { once: true });
     refresh();
-    const channel = subscribeToNotifications(userId, (item) => {
-      playNotificationSound(); refresh();
-      void showBrowserNotification(item.title, item.body, notificationLink(item), item.id);
-    });
-    return () => { void channel.unsubscribe(); window.removeEventListener('pointerdown', unlock); };
+    const channel = subscribeToNotifications(userId, refresh);
+    window.addEventListener('goalquest-notifications-changed', refresh);
+    return () => { void channel.unsubscribe();
+      window.removeEventListener('goalquest-notifications-changed', refresh); };
   }, [refresh, userId]);
   const unread = items.filter((item) => !item.read_at).length;
 
@@ -40,19 +40,33 @@ export function NotificationBell({ userId }: { userId: string }) {
     if (!error) setItems((current) => current.filter((item) => item.id !== id));
   }
   async function clearAll() {
-    if (!window.confirm('Удалить все уведомления?')) return;
+    if (clearing.current) return;
+    clearing.current = true;
+    setClearError('');
+    const previous = items;
     requestVersion.current += 1;
-    const { error } = await deleteAllNotifications(userId);
-    if (!error) setItems([]);
+    setItems([]);
+    try {
+      const { error } = await deleteAllNotifications(userId);
+      if (error) throw error;
+    } catch {
+      setItems(previous);
+      setClearError('Не удалось очистить уведомления. Попробуй ещё раз.');
+    } finally { clearing.current = false; }
   }
 
-  return <div className="notification-bell">
-    <button className="notification-bell__button" onClick={() => setOpen((value) => !value)} aria-label="Уведомления">
+  return <div className="notification-bell" style={draggable.style}>
+    <button className="notification-bell__button" onClick={() => {
+      if (draggable.shouldOpen()) setOpen((value) => !value);
+    }} onPointerDown={draggable.onPointerDown} onPointerMove={draggable.onPointerMove}
+      onPointerUp={draggable.onPointerUp} onPointerCancel={draggable.onPointerCancel}
+      aria-label="Уведомления" aria-expanded={open} title="Нажми, чтобы открыть. На телефоне можно перетащить.">
       <Icon name="bell" size={20} />{unread > 0 && <b>{Math.min(unread, 99)}</b>}
     </button>
     {open && <section className="notification-panel">
       <header><div><h2>Уведомления</h2><small>{unread ? `${unread} новых` : 'Новых пока нет'}</small></div>
         <button onClick={() => setOpen(false)} aria-label="Закрыть">×</button></header>
+      {clearError && <p role="alert">{clearError}</p>}
       <div className="notification-list">{items.map((item) => <article className={!item.read_at ? 'is-unread' : ''}
         key={item.id}><button className="notification-item" onClick={() => void openItem(item)}>
         <span>{item.actor_avatar ? <img src={item.actor_avatar} alt="" />

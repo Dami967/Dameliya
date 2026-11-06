@@ -76,3 +76,8 @@ function readSavedLanguage() {
     return null;
   }
 }
+
+/** True when the user has already chosen a language in this browser. */
+export function hasRememberedLanguage() {
+  return Boolean(readSavedLanguage());
+}

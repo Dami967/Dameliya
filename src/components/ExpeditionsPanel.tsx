@@ -1,3 +1,5 @@
+import { ExpeditionCheckpoints } from './ExpeditionCheckpoints';
+import { GoalProgress } from './GoalProgress';
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { loadAiQuests, type AiQuestPlan } from '../lib/aiQuest';
@@ -38,6 +40,8 @@ export function ExpeditionsPanel() {
       <div className="expedition-track"><span style={{ width: `${percent}%` }} /><i style={{ left: `${percent}%` }}>✦</i></div>
       <div className="expedition-stats"><span><b>{done.length}/{active.steps.length}</b><small>этапов</small></span>
         <span><b>{xp} XP</b><small>заработано</small></span><span><b>{percent}%</b><small>пройдено</small></span></div>
+      <GoalProgress plan={active} />
+      <ExpeditionCheckpoints plan={active} />
       <Link href={`/quest?plan=${active.id}`} className="primary-button">Продолжить задания <Icon name="arrow" size={16} /></Link>
     </section>
     <section className="expedition-list"><div className="section-heading"><h2>Все экспедиции</h2>

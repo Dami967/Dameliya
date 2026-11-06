@@ -1,8 +1,10 @@
+import { loadSettings } from './userProfile';
+import { languageName } from './languages';
 import { supabase } from './supabase';
 import type { AiAttachment } from './aiAttachments';
 
 type AiResponse = { text?: unknown; error?: unknown };
-export type YoutubeVideoResult = { type: 'video'; title: string; url: string; description: string };
+export type YoutubeVideoResult = { language?: string; type: 'video'; title: string; url: string; description: string };
 
 export async function askAi(prompt: string, system: string, attachments: AiAttachment[] = [], useMomentum = false,
   jsonResponse = false) {
@@ -13,9 +15,10 @@ export async function askAi(prompt: string, system: string, attachments: AiAttac
     window.dispatchEvent(new CustomEvent('momentum-changed', { detail: energy.data }));
   }
   const { data, error } = await supabase.functions.invoke<AiResponse>('ai', {
+    timeout: 60_000,
     body: { prompt: prompt.trim(), system: system.trim(), attachments, json: jsonResponse },
   });
-  if (error) return { text: null, error: new Error(readFunctionError(error.message)) };
+  if (error) return { text: null, error: await functionError(error) };
   if (typeof data?.error === 'string') return { text: null, error: new Error(data.error) };
   if (typeof data?.text !== 'string' || !data.text.trim()) {
     return { text: null, error: new Error('Кью не смог подготовить ответ. Попробуй ещё раз.') };
@@ -35,12 +38,21 @@ export function parseAiJson<T>(text: string): T {
   }
 }
 
-export async function searchYoutubeVideo(query: string, excludedUrl = '') {
+export async function searchYoutubeVideo(query: string, excludedUrl = '', previousUrls: string[] = []) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const settings = session ? await loadSettings(session.user.id) : null;
+  if (settings?.error) throw new Error('Не удалось проверить язык в настройках. Повтори подбор видео.');
+  const language = settings?.data?.language ?? 'ru';
   const excludedVideoId = youtubeId(excludedUrl) ?? '';
   const { data, error } = await supabase.functions.invoke<{ video?: YoutubeVideoResult | null }>('ai', {
-    body: { action: 'search_youtube', query, excludedVideoId },
+    body: { action: 'search_youtube', query: `${query}\nЯзык видео: ${language} (${languageName(language)}).`, language, excludedVideoId,
+      excludedVideoIds: previousUrls.map(youtubeId).filter(Boolean) },
+    timeout: 60_000,
   });
-  return error ? null : data?.video ?? null;
+  const video = data?.video;
+  if (error) throw new Error('Поиск видео сейчас недоступен. Проверь интернет и попробуй ещё раз.');
+  return !error && video?.type === 'video' && typeof video.title === 'string'
+    && typeof video.url === 'string' && typeof video.description === 'string' ? { ...video, language } : null;
 }
 
 function youtubeId(value: string) {
@@ -55,4 +67,16 @@ function youtubeId(value: string) {
 function readFunctionError(message: string) {
   if (message.includes('non-2xx')) return 'AI сейчас недоступен. Попробуй ещё раз немного позже.';
   return message || 'Не получилось обратиться к AI.';
+}
+
+async function functionError(error: { message: string; context?: unknown }) {
+  if (error.context instanceof Response) {
+    try {
+      const body: unknown = await error.context.clone().json();
+      if (body && typeof body === 'object' && 'error' in body && typeof body.error === 'string') {
+        return new Error(body.error);
+      }
+    } catch { /* Keep a readable error when the response is not JSON. */ }
+  }
+  return new Error(readFunctionError(error.message));
 }

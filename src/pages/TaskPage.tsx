@@ -1,3 +1,4 @@
+import { useSettings } from '../lib/useSettings';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useRoute } from 'wouter';
 import { CompletedTaskChoice } from '../components/CompletedTaskChoice';
@@ -5,85 +6,41 @@ import { CompletionCelebration } from '../components/CompletionCelebration';
 import { Icon } from '../components/Icon';
 import { TaskMentor } from '../components/TaskMentor';
 import { TaskResources } from '../components/TaskResources';
-import { ensureQuestTaskDetails, loadAiQuest, loadAiQuestById, normalizeQuestStep, type AiQuestPlan } from '../lib/aiQuest';
-import { questSteps, type QuestStep } from '../lib/questData';
-import { completeQuestTask, loadTaskRecord, saveTaskRecord,
-  type TaskChatMessage, type TaskRecord } from '../lib/taskRecords';
+import { completeQuestTask, saveTaskRecord } from '../lib/taskRecords';
 import { adaptFutureQuest } from '../lib/adaptiveQuest';
 import { useSession } from '../lib/useSession';
-import { loadQuestLearning } from '../lib/questLearning';
 import { validateTaskResult, type ValidationResult } from '../lib/taskValidation';
 import { loadProfile } from '../lib/userProfile';
 import { loadHomeProgress } from '../lib/homeProgress';
 import { defaultTaskDetails, LinkedTaskText } from '../components/TaskChecklist';
 import { TaskAttachments } from '../components/TaskAttachments';
 import type { TaskAttachment } from '../lib/taskAttachments';
+import { useQuestTask } from '../lib/useQuestTask';
+import { TaskWorkbook } from '../components/TaskWorkbook';
+import { readExerciseNotes, writeExerciseNotes } from '../lib/exerciseAnswers';
 import { TaskValidationResult } from '../components/TaskValidationResult';
 
 type View = 'lesson' | 'choice' | 'history';
 
 export function TaskPage() {
   const { session } = useSession();
+  const { settings } = useSettings(session?.user.id);
   const [, params] = useRoute('/task/:id');
   const [, navigate] = useLocation();
-  const [plan, setPlan] = useState<AiQuestPlan | null>(null);
-  const [step, setStep] = useState<QuestStep | null>(null);
-  const [record, setRecord] = useState<TaskRecord | null>(null);
-  const [notes, setNotes] = useState('');
-  const [chat, setChat] = useState<TaskChatMessage[]>([]);
   const [view, setView] = useState<View>('lesson');
   const [completing, setCompleting] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [rewardStats, setRewardStats] = useState({ xp: 0, streak: 0, level: 1 });
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
-  const [learningContext, setLearningContext] = useState('');
-  const [resourcesLoading, setResourcesLoading] = useState(false);
-  const [recordLoaded, setRecordLoaded] = useState(false);
   const stepId = Number(params?.id) || 0;
   const planId = new URLSearchParams(window.location.search).get('plan');
 
-  useEffect(() => {
-    if (!session) return;
-    setRecordLoaded(false);
-    setRecord(null);
-    const request = planId ? loadAiQuestById(session.user.id, planId) : loadAiQuest(session.user.id);
-    void request.then(async ({ data: currentPlan }) => {
-      const selectedId = stepId || currentPlan?.steps.find((item) => item.state === 'active')?.id || 1;
-      if (!currentPlan) {
-        setStep(questSteps.find((item) => item.id === selectedId) ?? questSteps[0]);
-        setView('lesson');
-        setRecordLoaded(true);
-        return;
-      }
-      const normalized = normalizeQuestStep(currentPlan.steps.find((item) => item.id === selectedId) ?? currentPlan.steps[0]);
-      const immediate = normalized;
-      setPlan({ ...currentPlan, steps: currentPlan.steps.map((item) => item.id === immediate.id ? immediate : item) });
-      setStep(immediate);
-      setView(immediate.state === 'done' ? 'choice' : 'lesson');
-      const saved = await loadTaskRecord(session.user.id, currentPlan.goal, immediate.id);
-      setRecord(saved.data ?? null); setNotes(saved.data?.notes ?? ''); setChat(saved.data?.chat ?? []);
-      setRecordLoaded(true);
-      const learning = await loadQuestLearning(session.user.id, currentPlan.goal);
-      setLearningContext(learning.context);
-      setResourcesLoading(true);
-      const detailResult = await ensureQuestTaskDetails(session.user.id, currentPlan, selectedId);
-      const selected = detailResult.data ?? immediate;
-      setPlan({ ...currentPlan, steps: currentPlan.steps.map((item) => item.id === selected.id ? selected : item) });
-      setStep(selected);
-      setResourcesLoading(false);
-    });
-  }, [planId, session, stepId]);
+  const { plan, step, record, notes, setNotes, chat, setChat, learningContext, resourcesLoading,
+    lessonReady, lessonLoading, loadError, saveError, retry } = useQuestTask(session?.user.id, planId, stepId);
+  useEffect(() => { setView(step?.state === 'done' ? 'choice' : 'lesson'); }, [step?.id, plan?.id]);
 
-  useEffect(() => {
-    if (!session || !plan || !step || !recordLoaded) return;
-    const timer = window.setTimeout(() => {
-      void saveTaskRecord(session.user.id, plan.goal, step.id, { notes, chat });
-    }, 700);
-    return () => window.clearTimeout(timer);
-  }, [chat, notes, plan, recordLoaded, session, step]);
-
-  if (!step) return <main className="center-loader">Кью адаптирует задание под твою цель…</main>;
+  if (!step) return <main className="center-loader">{loadError || 'Кью адаптирует задание под твою цель…'}</main>;
   if (view === 'choice') return <CompletedTaskChoice step={step} record={record}
     onHistory={() => setView('history')} onReplay={() => {
       setView('lesson');
@@ -93,12 +50,13 @@ export function TaskPage() {
 
   const activeStep = step;
   const details = activeStep.details ?? defaultTaskDetails(activeStep);
-  const expectsVideo = /видео|video|youtube|прослушай/i.test(`${details.objective} ${details.checklist.map((item) => `${item.title} ${item.hint}`).join(' ')}`);
+  const savedNotes = readExerciseNotes(notes);
+  const mentorContext = `${JSON.stringify(details.lesson ?? {})}`;
   const total = plan?.steps.length ?? 10;
-  const taskContext = `Цель: ${plan?.goal || 'пройти квест'}. Задание: ${activeStep.title}. ${details.objective}`;
+  const taskContext = `Задание: ${activeStep.title}. Цель: ${plan?.goal || 'пройти квест'}. ${details.objective}`;
 
   async function finish() {
-    if (completing) return;
+    if (completing || lessonLoading || !details.lesson) return;
     setCompleting(true);
     setValidationResult(null);
     if (session && plan) {
@@ -122,17 +80,6 @@ export function TaskPage() {
     }
   }
 
-  async function findTaskVideo() {
-    if (!session || !plan || resourcesLoading) return;
-    setResourcesLoading(true);
-    const result = await ensureQuestTaskDetails(session.user.id, plan, activeStep.id);
-    if (result.data) {
-      setStep(result.data);
-      setPlan({ ...plan, steps: plan.steps.map((item) => item.id === result.data?.id ? result.data : item) });
-    }
-    setResourcesLoading(false);
-  }
-
   return <div className="task-page">
     <header className="task-topbar"><Link href={`/quest${plan ? `?plan=${plan.id}` : ''}`} className="back-link">← <span>К карте</span></Link>
       <div className="task-topbar__progress"><span>Этап {activeStep.id} из {total}</span>
@@ -143,27 +90,32 @@ export function TaskPage() {
       {view === 'history' && <div className="history-mode"><b>Сохранённые материалы прошлого прохождения</b>
         <button onClick={() => setView('lesson')}>Пройти заново</button></div>}
       <span className="task-label"><Icon name="sparkles" size={16} /> ПЕРСОНАЛЬНОЕ ЗАДАНИЕ ОТ КЬЮ</span>
-      <h1>{activeStep.title}</h1><p className="task-lead">{details.objective}</p>
+      <h1>{lessonReady ? activeStep.title : 'Твой урок'}</h1>
+      <p className="task-lead">{lessonReady ? details.objective : 'Видео, заметки и сохранённые ответы доступны, пока мы готовим перевод урока.'}</p>
       <div className="task-info"><span><Icon name="clock" size={18} />{details.duration_minutes} минут</span>
-        <span><Icon name="zap" size={18} />+{activeStep.xp} XP</span><span><Icon name="target" size={18} />{details.category}</span></div>
-      <TaskResources resources={details.resources} loading={resourcesLoading} expectsVideo={expectsVideo}
-        notes={notes} task={taskContext} chat={chat} readOnly={view === 'history'} onFindVideo={() => void findTaskVideo()}
+        <span><Icon name="zap" size={18} />+{activeStep.xp} XP</span><span><Icon name="target" size={18} />{lessonReady ? details.category : 'Урок'}</span></div>
+      <TaskResources language={settings?.language ?? 'ru'} resources={details.resources} loading={resourcesLoading || lessonLoading} expectsVideo={true}
+        notes={notes} task={taskContext} chat={chat} readOnly={view === 'history'}
         onNotes={setNotes} onChat={setChat} />
-      <section className="content-card"><h2>Что нужно сделать</h2><ol className="steps-list">
+      {loadError && <p role="alert">{loadError} Сохранённые задания остаются доступны. <button onClick={retry}>Попробовать снова</button></p>}
+      {!lessonReady ? <section className="content-card" role="status"><p>{lessonLoading ? 'Кью переводит урок на язык из настроек…' : 'Перевод пока недоступен. Сохранённый урок и твои ответы не удалены.'}</p></section> : details.lesson ? <TaskWorkbook lesson={details.lesson} notes={notes} readOnly={view === 'history'} onNotes={setNotes} />
+        : <section className="content-card"><p>{lessonLoading ? 'Кью готовит объяснение, примеры и упражнения…' : 'Полный урок ещё не загружен.'}</p>
+          <button disabled={lessonLoading} onClick={retry}>Подготовить урок</button></section>}
+      {details.checklist.length > 0 && <section className="content-card"><h2>Что нужно сделать</h2><ol className="steps-list">
         {details.checklist.map((item, index) => <li key={`${item.title}-${index}`}><span>{index + 1}</span>
-          <p><b>{item.title}</b><small><LinkedTaskText text={item.hint} /></small></p></li>)}</ol></section>
-      <section className="content-card"><h2>Заметки этого квеста</h2><textarea value={notes} readOnly={view === 'history'}
-        onChange={(event) => setNotes(event.target.value)} placeholder="Записывай сюда результаты именно этого задания…" />
-        <small className="autosave">{notes ? 'Сохранено внутри задания' : 'Не попадёт в личную записную книжку'}</small></section>
+          <p><b>{item.title}</b><small><LinkedTaskText text={item.hint} /></small></p></li>)}</ol></section>}
+      <section className="content-card"><h2>Заметки этого квеста</h2><textarea value={savedNotes.notes} readOnly={view === 'history'}
+        onChange={(event) => setNotes(writeExerciseNotes(event.target.value, savedNotes.answers, details.lesson))} placeholder="Записывай сюда результаты именно этого задания…" />
+        <small className="autosave">{saveError || 'Заметки и ответы автоматически сохраняются в задании'}</small></section>
       {session && plan && <section className="content-card"><TaskAttachments userId={session.user.id}
         planId={plan.id} stepId={activeStep.id} readOnly={view === 'history'} onChange={setAttachments} /></section>}
-      {view !== 'history' && <button className={`complete-button ${completing ? 'is-done' : ''}`} onClick={() => void finish()}>
+      {view !== 'history' && <button disabled={completing || !lessonReady || lessonLoading || !details.lesson} className={`complete-button ${completing ? 'is-done' : ''}`} onClick={() => void finish()}>
         <Icon name="check" />{completing ? 'Кью проверяет качество результата…' : activeStep.state === 'done' ? 'Завершить повтор' : 'Я выполнила задание'}</button>}
       {validationResult && !validationResult.passed && <TaskValidationResult result={validationResult} />}
-    </article><TaskMentor task={taskContext} notes={notes} learningContext={learningContext} readOnly={view === 'history'}
+    </article><TaskMentor task={taskContext} notes={notes} learningContext={`${learningContext}\nМатериал и упражнения текущего урока: ${mentorContext}`} readOnly={view === 'history'}
       initialMessages={chat} onMessages={setChat} /></main>
     {celebrating && <CompletionCelebration xp={rewardStats.xp} streak={rewardStats.streak}
       level={rewardStats.level} goal={plan?.goal || 'своей цели'}
-      onClose={() => navigate(`/quest${plan ? `?plan=${plan.id}` : ''}`)} />}
+      onClose={() => navigate(plan ? `/review/${plan.id}/${activeStep.id}` : '/quest')} />}
   </div>;
 }

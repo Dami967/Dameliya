@@ -1,29 +1,13 @@
-import { useEffect, useState } from 'react';
-import { loadProfile } from '../lib/userProfile';
+import { useState } from 'react';
+import { useMomentum } from '../lib/useMomentum';
 import { useSession } from '../lib/useSession';
 import { Icon } from './Icon';
 import { MomentumActionModal } from './MomentumActionModal';
 
 export function MomentumCard() {
   const { session } = useSession();
-  const [value, setValue] = useState(100);
-  const [updatedAt, setUpdatedAt] = useState(Date.now());
-  const [, tick] = useState(0);
+  const { value: regenerated, seconds } = useMomentum(session?.user.id);
   const [action, setAction] = useState<'quiz' | 'report' | null>(null);
-  useEffect(() => {
-    if (!session) return;
-    void loadProfile(session.user.id).then(({ data }) => {
-      if (data) { setValue(data.momentum); setUpdatedAt(new Date(data.momentum_updated_at).getTime()); }
-    });
-    const changed = (event: Event) => {
-      setValue((event as CustomEvent<number>).detail); setUpdatedAt(Date.now());
-    };
-    window.addEventListener('momentum-changed', changed);
-    const timer = window.setInterval(() => tick((current) => current + 1), 1000);
-    return () => { window.removeEventListener('momentum-changed', changed); window.clearInterval(timer); };
-  }, [session]);
-  const regenerated = Math.min(100, value + Math.floor((Date.now() - updatedAt) / 600000));
-  const seconds = Math.max(0, 600 - Math.floor((Date.now() - updatedAt) / 1000) % 600);
 
   return <div className="momentum-card">
     <div className="momentum-card__top"><span><Icon name="zap" size={17} /> Momentum</span><b>{regenerated}/100</b></div>
@@ -33,7 +17,6 @@ export function MomentumCard() {
       <button onClick={() => setAction('report')}>Отчёт +10</button></div>
     {action && session && <MomentumActionModal mode={action} userId={session.user.id} onClose={() => setAction(null)}
       onReward={(next) => {
-        setValue(next); setUpdatedAt(Date.now());
         window.dispatchEvent(new CustomEvent('momentum-changed', { detail: next }));
       }} />}
   </div>;

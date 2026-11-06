@@ -1,3 +1,5 @@
+import { DeveloperGamesPage } from './pages/DeveloperGamesPage';
+import { ReviewPage } from './pages/ReviewPage';
 import { Route, Switch } from 'wouter';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -35,6 +37,7 @@ export default function App() {
   return (
     <Switch>
       <Route path="/" component={RootPage} />
+      {import.meta.env.DEV && <Route path="/dev/games" component={DeveloperGamesPage} />}
       <Route path="/home" component={protectedPage(HomePage)} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/auth/callback" component={AuthCallbackPage} />
@@ -44,6 +47,7 @@ export default function App() {
       <Route path="/quest" component={protectedPage(QuestPage)} />
       <Route path="/notes/:id" component={protectedPage(NotesPage)} />
       <Route path="/notes" component={protectedPage(NotesPage)} />
+      <Route path="/review/:planId/:stepId" component={protectedPage(ReviewPage)} />
       <Route path="/task/:id" component={protectedPage(TaskPage)} />
       <Route path="/task" component={protectedPage(TaskPage)} />
       <Route path="/rewards" component={protectedPage(RewardsPage)} />

@@ -1,76 +1,66 @@
 import { useEffect, useState } from 'react';
 import { loadActiveQuest } from '../lib/activeQuest';
 import { loadHomeProgress } from '../lib/homeProgress';
-import { loadSettings } from '../lib/userProfile';
+import { loadSettings, type UserSettings } from '../lib/userProfile';
 import { showBrowserNotification } from '../lib/browserNotifications';
-import { playNotificationSound } from '../lib/notificationSound';
+import { isReminderTime } from '../lib/reminderSchedule';
+import { supabase } from '../lib/supabase';
 
-type ReminderManagerProps = { userId: string };
-
-export function ReminderManager({ userId }: ReminderManagerProps) {
+export function ReminderManager({ userId }: { userId: string }) {
   const [message, setMessage] = useState('');
-
   useEffect(() => {
-    let timer: number | undefined;
     let active = true;
-
-    async function scheduleReminder() {
-      window.clearTimeout(timer);
-      const { data: settings } = await loadSettings(userId);
-      if (!active || !settings?.reminders) return;
-      const delay = millisecondsUntil(settings.reminder_time);
-      timer = window.setTimeout(() => void showReminder(settings.push_notifications, settings.reminder_time), delay);
+    let checking = false;
+    let settings: UserSettings | null = null;
+    const shown = new Set<string>();
+    async function check() {
+      if (!active || checking || !settings?.reminders) return;
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      if (!isReminderTime(settings.reminder_time, now)) return;
+      const kind = settings.streak_notifications ? 'streak' : 'daily';
+      const key = `scheduled-${today}`;
+      if (shown.has(key)) return;
+      checking = true;
+      try {
+        const [progress, quest] = await Promise.all([loadHomeProgress(userId), loadActiveQuest(userId)]);
+        if (!active || !settings?.reminders || !isReminderTime(settings.reminder_time)) return;
+        if (progress.completedToday > 0) { shown.add(key); return; }
+        const step = quest.data?.steps.find((item) => item.state === 'active');
+        const title = kind === 'streak' && progress.streak > 0 ? `Сохрани серию: ${progress.streak} дн. 🔥` : 'Время для твоей цели';
+        const body = step ? `Продолжи «${step.title}». Даже небольшой шаг важен.` : 'Добавь цель и начни приключение.';
+        const path = step && quest.data ? `/task/${step.id}?plan=${quest.data.id}` : '/mentor?new=1';
+        const saved = await supabase.rpc('deliver_scheduled_reminder', {
+          p_date: today, p_title: title, p_body: body, p_link: path });
+        if (saved.error) return;
+        if (!saved.data) { shown.add(key); return; }
+        shown.add(key);
+        if (!active) return;
+        setMessage(`${title}. ${body}`);
+        window.dispatchEvent(new Event('goalquest-notifications-changed'));
+        if (settings.push_notifications) await showBrowserNotification(title, body, path, saved.data);
+      } catch { /* Retry on next tick when the connection returns. */ }
+      finally { checking = false; }
     }
-
-    async function showReminder(useNotification: boolean, reminderTime: string) {
-      const today = new Date().toLocaleDateString('en-CA');
-      const storageKey = `goalquest-reminder-${userId}-${today}`;
-      if (window.localStorage.getItem(storageKey)) {
-        timer = window.setTimeout(() => void showReminder(useNotification, reminderTime), millisecondsUntilTomorrow(reminderTime));
-        return;
-      }
-      const [progress, quest] = await Promise.all([loadHomeProgress(userId), loadActiveQuest(userId)]);
+    async function refresh() {
+      const result = await loadSettings(userId);
       if (!active) return;
-      timer = window.setTimeout(() => void showReminder(useNotification, reminderTime), millisecondsUntilTomorrow(reminderTime));
-      if (progress.completedToday > 0) return;
-      const activeStep = quest.data?.steps.find((step) => step.state === 'active');
-      const body = activeStep
-        ? `${progress.streak ? `Сохрани серию ${progress.streak} дн.! ` : ''}Продолжи урок «${activeStep.title}».`
-        : 'Создай первую цель и начни своё приключение.';
-      window.localStorage.setItem(storageKey, 'shown');
-      setMessage(body);
-      playNotificationSound();
-      if (useNotification) await showBrowserNotification('GoalQuest напоминает 🔥', body,
-        activeStep ? '/quest' : '/mentor', 'goalquest-daily');
+      settings = result.data;
+      void check();
     }
-
-    window.addEventListener('goalquest-settings-changed', scheduleReminder);
-    void scheduleReminder();
+    const tick = () => void check();
+    const refreshSettings = () => { void refresh().catch(() => {}); };
+    refreshSettings();
+    const timer = window.setInterval(tick, 60_000);
+    window.addEventListener('focus', tick);
+    document.addEventListener('visibilitychange', tick);
+    window.addEventListener('goalquest-settings-changed', refreshSettings);
     return () => {
-      active = false;
-      window.clearTimeout(timer);
-      window.removeEventListener('goalquest-settings-changed', scheduleReminder);
+      active = false; window.clearInterval(timer);
+      window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick);
+      window.removeEventListener('goalquest-settings-changed', refreshSettings);
     };
   }, [userId]);
-
-  if (!message) return null;
-  return <aside className="reminder-toast" role="status"><b>Пора сделать маленький шаг 🔥</b>
-    <span>{message}</span><button type="button" aria-label="Закрыть" onClick={() => setMessage('')}>×</button></aside>;
-}
-
-function millisecondsUntil(time: string) {
-  const [hours, minutes] = time.split(':').map(Number);
-  const now = new Date();
-  const target = new Date(now);
-  target.setHours(hours || 0, minutes || 0, 0, 0);
-  if (target <= now) target.setDate(target.getDate() + 1);
-  return target.getTime() - now.getTime();
-}
-
-function millisecondsUntilTomorrow(time: string) {
-  const [hours, minutes] = time.split(':').map(Number);
-  const target = new Date();
-  target.setDate(target.getDate() + 1);
-  target.setHours(hours || 0, minutes || 0, 0, 0);
-  return target.getTime() - Date.now();
+  return message ? <aside className="reminder-toast" role="status"><span>{message}</span>
+    <button aria-label="Закрыть" onClick={() => setMessage('')}>×</button></aside> : null;
 }

@@ -49,7 +49,7 @@ export function ProfileEditPage() {
           <h2>Основная информация</h2>
           <Field label="Имя" value={profile.display_name} onSave={(value) => save({ display_name: value })} />
           <Field label="Username" value={profile.username ?? ''} prefix="@" onSave={(value) => save({ username: value.replace(/^@/, '') })} />
-          <Field label="Bio" value={profile.bio} multiline onSave={(value) => save({ bio: value })} />
+          <Field label="О себе" value={profile.bio} multiline onSave={(value) => save({ bio: value })} />
           <div className="field-pair">
             <Field label="Возраст" value={profile.age?.toString() ?? ''} type="number" onSave={(value) => save({ age: Number(value) || null })} />
             <Field label="Страна" value={profile.country} onSave={(value) => save({ country: value })} />
@@ -69,8 +69,8 @@ type FieldProps = { label: string; value: string; prefix?: string; multiline?: b
 function Field({ label, value, prefix, multiline, type = 'text', onSave }: FieldProps) {
   const [draft, setDraft] = useState(value);
   const input = multiline
-    ? <textarea value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => onSave(draft)} />
-    : <input type={type} value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => onSave(draft)} />;
+    ? <textarea aria-label={label} value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => onSave(draft)} />
+    : <input aria-label={label} type={type} value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => onSave(draft)} />;
   return <label className="edit-field">{label}<span>{prefix}{input}</span></label>;
 }
 function split(value: string) { return value.split(',').map((item) => item.trim()).filter(Boolean); }

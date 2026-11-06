@@ -4,7 +4,9 @@ import type { AiAttachment } from '../lib/aiAttachments';
 import type { TaskChatMessage } from '../lib/taskRecords';
 import { AiComposer } from './AiComposer';
 import { Icon } from './Icon';
-import { compactMentorReply, conciseMentorRules } from '../lib/mentorStyle';
+import { LearningText } from './LearningText';
+import { standaloneTaskRules } from '../lib/taskLesson';
+import { readableExerciseNotes } from '../lib/exerciseAnswers';
 import { detectLanguage, languageName } from '../lib/languages';
 
 export function TaskMentor({ task, notes, learningContext = '', initialMessages = [], readOnly = false, onMessages }: {
@@ -29,7 +31,7 @@ export function TaskMentor({ task, notes, learningContext = '', initialMessages 
     const answerLanguage = languageName(detectLanguage());
     const result = await askAi(
       `Задание: ${task}
-Заметки пользователя: ${notes || 'пока пусто'}
+Заметки пользователя: ${readableExerciseNotes(notes) || 'пока пусто'}
 История заметок и разговоров из всех пройденных этапов:
 ${learningContext || 'пройденных этапов пока нет'}
 Предыдущий разговор:
@@ -38,11 +40,12 @@ ${conversation || 'разговора ещё не было'}
       `Ты Кью, AI-наставник GoalQuest. Изучи приложенные фото, файлы или голосовое, если они есть.
 Помоги выполнить только текущее задание этой карты, но не делай всю работу вместо пользователя.
 Не переключайся на другие цели пользователя, если он сам об этом не попросил.
-Всегда отвечай на языке ${answerLanguage}. ${conciseMentorRules}`,
+Всегда отвечай на языке ${answerLanguage}. ${standaloneTaskRules}
+Если просят примеры, дай конкретные условия, затем понятный пошаговый разбор одного примера. Не обрезай объяснения. Отвечай кратко, но полно, до 350 слов. Каждый пример — отдельный абзац.`,
       attachments,
       true,
     );
-    append({ role: 'q', text: compactMentorReply(result.text ?? result.error.message) });
+    append({ role: 'q', text: result.text ?? result.error.message });
     setBusy(false);
   }
 
@@ -58,7 +61,7 @@ ${conversation || 'разговора ещё не было'}
     <div className="ai-panel__head"><span className="mentor-avatar">AI</span>
       <div><h3>Кью · AI-наставник</h3><small><i /> {readOnly ? 'Сохранённый разговор' : 'Учитывает текущее задание'}</small></div></div>
     <div className="ai-chat">{messages.map((message, index) =>
-      <div className={message.role === 'q' ? 'ai-bubble' : 'user-bubble'} key={`${message.text}-${index}`}>{message.text}</div>)}
+      <div className={message.role === 'q' ? 'ai-bubble' : 'user-bubble'} key={`${message.text}-${index}`}><LearningText text={message.text} /></div>)}
       {busy && <div className="ai-bubble">Кью думает…</div>}
     </div>
     {!readOnly && <><div className="quick-prompts">

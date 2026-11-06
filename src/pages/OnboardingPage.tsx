@@ -1,3 +1,4 @@
+import { GoalInput } from '../components/GoalInput';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Icon } from '../components/Icon';
@@ -50,6 +51,7 @@ export function OnboardingPage() {
 
   async function finish() {
     if (!session) return navigate('/auth?mode=signup&entry=app');
+    if (!answers.goal?.trim()) return setMessage('Выбери или напиши цель, чтобы Кью создал маршрут.');
     setSaving(true);
     await saveSettings(session.user.id, { language });
     const { error } = await saveProfile(session.user.id, {
@@ -71,7 +73,8 @@ export function OnboardingPage() {
     if (answers.goal?.trim()) {
       setSaving(true);
       setMessage('Кью создаёт первую персональную карту…');
-      await createAiQuest(session.user.id, answers.goal.trim(), buildAiPreferences(answers));
+      const created = await createAiQuest(session.user.id, answers.goal.trim(), buildAiPreferences(answers));
+      if (created.error) { setSaving(false); setMessage(created.error.message); return; }
       setSaving(false);
     }
     navigate('/home');
@@ -104,7 +107,9 @@ export function OnboardingPage() {
         <span className="step-count">{copy.step} {step + 1} / {steps.length}</span>
         <h2>{copy.titles[step + 1]}</h2><p>{copy.texts[step + 1]}</p>
         <div className="interview-fields">
-          {steps[step].map((key, index) => key === 'country'
+          {steps[step].map((key, index) => key === 'goal'
+            ? <GoalInput key={key} value={answers.goal ?? ''} onChange={(goal) => setAnswers({ ...answers, goal })} />
+            : key === 'country'
             ? <CountrySelect key={key} language={language} value={answers.country ?? ''}
               label={copy.labels[fieldOffsets[step] + index]}
               onChange={(country) => setAnswers({ ...answers, country })} />

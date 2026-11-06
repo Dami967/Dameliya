@@ -1,50 +1,30 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { AppShell } from '../components/AppShell';
 import { SettingsRow, SettingsSection, Toggle } from '../components/SettingsUi';
 import { supabase } from '../lib/supabase';
 import { useSession } from '../lib/useSession';
-import { loadSettings, saveProfile, saveSettings, type UserSettings } from '../lib/userProfile';
+import { saveProfile, saveSettings, type UserSettings } from '../lib/userProfile';
 import { appLanguages, rememberLanguage } from '../lib/languages';
 import { AccountActionDialog, type AccountAction } from '../components/AccountActionDialog';
 import { requestNotificationPermission, showBrowserNotification } from '../lib/browserNotifications';
 import { playNotificationSound, unlockNotificationSound } from '../lib/notificationSound';
-import { cachedSettings, cacheSettings } from '../lib/settingsCache';
+import { cacheSettings } from '../lib/settingsCache';
+import { useSettings } from '../lib/useSettings';
 
 export function SettingsPage() {
   const { session } = useSession();
-  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const { settings, setSettings, loadError, retry, markEdited } = useSettings(session?.user.id);
   const [message, setMessage] = useState('');
   const [accountAction, setAccountAction] = useState<AccountAction | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
   const [accountError, setAccountError] = useState('');
-  const settingsRevision = useRef(0);
   const [, navigate] = useLocation();
-
-  useEffect(() => {
-    if (session) {
-      let activeRequest = true;
-      const requestRevision = settingsRevision.current;
-      setSettings(null);
-      const cached = cachedSettings(session.user.id);
-      setSettings(cached);
-      void loadSettings(session.user.id).then(({ data }) => {
-      if (!activeRequest || requestRevision !== settingsRevision.current) return;
-      setSettings(data);
-      if (data) {
-        cacheSettings(data);
-        applyTheme(data.theme);
-        rememberLanguage(data.language);
-      }
-    });
-      return () => { activeRequest = false; };
-    }
-  }, [session]);
 
   async function update(changes: Partial<UserSettings>) {
     if (!session || !settings) return;
     const next = { ...settings, ...changes };
-    if (changes.language) settingsRevision.current += 1;
+    markEdited();
     setSettings(next);
     cacheSettings(next);
     if (changes.theme) applyTheme(changes.theme);
@@ -121,11 +101,15 @@ export function SettingsPage() {
     await saveProfile(session.user.id, { onboarding_completed: false });
     navigate('/onboarding');
   }
-  if (!session || !settings) return <main className="center-loader">Загружаем настройки…</main>;
+  if (!session || !settings) return <AppShell><div className="center-loader">
+    {loadError ? <div role="alert"><p>{loadError}</p><button onClick={retry}>Попробовать снова</button></div>
+      : 'Загружаем настройки…'}
+  </div></AppShell>;
   return (
     <AppShell>
       <header className="page-header"><div><span className="eyebrow">GOALQUEST</span><h1>Настройки</h1>
         <p>Управляй аккаунтом и настрой приложение под себя.</p></div><span className="save-status">{message}</span></header>
+      {loadError && <p role="alert">{loadError} <button onClick={retry}>Попробовать снова</button></p>}
       <div className="settings-layout">
         <SettingsSection icon="user" title="Аккаунт">
           <SettingsRow title="Изменить email" detail={session.user.email ?? 'Гостевой аккаунт'} onClick={() => openAccountAction('email')} />
@@ -146,6 +130,11 @@ export function SettingsPage() {
             </select>} />
         </SettingsSection>
         <SettingsSection icon="bell" title="Уведомления">
+          <p className="notification-help">Одно напоминание в выбранное время, пока приложение открыто. Без повторов в течение дня.</p>
+          <SettingsRow title="Сохранить серию" detail="В выбранное время, если серия может прерваться" trailing={<Toggle checked={settings.streak_notifications ?? true}
+            onChange={(streak_notifications) => update({ streak_notifications })} />} />
+          <SettingsRow title="Достижения" detail="Результаты этапов сохраняются в колокольчике без звука" trailing={<Toggle checked={settings.achievement_notifications ?? true}
+            onChange={(achievement_notifications) => update({ achievement_notifications })} />} />
           <SettingsRow title="Напоминания" trailing={<Toggle checked={settings.reminders}
             onChange={(reminders) => void changeReminders(reminders)} />} />
           <SettingsRow title="Время напоминания" detail="По времени на этом устройстве" trailing={

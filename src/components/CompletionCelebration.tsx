@@ -24,7 +24,7 @@ export function CompletionCelebration({ xp, streak, level, goal, onClose }: Comp
           <div><Icon name="flame" /><b>{streak} дн.</b><small>Серия</small></div>
           <div><Icon name="star" /><b>Уровень {level}</b><small>Текущий уровень</small></div>
         </div>
-        <button onClick={onClose}>Продолжить путь <Icon name="arrow" size={18} /></button>
+        <button onClick={onClose}>Закрепить в игре <Icon name="arrow" size={18} /></button>
       </section>
     </div>
   );

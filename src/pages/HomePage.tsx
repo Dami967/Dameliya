@@ -1,3 +1,4 @@
+import { ProgressSummary } from '../components/ProgressSummary';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { AppShell } from '../components/AppShell';
@@ -77,8 +78,8 @@ export function HomePage() {
         <div className="top-stats">
           <UserBalance />
           {session && <NotificationBell userId={session.user.id} />}
-          <div className="avatar">{profile?.avatar_url
-            ? <img src={profile.avatar_url} alt="" /> : userName[0]?.toUpperCase() || 'G'}</div>
+          <Link href="/profile" className="avatar" aria-label="Открыть профиль">{profile?.avatar_url
+            ? <img src={profile.avatar_url} alt="" /> : userName[0]?.toUpperCase() || 'G'}</Link>
         </div>
       </header>
 
@@ -120,6 +121,7 @@ export function HomePage() {
         </div>
       </section>
 
+      {plan && <ProgressSummary plan={plan} totalPlans={plans.length} />}
       <QuickActions />
       <div className="home-overview">
         <TodayTasks plan={plan} />
@@ -146,11 +148,11 @@ export function HomePage() {
             <div className="streak-freezes"><b>❄ Осталось {progress.freezesRemaining} из 5 заморозок</b>
               <span>{progress.freezesUsed} использовано в этом месяце</span></div>
           </section>
-          <section className="mentor-mini">
+          <Link href="/mentor?new=1" className="mentor-mini" aria-label="Добавить цель с ИИ-наставником">
             <span className="mentor-avatar">AI</span>
             <div><b>Нужна помощь?</b><p>Твой AI-наставник всегда рядом</p></div>
-            <Link href="/mentor" aria-label="Открыть чат с AI"><Icon name="message" size={21} /></Link>
-          </section>
+            <span><Icon name="message" size={21} /></span>
+          </Link>
       </aside>
     </AppShell>
   );

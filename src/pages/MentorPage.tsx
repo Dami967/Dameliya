@@ -1,3 +1,4 @@
+import { GoalInput } from '../components/GoalInput';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AiComposer } from '../components/AiComposer';
@@ -20,7 +21,7 @@ export function MentorPage() {
   const [goal, setGoal] = useState('');
   const [request, setRequest] = useState('');
   const [busy, setBusy] = useState(false);
-  const [mode, setMode] = useState<'add' | 'edit' | null>(null);
+  const [mode, setMode] = useState<'add' | 'edit' | null>('add');
   const [plans, setPlans] = useState<AiQuestPlan[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([{ role: 'q', text: mentorGreeting(detectLanguage()) }]);
@@ -57,28 +58,32 @@ export function MentorPage() {
     setMessages([{ role: 'q', text: `Давай изменим цель «${plan.goal}». Расскажи, что тебя не устраивает и какой результат ты хочешь получить.` }]);
   }
   async function adaptMap() {
-    if (!session || goal.trim().length < 2) return;
+    if (busy || goal.trim().length < 2) return;
+    if (!session) { setMessages((old) => [...old, { role: 'q', text: 'Войди в аккаунт, чтобы сохранить новую цель.' }]); return; }
     const discussion = messages.filter((message) => message.role === 'user').map((message) => message.text).join('\n');
     if (editingId && !discussion) return;
     setBusy(true);
-    let nextGoal = goal.trim();
-    let adaptationRequest = request.trim();
-    if (editingId) {
-      const summary = await askAi(`Текущая цель: ${goal}. Обсуждение изменений:\n${discussion}\n
-Верни JSON: {"goal":"обновлённая конкретная цель","request":"все требования пользователя к новой карте"}.`,
-      'Ты превращаешь обсуждение пользователя с наставником в точную цель и требования. Не добавляй пожелания от себя. Только валидный JSON.', [], false, true);
-      try {
-        const parsed = parseAiJson<{ goal?: unknown; request?: unknown }>(summary.text ?? '');
-        if (typeof parsed.goal === 'string' && parsed.goal.trim()) nextGoal = parsed.goal.trim();
-        if (typeof parsed.request === 'string') adaptationRequest = parsed.request.trim();
-      } catch { adaptationRequest = discussion; }
-    }
-    setMessages((old) => [...old, { role: 'user', text: 'Адаптируй карту по нашему обсуждению.' }]);
-    const { data, error } = await createAiQuest(session.user.id, nextGoal,
-      adaptationRequest || discussion, editingId ?? undefined);
-    setMessages((old) => [...old, { role: 'q', text: error ? error.message : `Готово! Я создал карту «${data?.map_title}» из 10 шагов.` }]);
-    setBusy(false);
-    if (data && !error) { rememberActiveQuest(data.id); navigate(`/quest?plan=${data.id}`); }
+    try {
+      let nextGoal = goal.trim();
+      let adaptationRequest = request.trim();
+      if (editingId) {
+        const summary = await askAi(`Текущая цель: ${goal}. Обсуждение изменений:\n${discussion}\n
+  Верни JSON: {"goal":"обновлённая конкретная цель","request":"все требования пользователя к новой карте"}.`,
+        'Ты превращаешь обсуждение пользователя с наставником в точную цель и требования. Не добавляй пожелания от себя. Только валидный JSON.', [], false, true);
+        try {
+          const parsed = parseAiJson<{ goal?: unknown; request?: unknown }>(summary.text ?? '');
+          if (typeof parsed.goal === 'string' && parsed.goal.trim()) nextGoal = parsed.goal.trim();
+          if (typeof parsed.request === 'string') adaptationRequest = parsed.request.trim();
+        } catch { adaptationRequest = discussion; }
+      }
+      setMessages((old) => [...old, { role: 'user', text: 'Адаптируй карту по нашему обсуждению.' }]);
+      const { data, error } = await createAiQuest(session.user.id, nextGoal,
+        adaptationRequest || discussion, editingId ?? undefined);
+      setMessages((old) => [...old, { role: 'q', text: error ? error.message : `Готово! Я создал карту «${data?.map_title}» из 10 шагов.` }]);
+      if (data && !error) { rememberActiveQuest(data.id); navigate(`/quest?plan=${data.id}`); }
+    } catch {
+      setMessages((old) => [...old, { role: 'q', text: 'Не удалось создать карту. Проверь интернет и попробуй ещё раз.' }]);
+    } finally { setBusy(false); }
   }
   async function send(text: string, attachments: AiAttachment[] = []) {
     if (!text || busy) return;
@@ -109,7 +114,7 @@ export function MentorPage() {
         className={editingId === plan.id ? 'is-active' : ''} key={plan.id} onClick={() => {
           selectPlanForEdit(plan);
         }}>{plan.goal}</button>)}</div>}
-      {mode === 'add' && <><textarea value={goal} onChange={(event) => setGoal(event.target.value)} placeholder="Например: подготовиться к IELTS за 4 месяца" maxLength={300} />
+      {mode === 'add' && <><GoalInput value={goal} onChange={setGoal} />
       <label>Как адаптировать маршрут?<textarea value={request} onChange={(event) => setRequest(event.target.value)} placeholder="У меня есть 30 минут в день, добавь больше практики…" /></label>
       <button className="social-primary" disabled={busy || goal.trim().length < 2} onClick={() => void adaptMap()}><Icon name="sparkles" size={17} />{busy ? 'Q создаёт карту…' : 'Создать новую карту'}</button>
       <small>Новая карта появится после подтверждения.</small></>}

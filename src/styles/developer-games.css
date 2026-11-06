@@ -1,0 +1,9 @@
+.developer-games{max-width:850px;margin:auto;padding:32px 20px 100px;color:var(--ink)}
+.developer-games header{margin:26px 0}.developer-games h1{margin:10px 0;font-size:30px}
+.developer-games header p{line-height:1.6}.developer-games header small{color:var(--muted)}
+.developer-games__tabs{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.developer-games__tabs button{min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;color:inherit;font:inherit;cursor:pointer}
+.developer-games__tabs button[aria-pressed=true]{border-color:var(--blue);background:var(--blue);color:#fff}
+.developer-games__reset{margin-top:20px;min-height:44px}
+.developer-games .reward-stop{width:100%}.developer-preview-link{display:block;margin:12px 0;padding:12px 16px;border:1px dashed var(--blue);border-radius:12px;color:var(--blue);background:#f0f4ff;text-decoration:none;font-size:14px}
+@media(max-width:600px){.developer-games__tabs button{flex:1;font-size:14px}.developer-games h1{font-size:25px}}

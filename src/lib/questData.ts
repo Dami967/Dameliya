@@ -1,3 +1,5 @@
+import type { TaskLesson } from './taskLesson';
+
 export type QuestStep = {
   id: number;
   title: string;
@@ -9,6 +11,8 @@ export type QuestStep = {
 };
 
 export type QuestTaskDetails = {
+  language?: string;
+  lesson?: TaskLesson;
   objective: string;
   expected_answer: string;
   checklist: Array<{ title: string; hint: string }>;
@@ -18,6 +22,7 @@ export type QuestTaskDetails = {
 };
 
 export type QuestResource = {
+  language?: string;
   type: 'video' | 'article' | 'test';
   title: string;
   url: string;

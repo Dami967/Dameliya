@@ -1,0 +1,67 @@
+.learning-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
+.task-workbook { display: grid; gap: 18px; }
+.task-workbook h3, .task-workbook h4, .task-workbook p { margin: 0; }
+.workbook-theory, .workbook-example, .workbook-exercise { padding: 20px; border: 1px solid var(--border, #e2e6f2); border-radius: 16px; }
+.workbook-theory { background: var(--surface, #f7f8fd); }
+.workbook-theory h3 { margin-bottom: 12px; }
+.workbook-example li { margin: 10px 0; }
+.workbook-exercise label { display: grid; gap: 10px; }
+.workbook-exercise textarea { margin: 12px 0; min-height: 100px; }
+.workbook-exercise summary { cursor: pointer; color: var(--blue); margin-bottom: 8px; }
+.task-workbook small { color: var(--muted); }
+.workbook-tabs, .exercise-navigation { display: flex; gap: 8px; }
+.workbook-tabs button, .exercise-navigation button { min-height: 44px; padding: 10px; border: 1px solid var(--line); background: #f4f5fc; color: var(--ink); border-radius: 12px; }
+.workbook-tabs button { flex: 1; }
+.workbook-tabs button[aria-pressed='true'], .exercise-navigation button[aria-pressed='true'] { background: var(--blue); color: white; }
+.workbook-theory { max-width: 65ch; font-size: 16px; }
+.workbook-example summary { cursor: pointer; font-weight: 700; min-height: 32px; }
+.task-workbook .primary-button { justify-self: start; min-height: 44px; }
+.video-fallback a { color: var(--blue); padding: 10px; }
+@media (max-width: 700px) {
+  .task-layout { display: block; padding: 16px 12px 90px; }
+  .task-workbook { padding: 16px; gap: 14px; }
+  .workbook-theory, .workbook-example, .workbook-exercise { padding: 14px; }
+  .workbook-theory, .workbook-example, .workbook-exercise { font-size: 15px; }
+  .task-workbook textarea { font-size: 16px; }
+  .workbook-tabs button { font-size: 12px; padding: 8px 4px; }
+  .video-lesson-backdrop { padding: 8px; }
+  .video-lesson-layout { grid-template-columns: minmax(0, 1fr); padding: 10px; }
+  .task-resources article { flex-wrap: wrap; }
+  .task-resources article button { min-height: 44px; }
+  .task-layout > .ai-panel { position: static; margin-top: 20px; }
+}
+[data-theme='dark'] .workbook-theory { background: #252e46; }
+.goal-input { display: grid; gap: 12px; }
+.goal-input label { display: grid; gap: 8px; }
+.goal-subjects { display: flex; gap: 8px; flex-wrap: wrap; }
+.goal-subjects button { min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); background: #f5f6fc; color: var(--ink); border-radius: 12px; }
+.goal-subjects button[aria-pressed='true'] { color: white; background: var(--blue); }
+.goal-input textarea, .goal-input input { width: 100%; min-height: 48px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; font-size: 16px; }
+.goal-progress-panel { margin: 16px 0; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface, #fff); }
+.goal-progress-panel h3 { margin: 0 0 12px; }
+.goal-progress-numbers { display: flex; gap: 16px; flex-wrap: wrap; }
+.goal-progress-numbers span { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.goal-progress-numbers b { font-size: 20px; color: var(--ink); }
+.goal-progress-panel details { margin-top: 16px; }
+.completed-skill { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; }
+.completed-skill a { flex-shrink: 0; color: var(--blue); }
+.expedition-checkpoints { margin: 20px 0; }
+.expedition-checkpoints > div { display: flex; gap: 12px; overflow: auto; padding: 5px; }
+.checkpoint { display: grid; gap: 8px; min-width: 100px; padding: 14px; border-radius: 14px; color: var(--blue); background: #f0f3ff; text-align: center; }
+.checkpoint > span { font-size: 32px; }.checkpoint.is-locked { color: var(--muted); background: #f2f2f6; }
+.review-page { max-width: 760px; margin: auto; }
+.review-game { display: grid; gap: 20px; }
+.review-options { display: grid; gap: 10px; }
+.review-options button, .review-navigation button { padding: 14px; min-height: 48px; border: 1px solid var(--line); border-radius: 12px; background: #f5f6fc; color: var(--ink); text-align: left; }
+.review-options button[aria-pressed='true'] { background: #dce6ff; border-color: var(--blue); }
+.review-options button:disabled { opacity: 1; }.review-navigation { display: flex; justify-content: space-between; gap: 12px; }
+@media (max-width: 700px) {
+  .completed-skill { align-items: flex-start; font-size: 13px; }
+  .goal-progress-panel { padding: 14px; }
+  .review-options button { font-size: 16px; }
+}
+
+.review-options button.is-correct,.review-options button.is-correct[aria-pressed=true]{background:#e7f7ed;border-color:#269b58;color:#186639}
+.review-options button.is-incorrect,.review-options button.is-incorrect[aria-pressed=true]{background:#fdebec;border-color:#d94b54;color:#a5222d}
+.review-options button.is-correct::after{content:' ✓';font-weight:800}
+.review-options button.is-incorrect::after{content:' ✕';font-weight:800}

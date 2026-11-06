@@ -1,3 +1,7 @@
+import { matchesLessonScope } from './videoScope.ts';
+import { matchesTargetLanguage, matchesSpokenLanguage, requestedVideoLanguage } from './videoLanguage.ts';
+import { videoSearchQuery } from './videoQuery.ts';
+
 export type VideoCandidate = {
   videoId: string;
   title: string;
@@ -19,7 +23,7 @@ const ignoredWords = new Set([
 ]);
 
 function collectVideos(value: unknown, videos: VideoCandidate[]) {
-  if (!value || typeof value !== 'object' || videos.length >= 16) return;
+  if (!value || typeof value !== 'object' || videos.length >= 40) return;
   const object = value as Record<string, unknown>;
   const renderer = object.videoRenderer as Record<string, unknown> | undefined;
   const title = renderer?.title as { runs?: Array<{ text?: unknown }> } | undefined;
@@ -53,21 +57,26 @@ function relevanceScore(query: string, video: Pick<VideoCandidate, 'title' | 'ch
   return matches * 5 + educational - unrelatedMusic;
 }
 
-export async function searchVideos(query: string, excludedVideoId = '') {
+export async function searchVideos(query: string, excludedVideoId = '', excludedVideoIds: string[] = []) {
+  const musicalTopic = /музык|песн|гитар|пианино|фортепиано|вокал|music|sing|guitar|piano/i.test(query);
   const search = await fetch('https://www.youtube.com/youtubei/v1/search?prettyPrint=false', {
+    signal: AbortSignal.timeout(12_000),
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ context: { client: { clientName: 'WEB',
-      clientVersion: '2.20260730.00.00', hl: 'ru', gl: 'KZ' } },
-      query: `${query} обучение урок -music -song -клип` }),
+      clientVersion: '2.20260730.00.00', hl: requestedVideoLanguage(query) || 'ru', gl: 'KZ' } },
+      query: `${videoSearchQuery(query)} ${requestedVideoLanguage(query) ? `language ${requestedVideoLanguage(query)}` : ''} ${excludedVideoIds.length % 2 ? 'объяснение примеры' : 'урок'}${musicalTopic ? '' : ' -music -song -клип'}` }),
   });
   if (!search.ok) return [];
   const candidates: VideoCandidate[] = [];
   collectVideos(await search.json(), candidates);
-  const ranked = candidates.filter((video) => video.videoId !== excludedVideoId)
+  const ranked = candidates.filter((video) => video.videoId !== excludedVideoId && !excludedVideoIds.includes(video.videoId))
+    .filter((video) => matchesLessonScope(query, video.title))
+    .filter((video) => matchesSpokenLanguage(query, video.title))
+    .filter((video) => matchesTargetLanguage(query, video.title, video.channel))
     .filter((video) => !/минут|час|minute|hour/i.test(video.published))
     .map((video) => ({ ...video, score: relevanceScore(query, video) }))
-    .filter((video) => video.score >= 0).sort((a, b) => b.score - a.score);
-  return ranked.slice(0, 8);
+    .filter((video) => video.score >= 5).sort((a, b) => b.score - a.score);
+  return ranked.slice(0, 16);
 }
 
 export function videoResult(video: VideoCandidate, query: string): YoutubeVideoResult {

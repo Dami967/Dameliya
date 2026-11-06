@@ -1,3 +1,4 @@
+import { LearningText } from './LearningText';
 import { useEffect, useState } from 'react';
 import { askAi } from '../lib/ai';
 import type { QuestResource } from '../lib/questData';
@@ -38,7 +39,7 @@ export function TaskMaterial({ resource, task, onClose }: {
     <header><button type="button" onClick={onClose}>← Назад к заданию</button><span>МАТЕРИАЛ ОТ КЬЮ</span></header>
     <div className="task-material__body"><span className="task-material__icon">✦</span>
       <h2>{resource.title}</h2><p className="task-material__intro">{resource.description}</p>
-      {content ? <div className="task-material__content">{content}</div>
+      {content ? <div className="task-material__content"><LearningText text={content} /></div>
         : <p className="task-material__loading">Кью готовит материал…</p>}
     </div>
   </section></div>;

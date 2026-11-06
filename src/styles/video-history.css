@@ -1,0 +1,20 @@
+.video-history { display: flex; justify-content: center; align-items: center; gap: 16px; margin-bottom: 12px; }
+.video-history button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 12px; color: var(--blue); background: #fff; font-size: 22px; }
+.video-history button:disabled { opacity: .4; cursor: default; }
+.video-history span { color: var(--muted); font-size: 14px; }
+.video-frame > p { display: grid; place-content: center; height: 100%; margin: 0; padding: 24px; color: #fff; text-align: center; }
+.map-practice-stop { display: grid; gap: 12px; padding: 18px; margin: 14px 0; border: 1px solid var(--line); border-radius: 18px; background: var(--surface, #fff); }
+.map-practice-stop b { font-size: 15px; }.map-practice-stop p { margin: 5px 0 0; font-size: 12px; color: var(--muted); }
+.map-practice-stop label { display: grid; gap: 6px; font-size: 12px; }
+.map-practice-stop select { width: 100%; padding: 10px; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--ink); }
+.map-practice-actions { display: flex; gap: 10px; }
+.map-practice-actions a, .map-practice-actions button { flex: 1; min-height: 44px; padding: 12px; border: 0; border-radius: 12px; color: var(--blue); background: #edf1ff; text-align: center; font-size: 13px; }
+.map-practice-actions button:disabled { color: var(--muted); background: #f0f1f6; }
+[data-theme='dark'] .map-practice-stop { background: #252e46; }
+.lesson-player { position: relative; width: 100%; height: 100%; }
+.lesson-player__frame { width: 100%; height: 100%; }
+.lesson-player__play { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); border: 0; border-radius: 12px; padding: 12px 20px; background: var(--blue); color: white; font-weight: 700; white-space: nowrap; }
+.lesson-player__message { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 10px; padding: 20px; background: #202944; color: white; text-align: center; }
+.lesson-player__message p { flex-basis: 100%; font-size: 14px; line-height: 1.5; }
+.lesson-player__message button { border: 0; border-radius: 10px; padding: 10px; color: white; background: var(--blue); }
+.lesson-player__browser { display: inline-flex; align-items: center; padding: 10px; border-radius: 10px; color: white; background: var(--blue); font-size: 14px; text-decoration: none; }

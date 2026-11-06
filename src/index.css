@@ -22,3 +22,7 @@
 @import './styles/ai-composer.css';
 @import './styles/quest-mobile.css';
 @import './styles/mobile-polish.css';
+
+@import './styles/task-workbook.css';
+@import './styles/progress-summary.css';
+@import './styles/video-history.css';

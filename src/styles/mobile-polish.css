@@ -60,3 +60,9 @@
   .hero-quest-switcher{display:none}
   .hero-card .hero-quest-actions .primary-button{width:100%;margin-top:0}
 }
+
+@media(max-width:920px){
+  .notification-bell__button{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+  .notification-bell__button:active{cursor:grabbing}
+  .notification-panel{max-height:calc(100dvh - 160px);overflow-y:auto}
+}

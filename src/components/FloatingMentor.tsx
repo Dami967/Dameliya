@@ -1,5 +1,7 @@
+import { welcome, fallback } from '../lib/mentorMessages';
+import { Link } from 'wouter';
 import { useEffect, useRef, useState } from 'react';
-import { detectLanguage, languageName } from '../lib/languages';
+import { detectLanguage, hasRememberedLanguage, languageName } from '../lib/languages';
 import { askAi } from '../lib/ai';
 import type { AiAttachment } from '../lib/aiAttachments';
 import { loadSettings } from '../lib/userProfile';
@@ -18,12 +20,16 @@ export function FloatingMentor() {
   const [answer, setAnswer] = useState('');
   const [busy, setBusy] = useState(false);
   const [position, setPosition] = useState(readMentorPosition);
+  const suppressClick = useRef(false);
   const drag = useRef<{ startX: number; startY: number; x: number; y: number; moved: boolean } | null>(null);
 
   useEffect(() => {
     if (!session) return;
     void loadSettings(session.user.id).then(({ data }) => {
-      if (data?.language) setLanguage(data.language);
+      // Do not reset a language the user already selected in this browser.
+      // This request can finish exactly when the mentor card is opened and
+      // used to make the whole mentor screen jump back to Russian.
+      if (data?.language && !hasRememberedLanguage()) setLanguage(data.language);
     });
   }, [session]);
   useEffect(() => {
@@ -62,6 +68,7 @@ Current step: ${plan.steps.find((step) => step.state === 'active')?.title || 'no
 Focus only on this map. Do not replace it with another user goal unless the user explicitly asks to switch.\n` : '';
     const result = await askAi(`${interview}\n${context}${text.trim()}`, `You are Q, a kind GoalQuest mentor for self-development. Always answer in ${selectedLanguage}.
 ${conciseMentorRules}
+You cannot save or create goals in this chat. When asked to add a goal, explain that the user should tap «Новая цель» and confirm creation in the form. Never claim a goal was saved.
 Never add combat or gambling mechanics. Do not claim professional medical, legal or financial expertise.
 The current map in the prompt always has priority over interests and other goals from the interview.
 Understand attached images, documents and voice messages when present.`, attachments, true);
@@ -70,6 +77,7 @@ Understand attached images, documents and voice messages when present.`, attachm
   }
 
   function startDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    suppressClick.current = false;
     const rect = event.currentTarget.parentElement?.getBoundingClientRect();
     drag.current = { startX: event.clientX, startY: event.clientY,
       x: rect?.left ?? 0, y: rect?.top ?? 0, moved: false };
@@ -87,14 +95,14 @@ Understand attached images, documents and voice messages when present.`, attachm
   function stopDrag() {
     const moved = drag.current?.moved;
     drag.current = null;
-    if (!moved) setIsOpen((value) => !value);
+    if (moved) suppressClick.current = true;
   }
 
   return (
     <div className={`floating-mentor ${isOpen ? 'is-open' : ''}`}
       style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}>
       {isOpen && <section className="mentor-popover">
-        <header><img src="/goalquest-eagle-quest.png" alt="" /><div><b>Q · AI Mentor</b>
+        <header><img src="/goalquest-eagle-quest.png" alt="" /><div><b>Кью · ИИ-наставник</b>
           <small><i /> {languageName(language)}</small></div>
           <button className="mentor-header-close" onClick={() => setIsOpen(false)} aria-label="Выйти из Q">
             <span>Выйти</span> ×
@@ -106,19 +114,23 @@ Understand attached images, documents and voice messages when present.`, attachm
           {answer && <p>{answer}</p>}
         </div>
         <div className="mentor-suggestions">
-          <button onClick={() => void ask('I feel stuck. Help me choose one small next step.')}>🧩 Small step</button>
-          <button onClick={() => void ask('Help me plan my goal for today.')}>🎯 Today’s plan</button>
+          <Link href="/mentor?new=1" onClick={() => setIsOpen(false)}>＋ Новая цель</Link>
+          <button onClick={() => void ask('Я застряла. Помоги выбрать один небольшой следующий шаг.')}>🧩 Маленький шаг</button>
+          <button onClick={() => void ask('Помоги составить план моей цели на сегодня.')}>🎯 План на сегодня</button>
         </div>
-        <AiComposer busy={busy} name="mentor" placeholder="Ask Q…" onSend={(text, files) => void ask(text, files)} />
-        <small className="mentor-cost"><Icon name="zap" size={13} /> AI answers in {languageName(language)}</small>
+        <AiComposer busy={busy} name="mentor" placeholder="Спроси Кью…" onSend={(text, files) => void ask(text, files)} />
+        <small className="mentor-cost"><Icon name="zap" size={13} /> Кью отвечает на выбранном языке</small>
         <button className="mentor-mobile-close" type="button" onClick={() => setIsOpen(false)}>
           <span>×</span> Выйти из Q
         </button>
       </section>}
-      {!isOpen && <span className="mentor-hint">AI Mentor</span>}
-      <button className="mentor-fab" onPointerDown={startDrag} onPointerMove={moveDrag}
+      {!isOpen && <span className="mentor-hint">ИИ-наставник</span>}
+      <button className="mentor-fab" onClick={() => {
+        if (suppressClick.current) { suppressClick.current = false; return; }
+        setIsOpen((value) => !value);
+      }} onPointerDown={startDrag} onPointerMove={moveDrag}
         onPointerUp={stopDrag} onPointerCancel={() => { drag.current = null; }}
-        aria-label="Открыть или переместить AI Mentor">
+        aria-label="Открыть или переместить ИИ-наставника">
         <span className="mentor-fab__letter">Q</span>
       </button>
     </div>
@@ -136,16 +148,4 @@ function readMentorPosition() {
     return value && typeof value.x === 'number' && typeof value.y === 'number'
       ? clampPosition(value.x, value.y) : null;
   } catch { return null; }
-}
-
-function welcome(language: string) {
-  if (language === 'ru') return 'Привет! Расскажи, над какой целью ты работаешь 🦅';
-  if (language === 'kk') return 'Сәлем! Қандай мақсатпен жұмыс істеп жатқаныңды айт 🦅';
-  return 'Hi! Tell me which goal you are working on 🦅';
-}
-
-function fallback(language: string) {
-  if (language === 'ru') return 'Сейчас не получилось получить ответ. Попробуй ещё раз.';
-  if (language === 'kk') return 'Қазір жауап алу мүмкін болмады. Қайтадан байқап көр.';
-  return 'I could not get an answer right now. Please try again.';
 }
